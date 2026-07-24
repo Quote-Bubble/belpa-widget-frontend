@@ -158,7 +158,7 @@ function QuoteBubbleShell({
       <motion.div
         className="q"
         id="quoter-widget"
-        data-stage={expanded ? "flow" : "input"}
+        data-stage={flow ? "flow" : "input"}
         data-suggesting="false"
         initial={false}
         animate={{

@@ -48,6 +48,8 @@ export function StepShell({
   bleed?: boolean;
 }) {
   const variant = useFlowVariant();
+  const shellRef = useRef<HTMLDivElement>(null);
+  const [announcement, setAnnouncement] = useState("");
   // Card: a flex child that fills the panel (flex-1) so short steps center
   // their content and bleed steps (maps) stretch to the edges. The pinned
   // BackButton sits over the bottom padding / map, so pb only needs to clear
@@ -58,12 +60,25 @@ export function StepShell({
       // chain resolving, which proved unreliable for the Google Map).
       "relative max-w-none flex-1 min-h-0"
     : "max-w-xl flex-1 min-h-0 px-5 pt-9 pb-14";
+
+  useEffect(() => {
+    const heading = shellRef.current?.querySelector("h1");
+    const text = heading?.textContent?.trim() ?? "";
+    if (text) setAnnouncement(text);
+  }, [children]);
+
   return (
     <div
-      className={`mx-auto flex w-full flex-col items-stretch ${
+      ref={shellRef}
+      data-step-focus
+      tabIndex={-1}
+      className={`mx-auto flex w-full flex-col items-stretch outline-none ${
         variant === "card" ? cardClass : "max-w-xl px-5 pb-28 pt-10 sm:pt-16"
       } ${className ?? ""}`}
     >
+      <span className="sr-only" aria-live="polite">
+        {announcement}
+      </span>
       {children}
     </div>
   );

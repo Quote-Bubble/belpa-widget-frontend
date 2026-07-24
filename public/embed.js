@@ -18,8 +18,9 @@
   "use strict";
 
   // Two fixed sizes — keep in sync with QUOTE_SIZES in the widget (lib/motion).
+  // Prefer the `sizes` field from the embed's init postMessage when present.
   var COLLAPSED_H = 120;
-  var EXPANDED_H = 544;
+  var EXPANDED_H = 574;
   var EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 
   function initOne(script) {
@@ -58,7 +59,10 @@
     frame.title = "Get an instant, free roof quote";
     frame.loading = "eager";
     frame.setAttribute("scrolling", "no");
-    frame.setAttribute("allow", "geolocation");
+    frame.setAttribute(
+      "sandbox",
+      "allow-scripts allow-same-origin allow-forms allow-popups",
+    );
     frame.style.display = "block";
     frame.style.width = "100%";
     frame.style.height = COLLAPSED_H + "px";
@@ -108,6 +112,16 @@
       if (event.origin !== origin) return;
       var d = event.data;
       if (!d || d.source !== "quoter-embed") return;
+
+      // Prefer live sizes from the widget so hosts don't copy constants.
+      if (d.sizes && typeof d.sizes === "object") {
+        if (typeof d.sizes.collapsed === "number" && d.sizes.collapsed > 0) {
+          COLLAPSED_H = d.sizes.collapsed;
+        }
+        if (typeof d.sizes.expanded === "number" && d.sizes.expanded > 0) {
+          EXPANDED_H = d.sizes.expanded;
+        }
+      }
 
       var mode = typeof d.mode === "string" ? d.mode : "collapsed";
       var h = typeof d.height === "number" && d.height > 0 ? d.height : 0;
