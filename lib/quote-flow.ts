@@ -176,6 +176,7 @@ export const JOB_TYPE_OPTIONS: FlowOption<JobType>[] = [
 export const PROPERTY_TYPE_OPTIONS: FlowOption<PropertyType>[] = [
   { value: "detached", label: "Detached" },
   { value: "semi_detached", label: "Semi-detached" },
+  { value: "end_of_terrace", label: "End of terrace" },
   { value: "terraced", label: "Terraced" },
   { value: "bungalow", label: "Bungalow" },
   { value: "flat", label: "Flat" },
@@ -184,7 +185,8 @@ export const PROPERTY_TYPE_OPTIONS: FlowOption<PropertyType>[] = [
 export const STOREY_OPTIONS: FlowOption<StoreyBand>[] = [
   { value: 1, label: "One" },
   { value: 2, label: "Two" },
-  { value: 3, label: "Three or more" },
+  { value: 3, label: "Three" },
+  { value: 4, label: "Four or more" },
 ];
 
 export const ROOFLINE_SCOPE_OPTIONS: FlowOption<RooflineScope>[] = [
@@ -633,6 +635,8 @@ export function buildLeadPayload(
     conditionAnswer: answers.condition,
     conditionFlagged: answers.condition === "yes",
     material: answers.material,
+    propertyType: answers.propertyType,
+    storeys: answers.storeys,
     quoteRange: quote ? { minExVat: quote.min, maxExVat: quote.max } : null,
     contact: {
       name: answers.contact.name.trim(),

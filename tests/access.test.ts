@@ -41,6 +41,7 @@ describe("assessAccess", () => {
 
   it("drives scaffold weeks from the storey answer", () => {
     expect(assessAccess(null, 3, "detached").scaffoldWeeks).toBe(2);
+    expect(assessAccess(null, 4, "detached").scaffoldWeeks).toBe(3);
     expect(assessAccess(null, 1, "detached").scaffoldWeeks).toBe(1);
     expect(assessAccess(null, 1, "detached", "repair").scaffoldWeeks).toBe(0);
     expect(assessAccess(null, 2, "detached", "repair").scaffoldWeeks).toBe(1);
@@ -50,11 +51,13 @@ describe("assessAccess", () => {
     const detached = assessAccess(null, 2, "detached");
     const bungalow = assessAccess(null, 2, "bungalow");
     const terraced = assessAccess(null, 2, "terraced");
+    const endOfTerrace = assessAccess(null, 2, "end_of_terrace");
     const semi = assessAccess(null, 2, "semi_detached");
     const flat = assessAccess(null, 2, "flat");
     expect(detached.accessMultiplier).toBeCloseTo(1.15);
     expect(bungalow.accessMultiplier).toBeCloseTo(1.15);
     expect(terraced.accessMultiplier).toBeCloseTo(0.9);
+    expect(endOfTerrace.accessMultiplier).toBeCloseTo(1.05);
     expect(semi.accessMultiplier).toBeCloseTo(1.05);
     expect(flat.accessMultiplier).toBeCloseTo(1.2);
   });

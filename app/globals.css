@@ -6,9 +6,9 @@
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
-  --quote-motion-fast: 160ms;
-  --quote-motion-base: 240ms;
-  --quote-motion-shell: 380ms;
+  --quote-motion-fast: 140ms;
+  --quote-motion-base: 200ms;
+  --quote-motion-shell: 320ms;
   /* Collapsed search bar stays its original size; only the opened flow
      grows wider. Taller is done via real padding in StepShell instead
      of a height/min-height trick - that fought an overflow:hidden
@@ -152,6 +152,14 @@ body:has(#quoter-widget[data-stage="flow"]) .quoter-bubble-host {
   height: 100%;
   display: flex;
   flex-direction: column;
+}
+
+/* The step content mounts as soon as the flow opens, so for the length of the
+   shell's height tween it is taller than the box it sits in. overflow-y:auto
+   would show a scrollbar for that whole 320ms. Clip until the shell has
+   reached its full height; QuoteBubble flips data-settled when it has. */
+.q[data-settled="false"] .quote-flow-scroller {
+  overflow-y: hidden;
 }
 
 .q-search {

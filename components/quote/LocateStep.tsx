@@ -360,7 +360,7 @@ export function LocateStep({
         </AnimatePresence>
 
         {phase === "confirm" ? (
-          <div className="absolute bottom-9 right-3 z-10">
+          <div className="absolute bottom-9 left-3 right-3 z-10 flex justify-end">
             <ContinueBubble
               label="Continue"
               ariaLabel="Yes, measure this roof"

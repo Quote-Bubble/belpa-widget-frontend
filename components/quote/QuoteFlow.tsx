@@ -773,9 +773,9 @@ function QuoteFlowBody({
           variant scrolls the whole document instead. */}
       <div
         ref={bodyRef}
-        className={`relative flex-1 ${
+        className={`quote-flow-scroller relative flex-1 ${
           variant === "card"
-            ? "flex min-h-0 flex-col overflow-y-auto overflow-x-hidden"
+            ? "flex min-h-0 flex-col overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]"
             : "min-h-0"
         }`}
       >
@@ -783,13 +783,22 @@ function QuoteFlowBody({
           <motion.div
             key={step}
             className={variant === "card" ? "flex min-h-0 flex-1 flex-col" : undefined}
-            initial={{ opacity: 0, y: state.direction * 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{
-              opacity: 0,
-              y: state.direction * -6,
-            }}
-            transition={STEP_TRANSITION}
+            initial={
+              step === "locate" || step === "draw_roof"
+                ? false
+                : { opacity: 0 }
+            }
+            animate={{ opacity: 1 }}
+            exit={
+              step === "locate" || step === "draw_roof"
+                ? undefined
+                : { opacity: 0 }
+            }
+            transition={
+              step === "locate" || step === "draw_roof"
+                ? { duration: 0 }
+                : STEP_TRANSITION
+            }
           >
             {renderStep()}
           </motion.div>

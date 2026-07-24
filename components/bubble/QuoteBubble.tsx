@@ -47,7 +47,12 @@ function QuoteBubbleShell({
 }: QuoteBubbleProps & { mapsEnabled: boolean }) {
   const [postcode, setPostcode] = useState("");
   const [flow, setFlow] = useState<OpenFlow | null>(null);
-  const [flowReady, setFlowReady] = useState(false);
+  // The step content mounts immediately so the panel is never empty glass, but
+  // for the length of the height tween it is taller than the box it sits in.
+  // Until the shell reaches its full 544px, the step scroller stays clipped so
+  // that transient overflow can't flash a scrollbar. See the CSS rule keyed on
+  // [data-settled] in app/globals.css.
+  const [shellSettled, setShellSettled] = useState(false);
   const [flowKey, setFlowKey] = useState(0);
   const [showAddressHint, setShowAddressHint] = useState(false);
   const hintTimerRef = useRef<number | null>(null);
@@ -90,20 +95,13 @@ function QuoteBubbleShell({
   }, []);
 
   useEffect(() => {
-    if (!expanded) return;
-    const frame = window.requestAnimationFrame(() => {
-      document.getElementById("quoter-widget")?.scrollIntoView({
-        block: "nearest",
-        behavior: "auto",
-      });
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [expanded]);
-
-  useEffect(() => {
-    if (!expanded) return;
+    if (!expanded) {
+      setShellSettled(false);
+      return;
+    }
+    setShellSettled(false);
     const timer = window.setTimeout(
-      () => setFlowReady(true),
+      () => setShellSettled(true),
       Math.round(MOTION_DURATION.shell * 1000),
     );
     return () => window.clearTimeout(timer);
@@ -133,7 +131,6 @@ function QuoteBubbleShell({
   }
 
   function closeFlow() {
-    setFlowReady(false);
     setFlow(null);
     track("widget_closed");
   }
@@ -159,6 +156,7 @@ function QuoteBubbleShell({
         className="q"
         id="quoter-widget"
         data-stage={flow ? "flow" : "input"}
+        data-settled={shellSettled ? "true" : "false"}
         data-suggesting="false"
         initial={false}
         animate={{
@@ -176,7 +174,7 @@ function QuoteBubbleShell({
               exit={{ opacity: 0 }}
               transition={STEP_TRANSITION}
             >
-              {flowReady ? flowContent : null}
+              {flowContent}
             </motion.div>
           ) : (
             <motion.div

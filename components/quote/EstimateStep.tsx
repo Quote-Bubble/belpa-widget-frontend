@@ -168,13 +168,16 @@ export function EstimateStep({
   ].filter(Boolean) as Chip[];
 
   return (
-    <StepShell className="overflow-y-auto">
+    // StepShell reserves pb-14 in the card to clear the pinned Back button,
+    // but this step is terminal and never shows one — reclaim it so the
+    // estimate, chips and tracker fit the fixed panel without scrolling.
+    <StepShell className={`overflow-y-auto ${variant === "card" ? "!pb-6" : ""}`}>
       {/* Heading + address */}
       <div className="shrink-0 text-center">
         <h1
           tabIndex={-1}
           className={`text-balance font-[family-name:var(--font-poppins)] font-semibold leading-tight tracking-tight text-ink outline-none ${
-            variant === "card" ? "text-[1.6rem]" : "text-3xl sm:text-4xl"
+            variant === "card" ? "text-[1.42rem]" : "text-3xl sm:text-4xl"
           }`}
         >
           {firstName ? `${firstName}, here's` : "Here's"} your estimate
@@ -183,7 +186,11 @@ export function EstimateStep({
             — this range is indicative, not a contract price.
           </InfoTip>
         </h1>
-        <p className="mt-2 flex items-center justify-center gap-1 text-[14px] text-muted">
+        <p
+          className={`flex items-center justify-center gap-1 text-muted ${
+            variant === "card" ? "mt-1.5 text-[13px]" : "mt-2 text-[14px]"
+          }`}
+        >
           <svg
             viewBox="0 0 24 24"
             fill="none"
@@ -200,14 +207,25 @@ export function EstimateStep({
       </div>
 
       {/* Estimate card */}
-      <div className="mx-auto mt-6 w-full shrink-0 overflow-hidden rounded-3xl border border-line bg-white shadow-[var(--shadow-soft)]">
-        <div className="px-5 pb-4 pt-5 text-center">
+      {/* Card variant is a fixed 544px panel — the vertical rhythm is tightened
+          there so the estimate + measurement chips + tracker all fit without a
+          scrollbar. The full-page variant keeps the roomier spacing. */}
+      <div
+        className={`mx-auto w-full shrink-0 overflow-hidden rounded-3xl border border-line bg-white shadow-[var(--shadow-soft)] ${
+          variant === "card" ? "mt-4" : "mt-6"
+        }`}
+      >
+        <div
+          className={`text-center ${
+            variant === "card" ? "px-5 pb-3 pt-4" : "px-5 pb-4 pt-5"
+          }`}
+        >
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
             Estimate
           </p>
           <p
             className={`mt-1.5 font-[family-name:var(--font-poppins)] font-semibold leading-tight tracking-tight text-ink ${
-              variant === "card" ? "text-[2.1rem]" : "text-[2rem] sm:text-5xl"
+              variant === "card" ? "text-[1.8rem]" : "text-[2rem] sm:text-5xl"
             }`}
           >
             {displayQuoteAmount(min, false)} – {displayQuoteAmount(max, false)}
@@ -265,7 +283,9 @@ export function EstimateStep({
                 {chips.map((chip) => (
                   <span
                     key={chip.key}
-                    className="flex min-w-0 flex-1 items-center justify-center gap-1.5 px-2 py-2.5 text-center text-[12.5px] font-medium text-ink-soft"
+                    className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 px-2 text-center font-medium text-ink-soft ${
+                      variant === "card" ? "py-2 text-[12px]" : "py-2.5 text-[12.5px]"
+                    }`}
                   >
                     <span className="text-brand-500">{chip.icon}</span>
                     <span className="truncate">{chip.label}</span>
@@ -276,7 +296,9 @@ export function EstimateStep({
             <button
               type="button"
               onClick={() => setShowBreakdown(true)}
-              className="flex w-full items-center gap-3 border-t border-line px-5 py-3.5 text-left text-[15px] font-semibold text-brand-600 transition-colors hover:text-brand-700"
+              className={`flex w-full items-center gap-3 border-t border-line px-5 text-left font-semibold text-brand-600 transition-colors hover:text-brand-700 ${
+                variant === "card" ? "py-2.5 text-[14px]" : "py-3.5 text-[15px]"
+              }`}
             >
               <svg
                 viewBox="0 0 24 24"
@@ -310,8 +332,16 @@ export function EstimateStep({
       </div>
 
       {/* What happens next — sleek horizontal tracker */}
-      <div className="mx-auto mt-6 w-full max-w-[560px] shrink-0">
-        <p className="mb-4 text-center text-[12px] font-semibold uppercase tracking-[0.12em] text-muted">
+      <div
+        className={`mx-auto w-full max-w-[560px] shrink-0 ${
+          variant === "card" ? "mt-4" : "mt-6"
+        }`}
+      >
+        <p
+          className={`text-center text-[12px] font-semibold uppercase tracking-[0.12em] text-muted ${
+            variant === "card" ? "mb-2.5" : "mb-4"
+          }`}
+        >
           What happens next
         </p>
         <div className="flex items-start">

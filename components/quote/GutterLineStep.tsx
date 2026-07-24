@@ -239,7 +239,7 @@ export function GutterLineStep({
           </div>
         ) : null}
 
-        <div className={`pointer-events-none absolute left-3 right-3 z-10 flex justify-center ${variant === "card" ? "top-16" : "top-3"}`}>
+        <div className={`pointer-events-none absolute left-3 right-3 z-10 flex justify-center ${variant === "card" ? "top-3" : "top-3"}`}>
           <span className="rounded-full bg-[rgba(10,11,13,0.75)] px-4 py-2 text-[13px] font-semibold text-white backdrop-blur-sm">
             {draft.length === 0
               ? "Tap the start of a gutter run"

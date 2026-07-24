@@ -12,6 +12,7 @@ export type AccessAssessment = {
 
 function clampStoreys(value: number): StoreyBand {
   if (value <= 1) return 1;
+  if (value >= 4) return 4;
   if (value >= 3) return 3;
   return 2;
 }
@@ -45,9 +46,10 @@ function attachmentMultiplier(propertyType: PropertyType | null): {
         note: "Flats often mean complex or communal access — modelled with a 20% uplift.",
       };
     case "semi_detached":
+    case "end_of_terrace":
       return {
         multiplier: 1.05,
-        note: "Semi-detached needs scaffolding on three elevations — modelled with a 5% uplift.",
+        note: "This property needs scaffolding on three elevations — modelled with a 5% uplift.",
       };
     case "terraced":
       return {
@@ -164,7 +166,7 @@ export function assessAccess(
   } else if (path === "consultation") {
     scaffoldWeeks = 0;
   } else {
-    scaffoldWeeks = estimatedStoreys >= 3 ? 2 : 1;
+    scaffoldWeeks = estimatedStoreys >= 4 ? 3 : estimatedStoreys >= 3 ? 2 : 1;
   }
 
   return {

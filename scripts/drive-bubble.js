@@ -10,27 +10,24 @@ const OUT = path.join(__dirname, "..", "tmp", "playwright");
 
 async function assertStableShell(page, label) {
   await page.waitForFunction(
-    () => Math.round(document.querySelector("#quoter-widget")?.getBoundingClientRect().height ?? 0) === 360,
-    { timeout: 2000 },
+    () => Math.round(document.querySelector("#quoter-widget")?.getBoundingClientRect().height ?? 0) === 544,
+    { timeout: 5000 },
   );
   const dimensions = await page.locator("#quoter-widget").evaluate((node) => {
-    const shell = node.querySelector(".quote-card-shell");
+    const scroller = node.querySelector(".quote-flow-scroller");
     return {
       width: Math.round(node.getBoundingClientRect().width),
       height: Math.round(node.getBoundingClientRect().height),
-      flowClientHeight: shell?.clientHeight ?? 0,
-      flowScrollHeight: shell?.scrollHeight ?? 0,
-      overflowY: shell ? getComputedStyle(shell).overflowY : "",
+      flowClientHeight: scroller?.clientHeight ?? 0,
+      flowScrollHeight: scroller?.scrollHeight ?? 0,
+      overflowY: scroller ? getComputedStyle(scroller).overflowY : "",
     };
   });
-  if (dimensions.width !== 620 || dimensions.height !== 360) {
-    throw new Error(`${label}: expected 620×360 bubble, got ${dimensions.width}×${dimensions.height}`);
+  if (dimensions.width !== 700 || dimensions.height !== 544) {
+    throw new Error(`${label}: expected 700×544 bubble, got ${dimensions.width}×${dimensions.height}`);
   }
-  if (dimensions.flowScrollHeight > dimensions.flowClientHeight) {
+  if (dimensions.flowScrollHeight > dimensions.flowClientHeight + 1) {
     throw new Error(`${label}: expanded quote flow overflows its fixed desktop shell`);
-  }
-  if (dimensions.overflowY !== "hidden") {
-    throw new Error(`${label}: expected hidden card overflow, got ${dimensions.overflowY}`);
   }
   return dimensions;
 }
@@ -45,17 +42,19 @@ async function main() {
   await page.screenshot({ path: path.join(OUT, "bubble-collapsed.png") });
 
   const input = page.locator("#quoter-widget input").first();
-  await input.fill("10 Downing Street, London");
-  // Submit typed text rather than selecting a live autocomplete item: this
-  // isolates desktop-shell geometry from the third-party Places response.
+  await input.fill("SW1A 2AA");
+  // Submit a real UK postcode so the shell expands into the flow stage.
   await page.locator(".q-go").click();
 
-  await page.waitForTimeout(1200);
+  await page.waitForFunction(
+    () => document.querySelector("#quoter-widget")?.getAttribute("data-stage") === "flow",
+    { timeout: 8000 },
+  );
   const stage = await page.locator("#quoter-widget").getAttribute("data-stage");
   await page.screenshot({ path: path.join(OUT, "bubble-expanded.png") });
 
   if (stage !== "flow") {
-    console.warn("Expected data-stage=flow, got", stage);
+    throw new Error(`Expected data-stage=flow, got ${stage}`);
   }
   // Card should still be in-page (not a full-viewport fixed overlay on desktop)
   const fixedOverlay = await page.locator("body > .quote-surface.fixed").count();

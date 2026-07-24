@@ -81,15 +81,17 @@ async function main() {
   await page.waitForTimeout(400);
   await page.screenshot({ path: path.join(OUT, "gutter-line-drawn.png") });
 
-  // Bump the chimney counter once
-  await page.getByRole("button", { name: /More chimneys/i }).click();
-  await page.waitForTimeout(200);
+  // The chimney / rooflight counters are commented out in GutterLineStep
+  // (see the note there — they come back with obstruction pricing), so this
+  // script no longer drives them. Restore the click when that block does.
 
   await page.getByRole("button", { name: "Continue" }).click();
   await page.waitForTimeout(500);
 
   // Material
-  await page.getByText(/What's on the roof/i).waitFor();
+  // Match the heading, not any text — StepShell also renders the same string
+  // into an sr-only aria-live region, which trips Playwright's strict mode.
+  await page.getByRole("heading", { name: /What's on the roof/i }).waitFor();
   await page.getByRole("button", { name: /Concrete/i }).first().click();
   await page.waitForTimeout(500);
 
