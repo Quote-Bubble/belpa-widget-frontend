@@ -56,7 +56,6 @@ import type { LatLng, SolarScan } from "@/lib/types";
 import { ADVANCE_DELAY_MS, STEP_TRANSITION } from "@/lib/motion";
 import { track } from "@/lib/analytics";
 import {
-  clearPendingLead,
   newSubmissionId,
   postLeadWithRetry,
   savePendingLead,
@@ -122,12 +121,27 @@ type FlowAction =
     }
   | { type: "SUBMIT_START"; patch: Partial<QuoteFlowAnswers> }
   | { type: "SUBMIT_ERROR"; message: string }
-  | { type: "SUBMIT_DONE" };
+  | { type: "SUBMIT_DONE" }
+  | {
+      type: "HYDRATE_PREVIEW";
+      answers: QuoteFlowAnswers;
+      step: FlowStepId;
+    };
 
 function reducer(state: FlowState, action: FlowAction): FlowState {
   switch (action.type) {
-    case "PATCH":
-      return { ...state, answers: { ...state.answers, ...action.patch } };
+    case "PATCH": {
+      const patch = { ...action.patch };
+      // Changing job type invalidates material / repair / roofline choices that
+      // may no longer apply to the new path.
+      if ("jobType" in patch && patch.jobType !== state.answers.jobType) {
+        patch.material = null;
+        patch.repairBandId = null;
+        patch.rooflineScope = null;
+        patch.fallbackReason = null;
+      }
+      return { ...state, answers: { ...state.answers, ...patch } };
+    }
     case "GO_NEXT": {
       const step = nextStep(state.answers, state.step);
       return step ? { ...state, step, direction: 1 } : state;
@@ -141,6 +155,8 @@ function reducer(state: FlowState, action: FlowAction): FlowState {
     case "GO_TO":
       return { ...state, step: action.step, direction: -1 };
     case "SCAN_SUCCESS": {
+      // Ignore late scan responses after the user has left the locate step.
+      if (state.step !== "locate") return state;
       const answers = {
         ...state.answers,
         coords: action.coords,
@@ -153,6 +169,7 @@ function reducer(state: FlowState, action: FlowAction): FlowState {
       return { ...state, answers, step: "draw_roof", direction: 1 };
     }
     case "SCAN_FALLBACK": {
+      if (state.step !== "locate") return state;
       const answers = {
         ...state.answers,
         coords: action.coords,
@@ -194,9 +211,19 @@ function reducer(state: FlowState, action: FlowAction): FlowState {
     case "SUBMIT_ERROR":
       return { ...state, submitStatus: "error", submitError: action.message };
     case "SUBMIT_DONE": {
+      // Ignore late submit confirmations after leaving the contact step.
+      if (state.step !== "contact") return state;
       const step = nextStep(state.answers, "contact") ?? state.step;
       return { ...state, submitStatus: "done", step, direction: 1 };
     }
+    case "HYDRATE_PREVIEW":
+      return {
+        answers: action.answers,
+        step: action.step,
+        direction: 1,
+        submitStatus: "idle",
+        submitError: null,
+      };
   }
 }
 
@@ -245,18 +272,6 @@ function QuoteFlowBody({
     reducer,
     undefined,
     (): FlowState => {
-      // Dev shortcut: ?preview=estimate seeds a finished repair estimate so
-      // the estimate screen can be opened directly while designing it, without
-      // clicking through the whole flow.
-      if (previewStep() === "estimate") {
-        return {
-          answers: buildPreviewAnswers(rooferId),
-          step: "estimate",
-          direction: 1,
-          submitStatus: "idle",
-          submitError: null,
-        };
-      }
       const answers = createFlowAnswers(rooferId, {
         postcode: initialAddress?.postcode ?? "",
         formatted: initialAddress?.formatted ?? null,
@@ -275,6 +290,18 @@ function QuoteFlowBody({
   );
   const advanceTimerRef = useRef<number | null>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
+
+  // Dev shortcut: ?preview=estimate seeds a finished repair estimate so the
+  // estimate screen can be opened directly while designing it. Applied after
+  // mount so SSR / first paint stay non-preview (avoids hydration mismatch).
+  useEffect(() => {
+    if (previewStep() !== "estimate") return;
+    dispatch({
+      type: "HYDRATE_PREVIEW",
+      answers: buildPreviewAnswers(rooferId),
+      step: "estimate",
+    });
+  }, [rooferId]);
 
   const { answers, step } = state;
 
@@ -491,14 +518,14 @@ function QuoteFlowBody({
     const result = await postLeadWithRetry(body);
 
     if (result.ok) {
-      clearPendingLead();
       track("lead_submitted", {
         jobType: payload.jobType,
         leadType: payload.leadType,
       });
       dispatch({ type: "SUBMIT_DONE" });
     } else {
-      // Leave the pending lead in storage so it can be re-sent on next mount.
+      // Pending lead is already cleared on permanent (4xx) failure inside
+      // postLeadWithRetry; transient failures keep it for flush-on-mount.
       track("lead_failed", { retriable: result.retriable });
       dispatch({ type: "SUBMIT_ERROR", message: result.message });
     }

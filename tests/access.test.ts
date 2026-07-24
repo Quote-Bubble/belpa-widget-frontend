@@ -25,20 +25,25 @@ function scanWithHeights(
 }
 
 describe("assessAccess", () => {
-  it("estimates storeys from roof plane height (~2.7 m each)", () => {
-    const access = assessAccess(scanWithHeights([5.5]), 2, "detached");
-    expect(access.estimatedStoreys).toBe(2);
-    expect(access.maxRoofHeightM).toBe(5.5);
-    expect(access.storeyMismatch).toBe(false);
+  it("uses the storey answer alone for estimatedStoreys (ignores satellite height)", () => {
+    // Tall satellite planes would previously have forced 3 storeys.
+    const access = assessAccess(scanWithHeights([9]), 1, "detached");
+    expect(access.estimatedStoreys).toBe(1);
+    expect(access.scaffoldWeeks).toBe(1);
+    expect(access.notes.every((note) => !note.includes("storey"))).toBe(true);
   });
 
-  it("widens confidence and uses the higher storey on mismatch", () => {
-    const access = assessAccess(scanWithHeights([9]), 1, "detached");
-    expect(access.estimatedStoreys).toBe(3);
-    expect(access.storeyMismatch).toBe(true);
-    expect(access.extraConfidence).toBeGreaterThan(0);
-    expect(access.scaffoldWeeks).toBe(2);
-    expect(access.notes.some((note) => note.includes("storey"))).toBe(true);
+  it("defaults storeysAnswer null to 2 storeys", () => {
+    const access = assessAccess(null, null, "detached");
+    expect(access.estimatedStoreys).toBe(2);
+    expect(access.scaffoldWeeks).toBe(1);
+  });
+
+  it("drives scaffold weeks from the storey answer", () => {
+    expect(assessAccess(null, 3, "detached").scaffoldWeeks).toBe(2);
+    expect(assessAccess(null, 1, "detached").scaffoldWeeks).toBe(1);
+    expect(assessAccess(null, 1, "detached", "repair").scaffoldWeeks).toBe(0);
+    expect(assessAccess(null, 2, "detached", "repair").scaffoldWeeks).toBe(1);
   });
 
   it("applies attachment multipliers — standalone properties need a full scaffold wrap, terraced needs the fewest elevations", () => {

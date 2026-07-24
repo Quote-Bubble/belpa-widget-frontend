@@ -17,7 +17,9 @@ import { apiUrl } from "@/lib/api";
  */
 
 const KEY = "quoter_pending_lead";
-const MAX_AGE_MS = 24 * 60 * 60 * 1000; // don't resurrect ancient drafts
+const MAX_AGE_MS = 60 * 60 * 1000; // 1 hour — don't resurrect ancient drafts
+
+export { MAX_AGE_MS };
 
 // Body includes the anti-spam fields alongside the lead payload.
 export type LeadBody = Record<string, unknown>;
@@ -90,12 +92,17 @@ export async function postLeadWithRetry(
   for (let attempt = 0; attempt < attempts; attempt++) {
     try {
       const response = await postOnce(body);
-      if (response.ok) return { ok: true };
-      // 4xx is a real rejection (bad input) — don't keep retrying it.
+      if (response.ok) {
+        clearPendingLead();
+        return { ok: true };
+      }
+      // 4xx is a real rejection (bad input) — don't keep retrying it, and clear
+      // the stash so we don't resurrect a permanently-invalid payload.
       if (response.status >= 400 && response.status < 500) {
         const parsed = (await response.json().catch(() => null)) as {
           error?: string;
         } | null;
+        clearPendingLead();
         return {
           ok: false,
           message: parsed?.error ?? "Please check your details and try again.",
@@ -129,6 +136,6 @@ export function flushPendingLead(): void {
     return;
   }
   void postLeadWithRetry(pending.body, 2).then((result) => {
-    if (result.ok) clearPendingLead();
+    if (result.ok || !result.retriable) clearPendingLead();
   });
 }
