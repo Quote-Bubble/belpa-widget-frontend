@@ -2,12 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import {
   deriveRoofType,
+  isSimpleRing,
   measureBoundary,
   measureDetached,
   pathFromBounds,
+  ringsOverlapExcessively,
   selectBoundsShare,
 } from "@/lib/roof-geometry";
-import type { GeoBounds, RoofSegment, SolarScan } from "@/lib/types";
+import type { GeoBounds, LatLng, RoofSegment, SolarScan } from "@/lib/types";
 
 const BUILDING: GeoBounds = {
   north: 52.0002,
@@ -143,5 +145,38 @@ describe("direct boundary selection", () => {
         segment(bounds, 10, 30, 180),
       ]),
     ).toBe("gable");
+  });
+});
+
+describe("isSimpleRing", () => {
+  it("accepts a simple rectangle", () => {
+    expect(isSimpleRing(pathFromBounds(BUILDING))).toBe(true);
+  });
+
+  it("rejects a self-crossing bow-tie", () => {
+    const bowTie: LatLng[] = [
+      { lat: 52, lng: 0 },
+      { lat: 52.001, lng: 0.001 },
+      { lat: 52, lng: 0.001 },
+      { lat: 52.001, lng: 0 },
+    ];
+    expect(isSimpleRing(bowTie)).toBe(false);
+  });
+});
+
+describe("ringsOverlapExcessively", () => {
+  it("flags near-identical overlapping outlines", () => {
+    const a = pathFromBounds(BUILDING);
+    const b = pathFromBounds({
+      ...BUILDING,
+      east: BUILDING.east - 0.00001,
+    });
+    expect(ringsOverlapExcessively(a, b)).toBe(true);
+  });
+
+  it("allows side-by-side non-overlapping halves", () => {
+    const left = pathFromBounds({ ...BUILDING, east: 0.0002 });
+    const right = pathFromBounds({ ...BUILDING, west: 0.0002 });
+    expect(ringsOverlapExcessively(left, right)).toBe(false);
   });
 });

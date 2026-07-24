@@ -1,11 +1,7 @@
 import type { PropertyType, SolarScan, StoreyBand } from "@/lib/types";
 
-const STOREY_HEIGHT_M = 2.7;
-
 export type AccessAssessment = {
   estimatedStoreys: StoreyBand;
-  storeyMismatch: boolean;
-  maxRoofHeightM: number | null;
   steepPitch: boolean;
   complexity: "simple" | "moderate" | "complex";
   scaffoldWeeks: number;
@@ -117,7 +113,8 @@ function complexityMultiplier(complexity: AccessAssessment["complexity"]): numbe
 
 /**
  * Derive scaffolding weeks, access uplift, and confidence wideners from the
- * Solar scan heights plus the homeowner's storey / property answers.
+ * Solar scan (pitch / plane count) plus the homeowner's storey / property answers.
+ * Storey count comes from the answer alone — satellite height is not used.
  */
 export function assessAccess(
   scan: SolarScan | null,
@@ -128,30 +125,7 @@ export function assessAccess(
   const notes: string[] = [];
   let extraConfidence = 0;
 
-  const heights =
-    scan?.roofSegmentStats
-      .map((segment) => segment.planeHeightAtCenterMeters)
-      .filter((height): height is number => typeof height === "number") ?? [];
-  const maxRoofHeightM = heights.length > 0 ? Math.max(...heights) : null;
-
-  const estimatedFromHeight =
-    maxRoofHeightM !== null
-      ? clampStoreys(Math.round(maxRoofHeightM / STOREY_HEIGHT_M))
-      : null;
-
-  const answered = storeysAnswer ?? 2;
-  const storeyMismatch =
-    estimatedFromHeight !== null && estimatedFromHeight !== answered;
-  const estimatedStoreys = clampStoreys(
-    Math.max(answered, estimatedFromHeight ?? answered),
-  );
-
-  if (storeyMismatch) {
-    extraConfidence += 0.06;
-    notes.push(
-      `Satellite roof height (~${maxRoofHeightM!.toFixed(1)} m) suggests ${estimatedFromHeight} storey(s); scaffolding uses the higher of that and your answer.`,
-    );
-  }
+  const estimatedStoreys = clampStoreys(storeysAnswer ?? 2);
 
   const avgPitch =
     scan && scan.roofSegmentStats.length > 0
@@ -195,8 +169,6 @@ export function assessAccess(
 
   return {
     estimatedStoreys,
-    storeyMismatch,
-    maxRoofHeightM,
     steepPitch,
     complexity,
     scaffoldWeeks,

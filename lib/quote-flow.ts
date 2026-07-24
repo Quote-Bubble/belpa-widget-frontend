@@ -10,11 +10,13 @@ import {
   calculateReplacementEstimate,
   calculateRooflineEstimate,
 } from "@/lib/quote";
+import { materialOptionsFor } from "@/lib/materials";
 import {
   isImageryOlderThanThreeYears,
   measureBoundary,
   measureDetached,
   pathFromBounds,
+  ringsOverlapExcessively,
 } from "@/lib/roof-geometry";
 import type {
   ConditionAnswer,
@@ -113,8 +115,15 @@ export function displayAddress(
   return address.formatted?.trim() || address.line.trim() || address.postcode;
 }
 
+function newRoofId(): string {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return `roof-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
 export function emptyDrawnRoof(path: LatLng[] = []): DrawnRoof {
-  return { path, gutterEdgeIndices: [], obstructions: [] };
+  return { id: newRoofId(), path, gutterEdgeIndices: [], obstructions: [] };
 }
 
 /**
@@ -290,7 +299,6 @@ export function stepSequence(answers: QuoteFlowAnswers): FlowStepId[] {
     }
   })();
   // A bungalow is single-storey by definition — asking would be redundant.
-  // (The satellite height check still bumps scaffolding up if the scan disagrees.)
   return answers.propertyType === "bungalow"
     ? steps.filter((step) => step !== "storeys")
     : steps;
@@ -362,12 +370,23 @@ export function measureRoofs(
   let chimneyCount = 0;
   let rooflightCount = 0;
   let obstructionSurfaceM2 = 0;
+  const acceptedPaths: LatLng[][] = [];
 
   for (const roof of roofs) {
     if (roof.path.length < 3) continue;
+    // Reject outlines that overlap an already-accepted roof by >10% of the
+    // new ring's area (defence in depth — DrawRoofStep also blocks this).
+    if (
+      acceptedPaths.some((existing) =>
+        ringsOverlapExcessively(roof.path, existing),
+      )
+    ) {
+      return null;
+    }
     try {
       const measured = measureBoundary(scan, roof.path);
       perRoof.push(measured);
+      acceptedPaths.push(roof.path);
       perimeterM += polygonPerimeterM(roof.path);
       for (const edgeIndex of roof.gutterEdgeIndices) {
         gutterLengthM += edgeLengthM(roof.path, edgeIndex);
@@ -448,6 +467,18 @@ export function measureWholeRoof(
 /* Quote + lead payload                                                */
 /* ------------------------------------------------------------------ */
 
+function isFinitePositive(value: number): boolean {
+  return Number.isFinite(value) && value > 0;
+}
+
+function isValidMaterialForJob(
+  jobType: JobType | null,
+  material: Material | null,
+): material is Material {
+  if (material === null) return false;
+  return materialOptionsFor(jobType).some((option) => option.value === material);
+}
+
 export function computeFlowQuote(
   answers: QuoteFlowAnswers,
   measurement: CombinedMeasurement | null,
@@ -463,71 +494,97 @@ export function computeFlowQuote(
   const storeys = access.estimatedStoreys;
 
   if (path === "repair") {
-    if (answers.material === null) return null;
+    if (!isValidMaterialForJob(answers.jobType, answers.material)) return null;
     const band = repairBandById(answers.repairBandId);
-    if (!band) return null;
-    return calculateRepairEstimate({
-      areaM2: band.representativeAreaM2,
-      material: answers.material as RepairMaterial,
-      storeys,
-      scaffoldWeeks: access.scaffoldWeeks,
-      includeSkip: false,
-      conditionAnswer: condition,
-      accessMultiplier: access.accessMultiplier,
-      extraAssumptions: access.notes,
-      extraConfidence: access.extraConfidence,
-    });
+    if (!band || !isFinitePositive(band.representativeAreaM2)) return null;
+    try {
+      return calculateRepairEstimate({
+        areaM2: band.representativeAreaM2,
+        material: answers.material as RepairMaterial,
+        storeys,
+        scaffoldWeeks: access.scaffoldWeeks,
+        includeSkip: false,
+        conditionAnswer: condition,
+        accessMultiplier: access.accessMultiplier,
+        extraAssumptions: access.notes,
+        extraConfidence: access.extraConfidence,
+      });
+    } catch {
+      return null;
+    }
   }
 
   if (path === "roofline") {
     if (!measurement || answers.rooflineScope === null) return null;
-    if (measurement.gutterLengthM <= 0) return null;
-    return calculateRooflineEstimate({
-      gutterLengthM: measurement.gutterLengthM,
-      includeFascias: answers.rooflineScope === "gutters_fascias",
-      storeys,
-      scaffoldWeeks: access.scaffoldWeeks,
-      accessMultiplier: access.accessMultiplier,
-      extraAssumptions: access.notes,
-      extraConfidence: access.extraConfidence,
-    });
+    if (
+      !Number.isFinite(measurement.gutterLengthM) ||
+      measurement.gutterLengthM <= 0
+    ) {
+      return null;
+    }
+    try {
+      return calculateRooflineEstimate({
+        gutterLengthM: measurement.gutterLengthM,
+        includeFascias: answers.rooflineScope === "gutters_fascias",
+        storeys,
+        scaffoldWeeks: access.scaffoldWeeks,
+        accessMultiplier: access.accessMultiplier,
+        extraAssumptions: access.notes,
+        extraConfidence: access.extraConfidence,
+      });
+    } catch {
+      return null;
+    }
   }
 
   if (path !== "measured" || !answers.scan || !measurement) return null;
-  if (answers.material === null) return null;
+  if (!isValidMaterialForJob(answers.jobType, answers.material)) return null;
+  if (
+    !Number.isFinite(measurement.surfaceAreaM2) ||
+    measurement.surfaceAreaM2 <= 0
+  ) {
+    return null;
+  }
 
   const linearItems: {
     rateId: "gutter_replace_m";
     quantityM: number;
   }[] = [];
-  if (measurement.gutterLengthM > 0) {
+  if (
+    Number.isFinite(measurement.gutterLengthM) &&
+    measurement.gutterLengthM > 0
+  ) {
     linearItems.push({
       rateId: "gutter_replace_m",
       quantityM: measurement.gutterLengthM,
     });
   }
 
-  return calculateReplacementEstimate({
-    areaM2: measurement.surfaceAreaM2,
-    roofType:
-      answers.jobType === "flat_roof_replacement"
-        ? "flat"
-        : measurement.roofType,
-    material: answers.material as ReplacementMaterial,
-    storeys,
-    scaffoldWeeks: access.scaffoldWeeks,
-    includeSkip: true,
-    imageryQuality: answers.scan.imageryQuality,
-    imageryDateIsOld: isImageryOlderThanThreeYears(answers.scan.imageryDate),
-    // Homeowner-drawn outlines keep the wider confidence band on purpose.
-    polygonWasEdited: true,
-    conditionAnswer: condition,
-    linearItems,
-    chimneyCount: measurement.chimneyCount,
-    accessMultiplier: access.accessMultiplier,
-    extraAssumptions: access.notes,
-    extraConfidence: access.extraConfidence,
-  });
+  try {
+    return calculateReplacementEstimate({
+      areaM2: measurement.surfaceAreaM2,
+      roofType:
+        answers.jobType === "flat_roof_replacement"
+          ? "flat"
+          : measurement.roofType,
+      material: answers.material as ReplacementMaterial,
+      storeys,
+      scaffoldWeeks: access.scaffoldWeeks,
+      includeSkip: true,
+      imageryQuality: answers.scan.imageryQuality,
+      imageryDateIsOld: isImageryOlderThanThreeYears(answers.scan.imageryDate),
+      // Homeowner-drawn outlines keep the wider confidence band on purpose.
+      polygonWasEdited: true,
+      conditionAnswer: condition,
+      linearItems,
+      chimneyCount: measurement.chimneyCount,
+      accessMultiplier: access.accessMultiplier,
+      extraAssumptions: access.notes,
+      extraConfidence: access.extraConfidence,
+    });
+  } catch {
+    return null;
+  }
 }
 
 export function buildLeadPayload(

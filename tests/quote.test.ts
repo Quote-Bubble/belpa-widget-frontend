@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   calculateRepairEstimate,
   calculateReplacementEstimate,
+  quoteBaseSubtotal,
   repairSizeAdjustment,
 } from "@/lib/quote";
 
@@ -111,5 +112,32 @@ describe("repair estimate", () => {
     expect(ridge?.min).toBe(250);
     expect(ridge?.max).toBe(350);
     expect(ridge?.unit).toBe("m");
+  });
+});
+
+describe("estimate breakdown reconciliation", () => {
+  it("sums line items to the base subtotal before the confidence band", () => {
+    const quote = calculateReplacementEstimate({
+      areaM2: 84.2,
+      roofType: "gable",
+      material: "natural_slate",
+      storeys: 2,
+      scaffoldWeeks: 1,
+      includeSkip: true,
+      imageryQuality: "HIGH",
+      imageryDateIsOld: false,
+      polygonWasEdited: false,
+      conditionAnswer: "no",
+    });
+    const base = quoteBaseSubtotal(quote);
+    const summedMin = quote.lineItems.reduce((sum, item) => sum + item.min, 0);
+    const summedMax = quote.lineItems.reduce((sum, item) => sum + item.max, 0);
+
+    expect(base.min).toBeCloseTo(summedMin, 8);
+    expect(base.max).toBeCloseTo(summedMax, 8);
+    // Headline range is the confidence-adjusted band around that base — not
+    // the raw line-item sum — so the UI labels the subtotal explicitly.
+    expect(quote.min).toBeLessThanOrEqual(base.min);
+    expect(quote.max).toBeGreaterThanOrEqual(base.max);
   });
 });

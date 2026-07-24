@@ -224,6 +224,7 @@ describe("measureRoofs", () => {
     };
     const withExtras = measureRoofs(scan, [
       {
+        id: "roof-with-extras",
         path,
         gutterEdgeIndices: [0, 2],
         obstructions: [{ kind: "chimney", bounds: chimneyBounds }],
@@ -240,6 +241,15 @@ describe("measureRoofs", () => {
   it("ignores degenerate outlines and returns null when nothing measures", () => {
     const scan = flatScan();
     expect(measureRoofs(scan, [emptyDrawnRoof([{ lat: 52, lng: 0 }])])).toBeNull();
+  });
+
+  it("rejects roofs that overlap each other by more than 10%", () => {
+    const scan = flatScan();
+    const full = emptyDrawnRoof(pathFromBounds(BUILDING));
+    const almostSame = emptyDrawnRoof(
+      pathFromBounds({ ...BUILDING, east: BUILDING.east - 0.00001 }),
+    );
+    expect(measureRoofs(scan, [full, almostSame])).toBeNull();
   });
 });
 
@@ -341,9 +351,8 @@ describe("computeFlowQuote", () => {
     const answers = measuredAnswers();
     answers.roofs = [
       {
-        path: pathFromBounds(BUILDING),
+        ...emptyDrawnRoof(pathFromBounds(BUILDING)),
         gutterEdgeIndices: [0],
-        obstructions: [],
       },
     ];
     const measurement = measureRoofs(answers.scan!, answers.roofs);
@@ -361,9 +370,8 @@ describe("computeFlowQuote", () => {
     answers.scan = flatScan();
     answers.roofs = [
       {
-        path: pathFromBounds(BUILDING),
+        ...emptyDrawnRoof(pathFromBounds(BUILDING)),
         gutterEdgeIndices: [0, 1],
-        obstructions: [],
       },
     ];
     answers.rooflineScope = "gutters_fascias";
@@ -396,6 +404,15 @@ describe("computeFlowQuote", () => {
     const answers = createFlowAnswers("r");
     answers.jobType = "full_replacement";
     expect(computeFlowQuote(answers, null)).toBeNull();
+  });
+
+  it("returns null when material is not valid for the job type", () => {
+    const answers = measuredAnswers();
+    answers.jobType = "flat_roof_replacement";
+    // Concrete tile is pitched-only — not in flat replacement options.
+    answers.material = "concrete_tile";
+    const measurement = measureRoofs(answers.scan!, answers.roofs);
+    expect(computeFlowQuote(answers, measurement)).toBeNull();
   });
 });
 

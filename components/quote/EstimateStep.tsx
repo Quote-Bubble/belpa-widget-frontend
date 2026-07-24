@@ -5,7 +5,7 @@ import { motion } from "motion/react";
 
 import { InfoTip, StepShell, useFlowVariant } from "@/components/quote/ui";
 import type { CombinedMeasurement } from "@/lib/quote-flow";
-import { displayQuoteAmount } from "@/lib/quote";
+import { displayQuoteAmount, quoteBaseSubtotal } from "@/lib/quote";
 import type { LatLng, QuoteResult } from "@/lib/types";
 
 function useCountUp(target: number, durationMs = 1100, delayMs = 250) {
@@ -156,6 +156,7 @@ export function EstimateStep({
       : null;
   const firstName = contactName.trim().split(" ")[0] ?? "";
   const showArea = quote.pricingMode !== "roofline" && area !== null;
+  const baseSubtotal = quoteBaseSubtotal(quote);
 
   const chips: Chip[] = [
     showArea && area !== null
@@ -230,6 +231,20 @@ export function EstimateStep({
                 </li>
               ))}
             </ul>
+            <div className="mt-3 flex items-baseline justify-between gap-4 border-t border-line pt-2.5 text-[13px]">
+              <span className="font-medium text-ink-soft">
+                Subtotal before our confidence range
+              </span>
+              <span className="flex-none font-semibold text-ink">
+                {displayQuoteAmount(baseSubtotal.min, false)} –{" "}
+                {displayQuoteAmount(baseSubtotal.max, false)}
+              </span>
+            </div>
+            <p className="mt-2 text-[11.5px] leading-relaxed text-muted">
+              The headline range applies our confidence band to this subtotal
+              ({displayQuoteAmount(quote.min, false)} –{" "}
+              {displayQuoteAmount(quote.max, false)}).
+            </p>
             {quote.modelAssumptions.length > 0 ? (
               <p className="mt-3 border-t border-line pt-2.5 text-[11.5px] leading-relaxed text-muted">
                 {quote.modelAssumptions.join(" ")}

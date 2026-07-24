@@ -17,6 +17,8 @@ import { QUOTE_SIZES } from "@/lib/motion";
  *   - mode:   "collapsed" | "suggesting" | "expanded" | "overlay"
  *   - height: the iframe height (px) for this mode
  *   - stage:  "input" | "flow" (mirrored for host-side selectors)
+ *   - sizes:  { collapsed, expanded } posted on init so hosts need not
+ *             copy QUOTE_SIZES constants
  *
  * Modes and how the host treats them:
  *   collapsed  — fixed bar height, laid out in flow (the reserved slot).
@@ -31,6 +33,15 @@ import { QUOTE_SIZES } from "@/lib/motion";
  */
 type EmbedMode = "collapsed" | "suggesting" | "expanded" | "overlay";
 
+function resolveHostOrigin(): string | null {
+  try {
+    if (document.referrer) return new URL(document.referrer).origin;
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
 export function EmbedFrame({ rooferId }: { rooferId: string }) {
   const hostRef = useRef<HTMLDivElement>(null);
 
@@ -41,8 +52,12 @@ export function EmbedFrame({ rooferId }: { rooferId: string }) {
     document.body.style.background = "transparent";
     document.body.style.margin = "0";
 
+    const hostOrigin = resolveHostOrigin();
     const desktopQuery = window.matchMedia("(min-width: 640px)");
     let lastKey = "";
+    let postedSizes = false;
+    let rafId = 0;
+    const postSoonTimers = new Set<number>();
 
     // Only used by the "suggesting" overlay: the dropdown overflows below the
     // bar and, being in an iframe, would be clipped — report a height that
@@ -66,6 +81,7 @@ export function EmbedFrame({ rooferId }: { rooferId: string }) {
     };
 
     const post = () => {
+      if (!hostOrigin) return;
       const widget = document.getElementById("quoter-widget");
       const stage = widget?.getAttribute("data-stage") ?? "input";
 
@@ -88,28 +104,57 @@ export function EmbedFrame({ rooferId }: { rooferId: string }) {
       }
 
       // De-dupe identical frames so we don't spam the parent.
-      const key = `${mode}|${height}|${stage}`;
+      const key = `${mode}|${height}|${stage}|${postedSizes}`;
       if (key === lastKey) return;
       lastKey = key;
 
-      window.parent?.postMessage(
-        { source: "quoter-embed", mode, height, stage },
-        "*",
-      );
+      const payload: Record<string, unknown> = {
+        source: "quoter-embed",
+        mode,
+        height,
+        stage,
+      };
+      if (!postedSizes) {
+        postedSizes = true;
+        payload.sizes = {
+          collapsed: QUOTE_SIZES.collapsed,
+          expanded: QUOTE_SIZES.expanded,
+        };
+      }
+
+      window.parent?.postMessage(payload, hostOrigin);
+    };
+
+    const schedulePost = () => {
+      if (rafId) return;
+      rafId = window.requestAnimationFrame(() => {
+        rafId = 0;
+        post();
+      });
+    };
+
+    const clearPostSoonTimers = () => {
+      for (const id of postSoonTimers) window.clearTimeout(id);
+      postSoonTimers.clear();
     };
 
     // data-stage flips (collapsed <-> expanded / overlay).
     const widget = document.getElementById("quoter-widget");
-    const mo = new MutationObserver(post);
+    const stageMo = new MutationObserver(schedulePost);
     if (widget) {
-      mo.observe(widget, { attributes: true, attributeFilter: ["data-stage"] });
+      stageMo.observe(widget, {
+        attributes: true,
+        attributeFilter: ["data-stage"],
+      });
     }
 
     // Host asks us to focus the search input (its own [data-try] buttons
     // can't reach across the frame boundary).
     const onHostMessage = (e: MessageEvent) => {
+      if (!hostOrigin || e.origin !== hostOrigin) return;
       const d = e.data;
       if (!d || d.source !== "quoter-host") return;
+      if (typeof d.action !== "string") return;
       if (d.action === "focus") {
         const input = document
           .getElementById("quoter-widget")
@@ -120,34 +165,57 @@ export function EmbedFrame({ rooferId }: { rooferId: string }) {
     window.addEventListener("message", onHostMessage);
 
     // The suggestions dropdown mounts/animates outside the widget subtree, so
-    // re-check on typing, focus changes, and any DOM mutation, then once more
-    // after the dropdown's enter/exit animation settles.
+    // re-check on typing and focus changes, then once more after the
+    // dropdown's enter/exit animation settles.
     const postSoon = () => {
-      post();
-      window.setTimeout(post, 60);
-      window.setTimeout(post, 240);
+      schedulePost();
+      const t1 = window.setTimeout(schedulePost, 60);
+      const t2 = window.setTimeout(schedulePost, 240);
+      postSoonTimers.add(t1);
+      postSoonTimers.add(t2);
+      window.setTimeout(() => {
+        postSoonTimers.delete(t1);
+        postSoonTimers.delete(t2);
+      }, 250);
     };
-    const bodyMo = new MutationObserver(postSoon);
-    bodyMo.observe(document.body, { childList: true, subtree: true });
+    const onFocusOut = () => {
+      const id = window.setTimeout(schedulePost, 120);
+      postSoonTimers.add(id);
+      window.setTimeout(() => postSoonTimers.delete(id), 130);
+    };
+
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(schedulePost)
+        : null;
+    if (widget && resizeObserver) resizeObserver.observe(widget);
+    // Also watch the host root — suggestions may extend past the widget.
+    if (hostRef.current && resizeObserver) {
+      resizeObserver.observe(hostRef.current);
+    }
+
     document.addEventListener("input", postSoon, true);
     document.addEventListener("focusin", postSoon, true);
-    document.addEventListener("focusout", () => window.setTimeout(post, 120), true);
+    document.addEventListener("focusout", onFocusOut, true);
 
-    desktopQuery.addEventListener("change", post);
+    desktopQuery.addEventListener("change", schedulePost);
     // A couple of delayed posts catch late layout (fonts, first paint).
-    const t1 = window.setTimeout(post, 60);
-    const t2 = window.setTimeout(post, 400);
-    post();
+    const t1 = window.setTimeout(schedulePost, 60);
+    const t2 = window.setTimeout(schedulePost, 400);
+    postSoonTimers.add(t1);
+    postSoonTimers.add(t2);
+    schedulePost();
 
     return () => {
-      mo.disconnect();
-      bodyMo.disconnect();
+      stageMo.disconnect();
+      resizeObserver?.disconnect();
       document.removeEventListener("input", postSoon, true);
       document.removeEventListener("focusin", postSoon, true);
+      document.removeEventListener("focusout", onFocusOut, true);
       window.removeEventListener("message", onHostMessage);
-      desktopQuery.removeEventListener("change", post);
-      window.clearTimeout(t1);
-      window.clearTimeout(t2);
+      desktopQuery.removeEventListener("change", schedulePost);
+      if (rafId) window.cancelAnimationFrame(rafId);
+      clearPostSoonTimers();
     };
   }, []);
 

@@ -205,6 +205,15 @@ export function repairSizeAdjustment(areaM2: number) {
 export function calculateReplacementEstimate(
   input: ReplacementEstimateInput,
 ): QuoteResult {
+  if (!Number.isFinite(input.areaM2) || input.areaM2 <= 0) {
+    throw new Error("Replacement estimate requires a positive roof area.");
+  }
+  if (!Number.isFinite(input.storeys) || input.storeys < 1) {
+    throw new Error("Replacement estimate requires a valid storey count.");
+  }
+  if (!Number.isFinite(input.scaffoldWeeks) || input.scaffoldWeeks < 0) {
+    throw new Error("Replacement estimate requires a non-negative scaffold weeks.");
+  }
   const rates = combineRates(
     coveringRates("replacement", input.material, input.roofType),
   );
@@ -294,6 +303,15 @@ export function calculateReplacementEstimate(
 export function calculateRepairEstimate(
   input: RepairEstimateInput,
 ): QuoteResult {
+  if (!Number.isFinite(input.areaM2) || input.areaM2 <= 0) {
+    throw new Error("Repair estimate requires a positive repair area.");
+  }
+  if (!Number.isFinite(input.storeys) || input.storeys < 1) {
+    throw new Error("Repair estimate requires a valid storey count.");
+  }
+  if (!Number.isFinite(input.scaffoldWeeks) || input.scaffoldWeeks < 0) {
+    throw new Error("Repair estimate requires a non-negative scaffold weeks.");
+  }
   const rates = combineRates(coveringRates("repair", input.material));
   const size = repairSizeAdjustment(input.areaM2);
   const adjustedMinRate = rates.min * size.rateMultiplier;
@@ -350,6 +368,15 @@ export function calculateRepairEstimate(
 export function calculateRooflineEstimate(
   input: RooflineEstimateInput,
 ): QuoteResult {
+  if (!Number.isFinite(input.gutterLengthM) || input.gutterLengthM < 0) {
+    throw new Error("Roofline estimate requires a non-negative gutter length.");
+  }
+  if (!Number.isFinite(input.storeys) || input.storeys < 1) {
+    throw new Error("Roofline estimate requires a valid storey count.");
+  }
+  if (!Number.isFinite(input.scaffoldWeeks) || input.scaffoldWeeks < 0) {
+    throw new Error("Roofline estimate requires a non-negative scaffold weeks.");
+  }
   const length = Math.max(0, input.gutterLengthM);
   const lineItems: QuoteLineItem[] = [];
 
@@ -415,4 +442,18 @@ export function displayQuoteAmount(amount: number, includesVat: boolean) {
     currency: "GBP",
     maximumFractionDigits: 0,
   }).format(roundToNearestFifty(value));
+}
+
+/** Sum of raw line-item ranges before the confidence band is applied. */
+export function quoteBaseSubtotal(quote: QuoteResult): {
+  min: number;
+  max: number;
+} {
+  return quote.lineItems.reduce(
+    (totals, item) => ({
+      min: totals.min + item.min,
+      max: totals.max + item.max,
+    }),
+    { min: 0, max: 0 },
+  );
 }

@@ -64,6 +64,9 @@ export function LocateStep({
 }) {
   const variant = useFlowVariant();
   const startedRef = useRef(false);
+  const cancelledRef = useRef(false);
+  const geocodeAbortRef = useRef<AbortController | null>(null);
+  const scanAbortRef = useRef<AbortController | null>(null);
   const [phase, setPhase] = useState<Phase>(prefetched ? "confirm" : "geocoding");
   const [error, setError] = useState<string | null>(null);
   const [geocoded, setGeocoded] = useState<{
@@ -77,11 +80,22 @@ export function LocateStep({
   const mapHeight = useMapHeightClass();
 
   useEffect(() => {
+    cancelledRef.current = false;
+    return () => {
+      cancelledRef.current = true;
+      geocodeAbortRef.current?.abort();
+      scanAbortRef.current?.abort();
+    };
+  }, []);
+
+  useEffect(() => {
     if (startedRef.current) return;
     startedRef.current = true;
     // Already resolved before this step was reached — nothing to fetch.
     if (prefetched) return;
     const startedAt = performance.now();
+    const abort = new AbortController();
+    geocodeAbortRef.current = abort;
 
     async function holdMinimum() {
       const elapsed = performance.now() - startedAt;
@@ -99,8 +113,11 @@ export function LocateStep({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ postcode }),
+          signal: abort.signal,
         });
+        if (cancelledRef.current || abort.signal.aborted) return;
         const raw = await geocodeResponse.text();
+        if (cancelledRef.current || abort.signal.aborted) return;
         let geocodeBody: {
           coords?: LatLng;
           formattedAddress?: string;
@@ -114,6 +131,7 @@ export function LocateStep({
           );
         }
         await holdMinimum();
+        if (cancelledRef.current || abort.signal.aborted) return;
         if (!geocodeResponse.ok || !geocodeBody.coords) {
           const message =
             typeof geocodeBody.error === "string"
@@ -132,8 +150,10 @@ export function LocateStep({
         onMapViewChange({ center: next.coords, zoom: 19 });
         setPhase("confirm");
       } catch (error) {
+        if (abort.signal.aborted || cancelledRef.current) return;
         console.error("[quoter] geocode failed", error);
         await holdMinimum();
+        if (cancelledRef.current) return;
         setError(
           "Something went wrong while finding that address. Check your connection and try again.",
         );
@@ -142,7 +162,10 @@ export function LocateStep({
     }
 
     void runGeocode();
-  }, [postcode, prefetched]);
+    return () => {
+      abort.abort();
+    };
+  }, [postcode, prefetched, onMapViewChange]);
 
   async function confirmAndScan() {
     if (!geocoded || !centre) return;
@@ -152,17 +175,22 @@ export function LocateStep({
       previousScan &&
       haversineM(confirmedCoords, previousScan.coords) <= SAME_ROOF_RADIUS_M
     ) {
+      if (cancelledRef.current) return;
       onSuccess(confirmedCoords, previousScan.formatted, previousScan.scan);
       return;
     }
 
     setPhase("scanning");
     const startedAt = performance.now();
+    const abort = new AbortController();
+    scanAbortRef.current?.abort();
+    scanAbortRef.current = abort;
     let formatted = geocoded.formatted;
     const reverseGeocode = fetch(apiUrl("/api/reverse-geocode"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ coords: confirmedCoords }),
+      signal: abort.signal,
     })
       .then(async (response) => {
         if (!response.ok) return null;
@@ -176,7 +204,7 @@ export function LocateStep({
     // user onward; if it arrives later, QuoteFlow applies it only if this pin
     // and postcode are still current.
     void reverseGeocode.then((resolved) => {
-      if (!resolved) return;
+      if (!resolved || cancelledRef.current || abort.signal.aborted) return;
       formatted = resolved;
       onAddressResolved(confirmedCoords, resolved);
     });
@@ -195,11 +223,14 @@ export function LocateStep({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ coords: confirmedCoords }),
+        signal: abort.signal,
       });
+      if (cancelledRef.current || abort.signal.aborted) return;
       const solarBody = (await solarResponse.json()) as {
         scan?: SolarScan;
       };
       await holdMinimum();
+      if (cancelledRef.current || abort.signal.aborted) return;
 
       if (!solarResponse.ok || !solarBody.scan) {
         onFallback(
@@ -212,7 +243,9 @@ export function LocateStep({
 
       onSuccess(confirmedCoords, formatted, solarBody.scan);
     } catch {
+      if (abort.signal.aborted || cancelledRef.current) return;
       await holdMinimum();
+      if (cancelledRef.current) return;
       setError(
         "Something went wrong while measuring. Check your connection and try again.",
       );

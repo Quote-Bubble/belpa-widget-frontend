@@ -23,6 +23,7 @@ import {
 } from "@/components/quote/ui";
 import { emptyDrawnRoof, type CombinedMeasurement } from "@/lib/quote-flow";
 import { haversineM, metersPerPixel, midpoint } from "@/lib/geo";
+import { isSimpleRing, ringsOverlapExcessively } from "@/lib/roof-geometry";
 import type {
   DrawnRoof,
   LatLng,
@@ -247,6 +248,7 @@ export function DrawCanvas({
   );
   const [obstructionDraft, setObstructionDraft] =
     useState<ObstructionDraft | null>(null);
+  const [closeError, setCloseError] = useState<string | null>(null);
   const mapHeight = useMapHeightClass();
 
   useEffect(() => {
@@ -290,6 +292,17 @@ export function DrawCanvas({
       }
     }
     if (closed.length < 3) return;
+    if (!isSimpleRing(closed)) {
+      setCloseError("That outline crosses itself — redraw without crossing lines.");
+      return;
+    }
+    if (roofs.some((roof) => ringsOverlapExcessively(closed, roof.path))) {
+      setCloseError(
+        "That outline overlaps another roof face too much — redraw so faces barely touch.",
+      );
+      return;
+    }
+    setCloseError(null);
     const nextRoofs = [...roofs, emptyDrawnRoof(closed)];
     onRoofsChange(nextRoofs);
     setDraft([]);
@@ -353,6 +366,7 @@ export function DrawCanvas({
       return;
     }
     setDraft((current) => [...current, snapped]);
+    setCloseError(null);
   }
 
   function handleMouseMove(event: MapMouseEvent) {
@@ -482,8 +496,8 @@ export function DrawCanvas({
       >
         {roofs.map((roof, roofIndex) => (
           <Polygon
-            key={`roof-${roofIndex}`}
-            defaultPaths={roof.path}
+            key={roof.id}
+            paths={roof.path}
             editable={inFaces && !drawing}
             draggable={false}
             geodesic
@@ -676,17 +690,19 @@ export function DrawCanvas({
         {variant === "card" && phase === "faces" && (drawing || roofs.length === 0) ? (
           <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex justify-center">
             <span className="rounded-full bg-black/45 px-3 py-1.5 text-[12px] font-medium text-white/95 shadow-sm backdrop-blur-sm">
-              {draft.length >= 3
-                ? "Tap the first point to finish"
-                : "Tap each corner of your roof"}
+              {closeError
+                ? closeError
+                : draft.length >= 3
+                  ? "Tap the first point to finish"
+                  : "Tap each corner of your roof"}
             </span>
           </div>
         ) : null}
 
-        {variant === "page" && instruction ? (
+        {variant === "page" && (instruction || closeError) ? (
           <div className="pointer-events-none absolute left-3 right-3 top-3 flex justify-center">
             <span className="rounded-full bg-[rgba(10,11,13,0.75)] px-4 py-2 text-[13px] font-semibold text-white backdrop-blur-sm">
-              {instruction}
+              {closeError ?? instruction}
             </span>
           </div>
         ) : null}
