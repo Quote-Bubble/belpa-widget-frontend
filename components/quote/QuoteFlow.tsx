@@ -194,12 +194,14 @@ function reducer(state: FlowState, action: FlowAction): FlowState {
         return state;
       }
       {
-        // Reverse-geocode returns the street ("Elm Grove, Manchester M1 2AB")
-        // but not the specific house. Keep the user-entered house on the front
-        // so the roofer still sees which property it is.
+        // The user types their own first line now, so their address
+        // ("14 Elm Grove, M1 2AB", set in continueFromAddress) is the source
+        // of truth — keep it. Only fall back to the reverse-geocoded street if
+        // for some entry path no first line was captured. Using reverse-geocode
+        // when a line exists would duplicate the road name.
         const line = state.answers.address.line?.trim();
         const formatted = line
-          ? `${line}, ${action.formatted}`
+          ? state.answers.address.formatted
           : action.formatted;
         return {
           ...state,
@@ -444,7 +446,7 @@ function QuoteFlowBody({
     }, ADVANCE_DELAY_MS);
   }
 
-  function updateHouse(line: string) {
+  function updateAddressLine(line: string) {
     dispatch({
       type: "PATCH",
       patch: { address: { ...answers.address, line } },
@@ -459,9 +461,10 @@ function QuoteFlowBody({
     const line = answers.address.line.trim();
     if (!addressEntryReady(postcode) || !line) return;
 
-    // Seed a contactable address from what they typed ("14, M1 2AB"), so the
-    // lead always has the house even before the pin-confirm reverse-geocode
-    // runs (ADDRESS_RESOLVED later enriches it to "14, Elm Grove, M1 2AB").
+    // The user types the full first line, so "14 Elm Grove, M1 2AB" is already
+    // a complete, contactable address — set it directly. (ADDRESS_RESOLVED
+    // below deliberately does NOT overwrite this with the reverse-geocoded
+    // street, which would duplicate the road name.)
     dispatch({
       type: "PATCH",
       patch: {
@@ -573,9 +576,9 @@ function QuoteFlowBody({
         return (
           <AddressStep
             postcode={answers.address.postcode}
-            house={answers.address.line}
+            addressLine={answers.address.line}
             onPostcodeChange={updatePostcode}
-            onHouseChange={updateHouse}
+            onAddressLineChange={updateAddressLine}
             onContinue={continueFromAddress}
           />
         );

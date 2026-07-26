@@ -70,21 +70,21 @@ export function OptionListStep<Value extends string | number>({
 
 export function AddressStep({
   postcode,
-  house,
+  addressLine,
   onPostcodeChange,
-  onHouseChange,
+  onAddressLineChange,
   onContinue,
 }: {
   postcode: string;
-  house: string;
+  addressLine: string;
   onPostcodeChange: (value: string) => void;
-  onHouseChange: (value: string) => void;
+  onAddressLineChange: (value: string) => void;
   onContinue: () => void;
 }) {
   const postcodeValid = addressEntryReady(postcode);
-  // House name/number is required — it's the whole point: the roofer needs a
+  // First line is required — it's the whole point: the roofer needs a
   // specific, contactable property, not just a postcode.
-  const ready = postcodeValid && house.trim().length > 0;
+  const ready = postcodeValid && addressLine.trim().length > 0;
   return (
     <StepShell>
       <StepHeading
@@ -102,21 +102,21 @@ export function AddressStep({
         }}
       />
       <div>
-        <label className={flowLabelClass} htmlFor="quote-house">
-          House number or name
+        <label className={flowLabelClass} htmlFor="quote-address-line">
+          First line of address
         </label>
         <input
-          id="quote-house"
+          id="quote-address-line"
           type="text"
-          value={house}
-          onChange={(event) => onHouseChange(event.target.value)}
+          value={addressLine}
+          onChange={(event) => onAddressLineChange(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === "Enter") {
               event.preventDefault();
               if (ready) onContinue();
             }
           }}
-          placeholder="e.g. 14 or Rose Cottage"
+          placeholder="e.g. 14 Elm Grove"
           autoComplete="address-line1"
           autoFocus={postcodeValid}
           className={flowInputClass}
