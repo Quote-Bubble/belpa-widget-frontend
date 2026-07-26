@@ -458,50 +458,18 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
 .quote-link {
   --ql-ink: #12151a;
   --ql-muted: #5c6570;
-  --ql-sky-top: #c5d4e4;
-  --ql-sky-mid: #e4eaf1;
-  --ql-ground: #f3eee6;
   position: relative;
   isolation: isolate;
   min-height: 100dvh;
   overflow: hidden;
   color: var(--ql-ink);
-  background: var(--ql-sky-mid);
+  background: #ffffff;
 }
 
-.quote-link__sky {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  background:
-    radial-gradient(120% 70% at 50% -10%, #dfe9f4 0%, transparent 55%),
-    linear-gradient(
-      180deg,
-      var(--ql-sky-top) 0%,
-      var(--ql-sky-mid) 42%,
-      var(--ql-ground) 100%
-    );
-}
-
-.quote-link__haze {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background:
-    radial-gradient(55% 35% at 50% 100%, rgba(255, 255, 255, 0.55), transparent 70%),
-    radial-gradient(40% 28% at 18% 18%, rgba(255, 255, 255, 0.35), transparent 70%);
-}
-
+.quote-link__sky,
+.quote-link__haze,
 .quote-link__grain {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-  opacity: 0.035;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: 180px 180px;
-  mix-blend-mode: multiply;
+  display: none;
 }
 
 .quote-link__frame {
