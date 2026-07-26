@@ -84,43 +84,61 @@ export function AddressStep({
   const postcodeValid = addressEntryReady(postcode);
   // First line is required — it's the whole point: the roofer needs a
   // specific, contactable property, not just a postcode.
-  const ready = postcodeValid && addressLine.trim().length > 0;
+  const lineValid = addressLine.trim().length > 0;
+  const ready = postcodeValid && lineValid;
   return (
     <StepShell>
-      <StepHeading
-        sub="No ladders — we measure from satellite imagery."
-        info="Your postcode is only used to find your roof on recent aerial imagery."
-      >
+      <StepHeading info="Your postcode is only used to find your roof on recent aerial imagery.">
         Where&apos;s the roof?
       </StepHeading>
-      <AddressEntry
-        postcode={postcode}
-        onPostcodeChange={onPostcodeChange}
-        autoFocus={!postcodeValid}
-        onSubmit={() => {
-          if (ready) onContinue();
-        }}
-      />
-      <div>
-        <label className={flowLabelClass} htmlFor="quote-address-line">
-          First line of address
-        </label>
-        <input
-          id="quote-address-line"
-          type="text"
-          value={addressLine}
-          onChange={(event) => onAddressLineChange(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.preventDefault();
-              if (ready) onContinue();
-            }
+      <div className="space-y-6 text-left">
+        <AddressEntry
+          postcode={postcode}
+          onPostcodeChange={onPostcodeChange}
+          autoFocus={!postcodeValid}
+          onSubmit={() => {
+            if (ready) onContinue();
           }}
-          placeholder="e.g. 14 Elm Grove"
-          autoComplete="address-line1"
-          autoFocus={postcodeValid}
-          className={flowInputClass}
         />
+        <div>
+          <label className={flowLabelClass} htmlFor="quote-address-line">
+            First line of address
+          </label>
+          <div className="relative">
+            <input
+              id="quote-address-line"
+              type="text"
+              value={addressLine}
+              onChange={(event) => onAddressLineChange(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  if (ready) onContinue();
+                }
+              }}
+              placeholder="e.g. 14 Elm Grove"
+              autoComplete="address-line1"
+              autoFocus={postcodeValid}
+              className={`${flowInputClass} pr-11`}
+            />
+            {lineValid ? (
+              <span
+                className="pointer-events-none absolute right-3 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-full bg-emerald-500/12 text-emerald-600"
+                aria-hidden="true"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M5 12.5 9.5 17 19 7.5"
+                    stroke="currentColor"
+                    strokeWidth="2.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
+            ) : null}
+          </div>
+        </div>
       </div>
       <PrimaryButton onClick={onContinue} disabled={!ready}>
         Continue
