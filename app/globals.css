@@ -450,11 +450,186 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
   }
 }
 
+/* ------------------------------------------------------------------ */
+/* Quote Link shell (/l/[roofer]) — page chrome only, not the widget.  */
+/* Daylight trade card: cool sky → warm ground, roofer name as brand. */
+/* ------------------------------------------------------------------ */
+
+.quote-link {
+  --ql-ink: #12151a;
+  --ql-muted: #5c6570;
+  --ql-sky-top: #c5d4e4;
+  --ql-sky-mid: #e4eaf1;
+  --ql-ground: #f3eee6;
+  --ql-stage: rgba(255, 255, 255, 0.72);
+
+  position: relative;
+  isolation: isolate;
+  min-height: 100dvh;
+  overflow: hidden;
+  color: var(--ql-ink);
+  background: var(--ql-sky-mid);
+}
+
+.quote-link__sky {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(120% 70% at 50% -10%, #dfe9f4 0%, transparent 55%),
+    linear-gradient(
+      180deg,
+      var(--ql-sky-top) 0%,
+      var(--ql-sky-mid) 42%,
+      var(--ql-ground) 100%
+    );
+}
+
+.quote-link__haze {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(55% 35% at 50% 100%, rgba(255, 255, 255, 0.55), transparent 70%),
+    radial-gradient(40% 28% at 18% 18%, rgba(255, 255, 255, 0.35), transparent 70%);
+}
+
+.quote-link__grain {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  mix-blend-mode: multiply;
+}
+
+.quote-link__frame {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  min-height: 100dvh;
+  width: 100%;
+  max-width: 740px;
+  margin: 0 auto;
+  flex-direction: column;
+  align-items: center;
+  padding: max(1.25rem, env(safe-area-inset-top)) 1.25rem
+    max(1.25rem, env(safe-area-inset-bottom));
+}
+
+.quote-link__identity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-top: 0.5rem;
+  animation: quote-link-in 520ms var(--ease-out-soft) both;
+}
+
+.quote-link__name {
+  margin: 0;
+  max-width: 22ch;
+  font-family: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  font-size: clamp(1.65rem, 4.2vw, 2.15rem);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+  color: var(--ql-ink);
+}
+
+.quote-link__sub {
+  margin: 0.55rem 0 0;
+  max-width: 28ch;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--ql-muted);
+}
+
+.quote-link__stage {
+  width: 100%;
+  margin-top: 1.35rem;
+  padding: 0.65rem;
+  border-radius: 28px;
+  background: var(--ql-stage);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.85) inset,
+    0 18px 50px -28px rgba(30, 45, 70, 0.35),
+    0 4px 14px rgba(30, 45, 70, 0.06);
+  backdrop-filter: blur(14px) saturate(1.15);
+  -webkit-backdrop-filter: blur(14px) saturate(1.15);
+  animation: quote-link-rise 640ms var(--ease-out-soft) 80ms both;
+}
+
+.quote-link__empty {
+  min-height: 12rem;
+}
+
+.quote-link__footer {
+  margin: 1.15rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--ql-muted);
+  animation: quote-link-in 520ms var(--ease-out-soft) 160ms both;
+}
+
+.quote-link__powered {
+  font-weight: 600;
+  color: #1f57f0;
+  text-decoration: none;
+  transition: opacity 160ms ease;
+}
+
+.quote-link__powered:hover {
+  opacity: 0.8;
+}
+
+@keyframes quote-link-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes quote-link-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (min-width: 640px) {
+  .quote-link__frame {
+    justify-content: center;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+
+  .quote-link__stage {
+    margin-top: 1.6rem;
+    padding: 0.85rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .q,
   .q *,
   .quote-surface,
-  .quote-surface * {
+  .quote-surface *,
+  .quote-link,
+  .quote-link * {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
