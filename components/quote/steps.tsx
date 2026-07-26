@@ -2,7 +2,12 @@
 
 import { useRef, useState } from "react";
 
-import { AddressEntry, addressEntryReady } from "@/components/quote/AddressEntry";
+import {
+  AddressEntry,
+  FieldFeedbackIcon,
+  addressEntryReady,
+  useConfirmingValid,
+} from "@/components/quote/AddressEntry";
 import { MaterialSwatch } from "@/components/quote/MaterialSwatch";
 import {
   InfoCallout,
@@ -85,6 +90,7 @@ export function AddressStep({
   // First line is required — it's the whole point: the roofer needs a
   // specific, contactable property, not just a postcode.
   const lineValid = addressLine.trim().length > 0;
+  const lineFeedback = useConfirmingValid(lineValid);
   const ready = postcodeValid && lineValid;
   return (
     <StepShell>
@@ -119,24 +125,14 @@ export function AddressStep({
               placeholder="e.g. 14 Elm Grove"
               autoComplete="address-line1"
               autoFocus={postcodeValid}
-              className={`${flowInputClass} pr-11`}
+              aria-busy={lineFeedback === "checking"}
+              className={`${flowInputClass} pr-11 ${
+                lineFeedback === "checking" || lineFeedback === "valid"
+                  ? "border-emerald-400/80 focus:border-emerald-400"
+                  : ""
+              }`}
             />
-            {lineValid ? (
-              <span
-                className="pointer-events-none absolute right-3 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-full bg-emerald-500/12 text-emerald-600"
-                aria-hidden="true"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M5 12.5 9.5 17 19 7.5"
-                    stroke="currentColor"
-                    strokeWidth="2.4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </span>
-            ) : null}
+            <FieldFeedbackIcon status={lineFeedback} />
           </div>
         </div>
       </div>

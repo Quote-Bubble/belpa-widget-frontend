@@ -1,14 +1,13 @@
 "use client";
 
 /**
- * Postcode-only address entry. No street/house field: the reverse-geocode
- * call fired once at pin-confirm (LocateStep) derives a real street address
- * from the coordinate the homeowner actually drags onto their roof, which is
- * a stronger signal than free-typed text nobody validates.
+ * Postcode field for the bubble + address step. The flow's "First line of
+ * address" lives in AddressStep (steps.tsx) and reuses the same confirming
+ * tick UX via the exports below.
  * No Google Places Autocomplete — geocode stays on /api/geocode (postcodes.io).
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { flowInputClass, flowLabelClass } from "@/components/quote/ui";
 import { looksLikeUkPostcode, prettyPostcode } from "@/lib/postcode";
@@ -22,10 +21,41 @@ type AddressEntryProps = {
   onSubmit?: () => void;
 };
 
-type FieldStatus = "idle" | "valid" | "invalid";
+export type FieldFeedback = "idle" | "checking" | "valid" | "invalid";
 
-function FieldStatusIcon({ status }: { status: FieldStatus }) {
+/** Brief spinner before the green tick so validation feels like work. */
+export function useConfirmingValid(
+  isValid: boolean,
+  delayMs = 520,
+): "idle" | "checking" | "valid" {
+  const [phase, setPhase] = useState<"idle" | "checking" | "valid">("idle");
+
+  useEffect(() => {
+    if (!isValid) {
+      setPhase("idle");
+      return;
+    }
+    setPhase("checking");
+    const timer = window.setTimeout(() => setPhase("valid"), delayMs);
+    return () => window.clearTimeout(timer);
+  }, [isValid, delayMs]);
+
+  return phase;
+}
+
+export function FieldFeedbackIcon({ status }: { status: FieldFeedback }) {
   if (status === "idle") return null;
+
+  if (status === "checking") {
+    return (
+      <span
+        className="pointer-events-none absolute right-3 top-1/2 grid size-6 -translate-y-1/2 place-items-center"
+        aria-hidden="true"
+      >
+        <span className="q-field-spinner" />
+      </span>
+    );
+  }
 
   const ok = status === "valid";
   return (
@@ -59,15 +89,13 @@ function FieldStatusIcon({ status }: { status: FieldStatus }) {
   );
 }
 
-function postcodeStatus(value: string, showInvalid: boolean): FieldStatus {
-  if (!value.trim()) return "idle";
-  if (looksLikeUkPostcode(value)) return "valid";
-  return showInvalid ? "invalid" : "idle";
-}
-
-function statusBorderClass(status: FieldStatus): string {
-  if (status === "valid") return "border-emerald-400/80 focus:border-emerald-400";
-  if (status === "invalid") return "border-red-400 focus:border-red-400 focus:ring-red-500/15";
+function statusBorderClass(status: FieldFeedback): string {
+  if (status === "valid" || status === "checking") {
+    return "border-emerald-400/80 focus:border-emerald-400";
+  }
+  if (status === "invalid") {
+    return "border-red-400 focus:border-red-400 focus:ring-red-500/15";
+  }
   return "";
 }
 
@@ -79,6 +107,14 @@ export function AddressEntry({
   onSubmit,
 }: AddressEntryProps) {
   const [postcodeTouched, setPostcodeTouched] = useState(false);
+  const postcodeLooksValid = looksLikeUkPostcode(postcode);
+  const confirming = useConfirmingValid(postcodeLooksValid);
+
+  const postcodeFeedback: FieldFeedback = postcodeLooksValid
+    ? confirming
+    : postcode.trim() && postcodeTouched
+      ? "invalid"
+      : "idle";
 
   if (variant === "bare") {
     return (
@@ -112,8 +148,6 @@ export function AddressEntry({
     );
   }
 
-  const postcodeState = postcodeStatus(postcode, postcodeTouched);
-
   return (
     <div>
       <label className={flowLabelClass} htmlFor="quote-postcode">
@@ -144,10 +178,11 @@ export function AddressEntry({
           autoComplete="postal-code"
           autoFocus={autoFocus}
           spellCheck={false}
-          aria-invalid={postcodeState === "invalid"}
-          className={`${flowInputClass} pr-11 ${statusBorderClass(postcodeState)}`}
+          aria-invalid={postcodeFeedback === "invalid"}
+          aria-busy={postcodeFeedback === "checking"}
+          className={`${flowInputClass} pr-11 ${statusBorderClass(postcodeFeedback)}`}
         />
-        <FieldStatusIcon status={postcodeState} />
+        <FieldFeedbackIcon status={postcodeFeedback} />
       </div>
     </div>
   );

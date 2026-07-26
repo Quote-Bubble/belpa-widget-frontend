@@ -346,6 +346,14 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
   border-top-color: var(--color-brand-500);
   animation: q-spin 0.8s linear infinite;
 }
+.q-field-spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(16, 185, 129, 0.25);
+  border-top-color: #059669;
+  animation: q-spin 0.7s linear infinite;
+}
 @keyframes q-spin {
   to {
     transform: rotate(360deg);
