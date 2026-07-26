@@ -31,7 +31,7 @@ export function QuoteLinkShell({
           ) : null}
         </header>
 
-        <div className="quote-link__stage">{children}</div>
+        <div className="quote-link__widget">{children}</div>
 
         {footer ? (
           <p className="quote-link__footer">
