@@ -90,7 +90,7 @@ export function AddressStep({
   // First line is required — it's the whole point: the roofer needs a
   // specific, contactable property, not just a postcode.
   const lineValid = addressLine.trim().length > 0;
-  const lineFeedback = useConfirmingValid(lineValid);
+  const lineFeedback = useConfirmingValid(addressLine, lineValid);
   const ready = postcodeValid && lineValid;
   return (
     <StepShell>

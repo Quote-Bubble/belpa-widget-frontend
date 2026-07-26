@@ -23,22 +23,34 @@ type AddressEntryProps = {
 
 export type FieldFeedback = "idle" | "checking" | "valid" | "invalid";
 
-/** Brief spinner before the green tick so validation feels like work. */
+/**
+ * Spinner while the user is typing; after they pause, settle into a tick
+ * (or invalid / idle). Feels like the system is checking the value.
+ */
 export function useConfirmingValid(
+  value: string,
   isValid: boolean,
-  delayMs = 520,
-): "idle" | "checking" | "valid" {
-  const [phase, setPhase] = useState<"idle" | "checking" | "valid">("idle");
+  options?: { settleMs?: number; showInvalid?: boolean },
+): FieldFeedback {
+  const settleMs = options?.settleMs ?? 550;
+  const showInvalid = options?.showInvalid ?? false;
+  const [phase, setPhase] = useState<FieldFeedback>("idle");
 
   useEffect(() => {
-    if (!isValid) {
+    if (!value.trim()) {
       setPhase("idle");
       return;
     }
+
     setPhase("checking");
-    const timer = window.setTimeout(() => setPhase("valid"), delayMs);
+    const timer = window.setTimeout(() => {
+      if (isValid) setPhase("valid");
+      else if (showInvalid) setPhase("invalid");
+      else setPhase("idle");
+    }, settleMs);
+
     return () => window.clearTimeout(timer);
-  }, [isValid, delayMs]);
+  }, [value, isValid, settleMs, showInvalid]);
 
   return phase;
 }
@@ -108,13 +120,9 @@ export function AddressEntry({
 }: AddressEntryProps) {
   const [postcodeTouched, setPostcodeTouched] = useState(false);
   const postcodeLooksValid = looksLikeUkPostcode(postcode);
-  const confirming = useConfirmingValid(postcodeLooksValid);
-
-  const postcodeFeedback: FieldFeedback = postcodeLooksValid
-    ? confirming
-    : postcode.trim() && postcodeTouched
-      ? "invalid"
-      : "idle";
+  const postcodeFeedback = useConfirmingValid(postcode, postcodeLooksValid, {
+    showInvalid: postcodeTouched,
+  });
 
   if (variant === "bare") {
     return (
