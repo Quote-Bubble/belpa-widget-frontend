@@ -193,13 +193,22 @@ function reducer(state: FlowState, action: FlowAction): FlowState {
       ) {
         return state;
       }
-      return {
-        ...state,
-        answers: {
-          ...state.answers,
-          address: { ...state.answers.address, formatted: action.formatted },
-        },
-      };
+      {
+        // Reverse-geocode returns the street ("Elm Grove, Manchester M1 2AB")
+        // but not the specific house. Keep the user-entered house on the front
+        // so the roofer still sees which property it is.
+        const line = state.answers.address.line?.trim();
+        const formatted = line
+          ? `${line}, ${action.formatted}`
+          : action.formatted;
+        return {
+          ...state,
+          answers: {
+            ...state.answers,
+            address: { ...state.answers.address, formatted },
+          },
+        };
+      }
     }
     case "SUBMIT_START":
       return {
@@ -276,12 +285,14 @@ function QuoteFlowBody({
         postcode: initialAddress?.postcode ?? "",
         formatted: initialAddress?.formatted ?? null,
       });
-      // The bubble already gates its own "Get quote" on a valid postcode, so
-      // if one made it here we never ask "where's the roof?" a second time.
-      const hasAddress = looksLikeUkPostcode(answers.address.postcode);
+      // Always land on the address step first, even when the bubble already
+      // captured a valid postcode. It shows that postcode pre-filled and asks
+      // for the house number/name — the roofer needs a specific, contactable
+      // property, and we capture it up front (lowest drop-off point) rather
+      // than at the contact step at the very end.
       return {
         answers,
-        step: hasAddress ? "job_type" : "address",
+        step: "address",
         direction: 1,
         submitStatus: "idle",
         submitError: null,
@@ -433,16 +444,29 @@ function QuoteFlowBody({
     }, ADVANCE_DELAY_MS);
   }
 
+  function updateHouse(line: string) {
+    dispatch({
+      type: "PATCH",
+      patch: { address: { ...answers.address, line } },
+    });
+  }
+
   function continueFromAddress() {
     clearAdvanceTimer();
     const postcode = looksLikeUkPostcode(answers.address.postcode)
       ? prettyPostcode(answers.address.postcode)
       : answers.address.postcode.trim();
-    if (!addressEntryReady(postcode)) return;
+    const line = answers.address.line.trim();
+    if (!addressEntryReady(postcode) || !line) return;
 
+    // Seed a contactable address from what they typed ("14, M1 2AB"), so the
+    // lead always has the house even before the pin-confirm reverse-geocode
+    // runs (ADDRESS_RESOLVED later enriches it to "14, Elm Grove, M1 2AB").
     dispatch({
       type: "PATCH",
-      patch: { address: { ...answers.address, postcode } },
+      patch: {
+        address: { ...answers.address, postcode, line, formatted: `${line}, ${postcode}` },
+      },
     });
 
     if (returnToLocate) {
@@ -549,7 +573,9 @@ function QuoteFlowBody({
         return (
           <AddressStep
             postcode={answers.address.postcode}
+            house={answers.address.line}
             onPostcodeChange={updatePostcode}
+            onHouseChange={updateHouse}
             onContinue={continueFromAddress}
           />
         );
