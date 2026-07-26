@@ -193,13 +193,24 @@ function reducer(state: FlowState, action: FlowAction): FlowState {
       ) {
         return state;
       }
-      return {
-        ...state,
-        answers: {
-          ...state.answers,
-          address: { ...state.answers.address, formatted: action.formatted },
-        },
-      };
+      {
+        // The user types their own first line now, so their address
+        // ("14 Elm Grove, M1 2AB", set in continueFromAddress) is the source
+        // of truth — keep it. Only fall back to the reverse-geocoded street if
+        // for some entry path no first line was captured. Using reverse-geocode
+        // when a line exists would duplicate the road name.
+        const line = state.answers.address.line?.trim();
+        const formatted = line
+          ? state.answers.address.formatted
+          : action.formatted;
+        return {
+          ...state,
+          answers: {
+            ...state.answers,
+            address: { ...state.answers.address, formatted },
+          },
+        };
+      }
     }
     case "SUBMIT_START":
       return {
@@ -276,12 +287,14 @@ function QuoteFlowBody({
         postcode: initialAddress?.postcode ?? "",
         formatted: initialAddress?.formatted ?? null,
       });
-      // The bubble already gates its own "Get quote" on a valid postcode, so
-      // if one made it here we never ask "where's the roof?" a second time.
-      const hasAddress = looksLikeUkPostcode(answers.address.postcode);
+      // Always land on the address step first, even when the bubble already
+      // captured a valid postcode. It shows that postcode pre-filled and asks
+      // for the house number/name — the roofer needs a specific, contactable
+      // property, and we capture it up front (lowest drop-off point) rather
+      // than at the contact step at the very end.
       return {
         answers,
-        step: hasAddress ? "job_type" : "address",
+        step: "address",
         direction: 1,
         submitStatus: "idle",
         submitError: null,
@@ -433,16 +446,30 @@ function QuoteFlowBody({
     }, ADVANCE_DELAY_MS);
   }
 
+  function updateAddressLine(line: string) {
+    dispatch({
+      type: "PATCH",
+      patch: { address: { ...answers.address, line } },
+    });
+  }
+
   function continueFromAddress() {
     clearAdvanceTimer();
     const postcode = looksLikeUkPostcode(answers.address.postcode)
       ? prettyPostcode(answers.address.postcode)
       : answers.address.postcode.trim();
-    if (!addressEntryReady(postcode)) return;
+    const line = answers.address.line.trim();
+    if (!addressEntryReady(postcode) || !line) return;
 
+    // The user types the full first line, so "14 Elm Grove, M1 2AB" is already
+    // a complete, contactable address — set it directly. (ADDRESS_RESOLVED
+    // below deliberately does NOT overwrite this with the reverse-geocoded
+    // street, which would duplicate the road name.)
     dispatch({
       type: "PATCH",
-      patch: { address: { ...answers.address, postcode } },
+      patch: {
+        address: { ...answers.address, postcode, line, formatted: `${line}, ${postcode}` },
+      },
     });
 
     if (returnToLocate) {
@@ -549,7 +576,9 @@ function QuoteFlowBody({
         return (
           <AddressStep
             postcode={answers.address.postcode}
+            addressLine={answers.address.line}
             onPostcodeChange={updatePostcode}
+            onAddressLineChange={updateAddressLine}
             onContinue={continueFromAddress}
           />
         );
