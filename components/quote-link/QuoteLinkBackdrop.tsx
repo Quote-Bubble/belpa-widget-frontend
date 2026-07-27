@@ -1,6 +1,6 @@
 /**
- * Quote Link backdrop — crisp architectural horizon bands + contour strokes.
- * No blur filters. Built to contrast the white widget without wrapping it.
+ * Quote Link backdrop — soft diagonal light-blue streaks
+ * (top-right → bottom-left), matching the pale streak design.
  */
 export function QuoteLinkBackdrop() {
   return (
@@ -12,113 +12,86 @@ export function QuoteLinkBackdrop() {
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
-          <linearGradient id="ql-base" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#f8fafc" />
-            <stop offset="100%" stopColor="#e8eef5" />
+          <linearGradient id="ql-base" x1="0" y1="0" x2="0.3" y2="1">
+            <stop offset="0%" stopColor="#fbfcfd" />
+            <stop offset="100%" stopColor="#f3f5f8" />
           </linearGradient>
-          <linearGradient id="ql-band" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#2f6bff" stopOpacity="0.14" />
-            <stop offset="50%" stopColor="#2f6bff" stopOpacity="0.1" />
-            <stop offset="100%" stopColor="#2f6bff" stopOpacity="0.16" />
+          <linearGradient id="ql-streak" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0" />
+            <stop offset="35%" stopColor="#9ec0ff" stopOpacity="0.45" />
+            <stop offset="65%" stopColor="#c5d8ff" stopOpacity="0.28" />
+            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
           </linearGradient>
-          <linearGradient id="ql-band-deep" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#1f57f0" stopOpacity="0.2" />
-            <stop offset="100%" stopColor="#4f8bff" stopOpacity="0.14" />
+          <linearGradient id="ql-streak-soft" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0" />
+            <stop offset="40%" stopColor="#b8d0ff" stopOpacity="0.32" />
+            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
           </linearGradient>
           <filter
             id="ql-blur"
-            x="-20%"
-            y="-20%"
-            width="140%"
-            height="140%"
+            x="-30%"
+            y="-30%"
+            width="160%"
+            height="160%"
           >
-            <feGaussianBlur stdDeviation="36" />
-          </filter>
-          <filter
-            id="ql-blur-lines"
-            x="-15%"
-            y="-15%"
-            width="130%"
-            height="130%"
-          >
-            <feGaussianBlur stdDeviation="18" />
+            <feGaussianBlur stdDeviation="48" />
           </filter>
         </defs>
 
         <rect width="1600" height="900" fill="url(#ql-base)" />
 
-        {/* Quiet measurement grid — upper field stays calm for the card */}
-        <g stroke="#2f6bff" strokeOpacity="0.045" strokeWidth="1" fill="none">
-          {Array.from({ length: 16 }, (_, i) => (
-            <line
-              key={`v-${i}`}
-              x1={100 + i * 100}
-              y1="0"
-              x2={100 + i * 100}
-              y2="900"
-            />
-          ))}
-          {Array.from({ length: 9 }, (_, i) => (
-            <line
-              key={`h-${i}`}
-              x1="0"
-              y1={100 + i * 100}
-              x2="1600"
-              y2={100 + i * 100}
-            />
-          ))}
-        </g>
-
-        {/* Solid horizon bands — heavy soft blur */}
+        {/* Broad diagonal streaks: top-right → bottom-left */}
         <g filter="url(#ql-blur)">
-          <path
-            fill="url(#ql-band)"
-            d="M0 620
-               C 260 560, 520 680, 800 620
-               C 1080 560, 1340 680, 1600 620
-               L 1600 900 L 0 900 Z"
+          <ellipse
+            cx="1180"
+            cy="180"
+            rx="780"
+            ry="160"
+            fill="url(#ql-streak)"
+            transform="rotate(-38 1180 180)"
           />
-          <path
-            fill="url(#ql-band)"
-            d="M0 700
-               C 280 650, 540 760, 820 700
-               C 1100 640, 1360 760, 1600 700
-               L 1600 900 L 0 900 Z"
+          <ellipse
+            cx="980"
+            cy="320"
+            rx="860"
+            ry="140"
+            fill="url(#ql-streak-soft)"
+            transform="rotate(-38 980 320)"
           />
-          <path
-            fill="url(#ql-band-deep)"
-            d="M0 790
-               C 300 740, 560 850, 840 790
-               C 1120 730, 1380 850, 1600 790
-               L 1600 900 L 0 900 Z"
+          <ellipse
+            cx="720"
+            cy="480"
+            rx="920"
+            ry="150"
+            fill="url(#ql-streak)"
+            transform="rotate(-38 720 480)"
+            opacity="0.85"
           />
-        </g>
-
-        {/* Contour strokes — softened */}
-        <g
-          filter="url(#ql-blur-lines)"
-          fill="none"
-          stroke="#1f57f0"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path
-            strokeOpacity="0.45"
-            d="M0 618 C 260 558, 520 678, 800 618 C 1080 558, 1340 678, 1600 618"
+          <ellipse
+            cx="460"
+            cy="640"
+            rx="880"
+            ry="130"
+            fill="url(#ql-streak-soft)"
+            transform="rotate(-38 460 640)"
           />
-          <path
-            strokeOpacity="0.35"
-            d="M0 698 C 280 648, 540 758, 820 698 C 1100 638, 1360 758, 1600 698"
+          <ellipse
+            cx="220"
+            cy="800"
+            rx="760"
+            ry="120"
+            fill="url(#ql-streak)"
+            transform="rotate(-38 220 800)"
+            opacity="0.7"
           />
-          <path
-            strokeOpacity="0.5"
-            d="M0 788 C 300 738, 560 848, 840 788 C 1120 728, 1380 848, 1600 788"
-          />
-          <path
-            strokeOpacity="0.25"
-            strokeWidth="2"
-            d="M0 560 C 240 510, 500 600, 780 550 C 1060 500, 1320 600, 1600 540"
+          {/* Soft white wash so the card area stays airy */}
+          <ellipse
+            cx="800"
+            cy="360"
+            rx="520"
+            ry="380"
+            fill="#ffffff"
+            opacity="0.55"
           />
         </g>
       </svg>
