@@ -33,7 +33,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { roofer: slug } = await params;
   const roofer = await getRoofer(slug);
-  const name = roofer?.name ?? "Quoter";
+  const name =
+    roofer?.slug === "quoter-landing-demo"
+      ? "Ridgeway Roofing"
+      : (roofer?.name ?? "Quoter");
   return {
     title: `Free roof quote — ${name}`,
     description: `Get a free roof quote from ${name}. Takes a couple of minutes.`,
@@ -61,10 +64,13 @@ export default async function RooferQuotePage({
     );
   }
 
+  const displayName =
+    roofer.slug === "quoter-landing-demo" ? "Ridgeway Roofing" : roofer.name;
+
   return (
     <QuoteLinkShell
-      title={roofer.name}
-      subtitle="Get your free quote — takes a couple of minutes"
+      title={displayName}
+      subtitle="Get your free quote, takes a couple of minutes"
     >
       {/* Expanded quote card, open at step one — widget chrome unchanged. */}
       <div
@@ -75,7 +81,7 @@ export default async function RooferQuotePage({
         <QuoteFlow
           variant="card"
           rooferId={roofer.slug}
-          brandName={roofer.name}
+          brandName={displayName}
         />
       </div>
     </QuoteLinkShell>
