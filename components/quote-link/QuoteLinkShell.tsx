@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { QuoteLinkBackdrop } from "@/components/quote-link/QuoteLinkBackdrop";
+
 /**
  * Visual shell around the Quote Link page — atmosphere, roofer identity,
  * footer. Does not touch the quote widget / QuoteFlow itself.
@@ -19,9 +21,7 @@ export function QuoteLinkShell({
 }) {
   return (
     <main className="quote-link">
-      <div className="quote-link__sky" aria-hidden />
-      <div className="quote-link__haze" aria-hidden />
-      <div className="quote-link__grain" aria-hidden />
+      <QuoteLinkBackdrop />
 
       <div className="quote-link__frame">
         <header className="quote-link__identity">
