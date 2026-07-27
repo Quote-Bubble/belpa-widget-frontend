@@ -563,7 +563,7 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
 /* Widget sits bare — no outer border/stage chrome around the card. */
 .quote-link__widget {
   width: 100%;
-  margin-top: 1.35rem;
+  margin-top: 2.25rem;
   animation: quote-link-rise 640ms var(--ease-out-soft) 80ms both;
 }
 
@@ -622,7 +622,7 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
   }
 
   .quote-link__widget {
-    margin-top: 1.6rem;
+    margin-top: 2.75rem;
   }
 
   .quote-link__footer {
