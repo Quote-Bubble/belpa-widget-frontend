@@ -18,7 +18,7 @@ export function QuoteLinkArrow() {
            C 82 50, 78 38, 66 42
            C 52 48, 54 68, 62 80"
         stroke="currentColor"
-        strokeWidth="2.75"
+        strokeWidth="2.25"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -26,7 +26,7 @@ export function QuoteLinkArrow() {
         className="quote-link__arrow-head"
         d="M52 72 L62 82 L74 68"
         stroke="currentColor"
-        strokeWidth="2.75"
+        strokeWidth="2.25"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
