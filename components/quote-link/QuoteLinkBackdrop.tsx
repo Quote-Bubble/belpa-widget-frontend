@@ -1,119 +1,53 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
 /**
- * Quote Link backdrop — crisp stacked diagonal planes (BL → TR).
- * Inspired by sharp paper/architecture banding. No blur filters.
+ * Quote Link backdrop — full-quality photo with an instant CSS stand-in
+ * so the page never waits on the image. WebP loads first; PNG is fallback.
  */
 export function QuoteLinkBackdrop() {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const img = new Image();
+    img.src = "/quote-link-bg.webp";
+    if (img.complete) {
+      setReady(true);
+      return;
+    }
+    img.onload = () => setReady(true);
+    img.onerror = () => {
+      // Fall back to PNG if WebP fails
+      const png = new Image();
+      png.src = "/quote-link-bg.png";
+      png.onload = () => setReady(true);
+    };
+  }, []);
+
   return (
     <div className="quote-link__sky" aria-hidden>
-      <svg
-        className="quote-link__art"
-        viewBox="0 0 1600 900"
-        preserveAspectRatio="xMidYMid slice"
-        xmlns="http://www.w3.org/2000/svg"
+      {/* Instant geometric stand-in (same vibe, zero network) */}
+      <div className="quote-link__standin" />
+
+      {/* Tiny preview while the full asset arrives */}
+      <div
+        className="quote-link__lqip"
+        style={{ backgroundImage: "url(/quote-link-bg-lq.webp)" }}
+      />
+
+      <picture
+        className={`quote-link__photo${ready ? " is-ready" : ""}`}
       >
-        <defs>
-          <linearGradient id="ql-base" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#ffffff" />
-            <stop offset="100%" stopColor="#f2f5f9" />
-          </linearGradient>
-          {/* Cool pale blue for the “shadow” faces between planes */}
-          <linearGradient id="ql-face" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#e7eef8" />
-            <stop offset="100%" stopColor="#d5e2f3" />
-          </linearGradient>
-          <linearGradient id="ql-face-soft" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#eef3f9" />
-            <stop offset="100%" stopColor="#dde8f5" />
-          </linearGradient>
-          <linearGradient id="ql-lit" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#ffffff" />
-            <stop offset="100%" stopColor="#f7f9fc" />
-          </linearGradient>
-        </defs>
-
-        <rect width="1600" height="900" fill="url(#ql-base)" />
-
-        {/*
-          Stacked diagonal slabs (bottom-left → top-right).
-          Alternating lit / shaded faces for a stepped paper depth look.
-          Angle ~32° via parallelogram strips.
-        */}
-        {/* Back shade band */}
-        <polygon
-          fill="url(#ql-face-soft)"
-          points="
-            -200,980
-            400,980
-            2100,-120
-            1500,-120
-          "
+        <source srcSet="/quote-link-bg.webp" type="image/webp" />
+        <img
+          src="/quote-link-bg.png"
+          alt=""
+          decoding="async"
+          fetchPriority="high"
+          onLoad={() => setReady(true)}
         />
-        {/* Lit plane */}
-        <polygon
-          fill="url(#ql-lit)"
-          points="
-            280,980
-            720,980
-            2420,-120
-            1980,-120
-          "
-        />
-        {/* Shade plane */}
-        <polygon
-          fill="url(#ql-face)"
-          points="
-            620,980
-            980,980
-            2680,-120
-            2320,-120
-          "
-        />
-        {/* Lit plane */}
-        <polygon
-          fill="url(#ql-lit)"
-          points="
-            900,980
-            1220,980
-            2920,-120
-            2600,-120
-          "
-        />
-        {/* Deeper shade — denser bottom-right */}
-        <polygon
-          fill="url(#ql-face)"
-          points="
-            1140,980
-            1600,980
-            3300,-120
-            2840,-120
-          "
-        />
-        {/* Thin highlight edge strips for crisp layer separation */}
-        <g stroke="#ffffff" strokeWidth="3" fill="none" opacity="0.9">
-          <line x1="400" y1="980" x2="2100" y2="-120" />
-          <line x1="720" y1="980" x2="2420" y2="-120" />
-          <line x1="980" y1="980" x2="2680" y2="-120" />
-          <line x1="1220" y1="980" x2="2920" y2="-120" />
-        </g>
-        <g stroke="#c5d4ea" strokeWidth="1.25" fill="none" opacity="0.7">
-          <line x1="280" y1="980" x2="1980" y2="-120" />
-          <line x1="620" y1="980" x2="2320" y2="-120" />
-          <line x1="900" y1="980" x2="2600" y2="-120" />
-          <line x1="1140" y1="980" x2="2840" y2="-120" />
-        </g>
-
-        {/* Soft open white field toward top-left (card sits here) */}
-        <polygon
-          fill="#ffffff"
-          fillOpacity="0.72"
-          points="
-            -100,-100
-            1100,-100
-            200,1000
-            -100,1000
-          "
-        />
-      </svg>
+      </picture>
     </div>
   );
 }

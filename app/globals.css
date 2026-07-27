@@ -463,7 +463,7 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
   min-height: 100dvh;
   overflow: hidden;
   color: var(--ql-ink);
-  background: #f5f7fa;
+  background: #ffffff;
 }
 
 .quote-link__sky {
@@ -472,21 +472,66 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
+  background: #ffffff;
 }
 
-.quote-link__art {
+/* Sharp diagonal stand-in — paints immediately, no image wait */
+.quote-link__standin {
   position: absolute;
   inset: 0;
+  background:
+    linear-gradient(142deg, #ffffff 0 34%, transparent 34%),
+    linear-gradient(142deg, transparent 0 38%, #e8eef8 38% 44%, transparent 44%),
+    linear-gradient(142deg, transparent 0 46%, #ffffff 46% 52%, transparent 52%),
+    linear-gradient(142deg, transparent 0 54%, #d8e4f4 54% 62%, transparent 62%),
+    linear-gradient(142deg, transparent 0 64%, #eef3fa 64% 72%, transparent 72%),
+    linear-gradient(142deg, transparent 0 74%, #cfdcf0 74% 100%),
+    #ffffff;
+  transition: opacity 200ms ease;
+}
+
+.quote-link__lqip {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  filter: blur(18px);
+  transform: scale(1.08);
+  opacity: 0.85;
+  transition: opacity 200ms ease;
+}
+
+.quote-link__sky:has(.quote-link__photo.is-ready) .quote-link__lqip,
+.quote-link__sky:has(.quote-link__photo.is-ready) .quote-link__standin {
+  opacity: 0;
+}
+
+.quote-link__photo {
+  position: absolute;
+  inset: 0;
+  display: block;
+  margin: 0;
+  opacity: 0;
+  transition: opacity 280ms ease;
+  z-index: 1;
+}
+
+.quote-link__photo.is-ready {
+  opacity: 1;
+}
+
+.quote-link__photo img {
   width: 100%;
   height: 100%;
+  object-fit: cover;
+  object-position: center;
   display: block;
 }
 
-.quote-link__haze {
-  display: none;
-}
-
-.quote-link__grain {
+.quote-link__haze,
+.quote-link__grain,
+.quote-link__art {
   display: none;
 }
 
