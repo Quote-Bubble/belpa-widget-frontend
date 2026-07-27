@@ -463,10 +463,21 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
   min-height: 100dvh;
   overflow: hidden;
   color: var(--ql-ink);
-  background: #ffffff;
+  background: #f4f6f9;
 }
 
-.quote-link__sky,
+.quote-link__sky {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-color: #f4f6f9;
+  background-image: url("/quote-link-bg.png");
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
 .quote-link__haze,
 .quote-link__grain {
   display: none;
