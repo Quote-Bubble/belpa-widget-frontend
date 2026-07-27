@@ -21,13 +21,6 @@ export function QuoteLinkShell({
 }) {
   return (
     <main className="quote-link">
-      {/* Preload full-quality WebP so it races ahead of paint */}
-      <link
-        rel="preload"
-        as="image"
-        href="/quote-link-bg.webp"
-        type="image/webp"
-      />
       <QuoteLinkBackdrop />
 
       <div className="quote-link__frame">
