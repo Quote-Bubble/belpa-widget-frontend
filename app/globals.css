@@ -508,6 +508,27 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
   display: none;
 }
 
+/* Tiny roofer mark — private-link seal, not a page headline */
+.quote-link__seal {
+  position: absolute;
+  top: max(1rem, env(safe-area-inset-top));
+  left: max(1.15rem, env(safe-area-inset-left));
+  z-index: 4;
+  max-width: min(46vw, 16rem);
+  animation: quote-link-in 520ms var(--ease-out-soft) both;
+}
+
+.quote-link__name {
+  margin: 0;
+  font-family: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--ql-ink);
+  opacity: 0.72;
+}
+
 .quote-link__frame {
   position: relative;
   z-index: 3;
@@ -518,7 +539,7 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
   margin: 0 auto;
   flex-direction: column;
   align-items: center;
-  padding: max(1.25rem, env(safe-area-inset-top)) 1.25rem 0;
+  padding: max(3rem, calc(env(safe-area-inset-top) + 2.25rem)) 1.25rem 0;
 }
 
 .quote-link__content {
@@ -531,29 +552,10 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
   padding-bottom: 1.25rem;
 }
 
-.quote-link__identity {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding-top: 0.5rem;
-  animation: quote-link-in 520ms var(--ease-out-soft) both;
-}
-
-.quote-link__name {
-  margin: 0;
-  max-width: 22ch;
-  font-family: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
-  font-size: clamp(1.65rem, 4.2vw, 2.15rem);
-  font-weight: 600;
-  letter-spacing: -0.035em;
-  line-height: 1.15;
-  color: var(--ql-ink);
-}
-
 .quote-link__sub {
-  margin: 0.55rem 0 0;
+  margin: 0 0 1.25rem;
   max-width: 28ch;
+  text-align: center;
   font-size: 0.9375rem;
   font-weight: 500;
   line-height: 1.4;
@@ -563,7 +565,7 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
 /* Widget sits bare — no outer border/stage chrome around the card. */
 .quote-link__widget {
   width: 100%;
-  margin-top: 2.25rem;
+  margin-top: 0;
   animation: quote-link-rise 640ms var(--ease-out-soft) 80ms both;
 }
 
@@ -617,12 +619,18 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
 }
 
 @media (min-width: 640px) {
-  .quote-link__frame {
-    padding-top: 2rem;
+  .quote-link__seal {
+    top: max(1.35rem, env(safe-area-inset-top));
+    left: max(1.5rem, env(safe-area-inset-left));
+    max-width: 18rem;
   }
 
-  .quote-link__widget {
-    margin-top: 2.75rem;
+  .quote-link__name {
+    font-size: 0.875rem;
+  }
+
+  .quote-link__frame {
+    padding-top: max(3.25rem, calc(env(safe-area-inset-top) + 2.5rem));
   }
 
   .quote-link__footer {

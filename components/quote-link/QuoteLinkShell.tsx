@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { QuoteLinkBackdrop } from "@/components/quote-link/QuoteLinkBackdrop";
 
 /**
- * Visual shell around the Quote Link page — atmosphere, roofer identity,
+ * Visual shell around the Quote Link page — atmosphere, roofer seal,
  * footer. Does not touch the quote widget / QuoteFlow itself.
  */
 
@@ -23,14 +23,15 @@ export function QuoteLinkShell({
     <main className="quote-link">
       <QuoteLinkBackdrop />
 
+      <header className="quote-link__seal">
+        <h1 className="quote-link__name">{title}</h1>
+      </header>
+
       <div className="quote-link__frame">
         <div className="quote-link__content">
-          <header className="quote-link__identity">
-            <h1 className="quote-link__name">{title}</h1>
-            {subtitle ? (
-              <p className="quote-link__sub">{subtitle}</p>
-            ) : null}
-          </header>
+          {subtitle ? (
+            <p className="quote-link__sub">{subtitle}</p>
+          ) : null}
 
           <div className="quote-link__widget">{children}</div>
         </div>

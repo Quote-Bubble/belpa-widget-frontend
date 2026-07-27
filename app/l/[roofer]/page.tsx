@@ -68,10 +68,7 @@ export default async function RooferQuotePage({
     roofer.slug === "quoter-landing-demo" ? "Ridgeway Roofing" : roofer.name;
 
   return (
-    <QuoteLinkShell
-      title={displayName}
-      subtitle="Get your free quote"
-    >
+    <QuoteLinkShell title={displayName}>
       {/* Expanded quote card, open at step one — widget chrome unchanged. */}
       <div
         className="q mx-auto"
