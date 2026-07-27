@@ -601,8 +601,6 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
   margin-top: -0.15rem;
   margin-bottom: -0.35rem;
   color: #2563eb;
-  transform-origin: 50% 12%;
-  animation: quote-link-arrow-bob 1.8s var(--ease-out-soft) 0.85s infinite;
 }
 
 .quote-link__arrow-path,
@@ -710,16 +708,6 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
   }
 }
 
-@keyframes quote-link-arrow-bob {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(7px);
-  }
-}
-
 @media (min-width: 640px) {
   .quote-link__seal {
     top: max(1.35rem, env(safe-area-inset-top));
@@ -767,10 +755,6 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
   .quote-link__arrow-path,
   .quote-link__arrow-head {
     stroke-dashoffset: 0;
-    animation: none;
-  }
-
-  .quote-link__arrow {
     animation: none;
   }
 
