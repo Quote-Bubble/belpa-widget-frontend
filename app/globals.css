@@ -518,8 +518,17 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
   margin: 0 auto;
   flex-direction: column;
   align-items: center;
-  padding: max(1.25rem, env(safe-area-inset-top)) 1.25rem
-    max(1.25rem, env(safe-area-inset-bottom));
+  padding: max(1.25rem, env(safe-area-inset-top)) 1.25rem 0;
+}
+
+.quote-link__content {
+  flex: 1;
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 1.25rem;
 }
 
 .quote-link__identity {
@@ -563,7 +572,11 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
 }
 
 .quote-link__footer {
-  margin: 1.15rem 0 0;
+  flex-shrink: 0;
+  width: 100%;
+  margin: 0;
+  padding: 1rem 0 max(1.25rem, env(safe-area-inset-bottom));
+  text-align: center;
   font-size: 0.75rem;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.92);
@@ -605,13 +618,15 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
 
 @media (min-width: 640px) {
   .quote-link__frame {
-    justify-content: center;
     padding-top: 2rem;
-    padding-bottom: 2rem;
   }
 
   .quote-link__widget {
     margin-top: 1.6rem;
+  }
+
+  .quote-link__footer {
+    padding-bottom: max(1.75rem, env(safe-area-inset-bottom));
   }
 }
 

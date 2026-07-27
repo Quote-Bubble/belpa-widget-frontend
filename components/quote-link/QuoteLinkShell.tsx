@@ -24,24 +24,26 @@ export function QuoteLinkShell({
       <QuoteLinkBackdrop />
 
       <div className="quote-link__frame">
-        <header className="quote-link__identity">
-          <h1 className="quote-link__name">{title}</h1>
-          {subtitle ? (
-            <p className="quote-link__sub">{subtitle}</p>
-          ) : null}
-        </header>
+        <div className="quote-link__content">
+          <header className="quote-link__identity">
+            <h1 className="quote-link__name">{title}</h1>
+            {subtitle ? (
+              <p className="quote-link__sub">{subtitle}</p>
+            ) : null}
+          </header>
 
-        <div className="quote-link__widget">{children}</div>
+          <div className="quote-link__widget">{children}</div>
+        </div>
 
         {footer ? (
-          <p className="quote-link__footer">
+          <footer className="quote-link__footer">
             <Link
               href="https://quoter-web-six.vercel.app"
               className="quote-link__powered"
             >
               Powered by Quoter
             </Link>
-          </p>
+          </footer>
         ) : null}
       </div>
     </main>
