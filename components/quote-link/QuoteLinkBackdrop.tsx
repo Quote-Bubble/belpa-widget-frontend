@@ -35,8 +35,8 @@ export function QuoteLinkBackdrop() {
             <stop offset="100%" stopColor="#c5d6f5" stopOpacity="0.16" />
           </linearGradient>
 
-          <filter id="ql-edge" x="-4%" y="-4%" width="108%" height="108%">
-            <feGaussianBlur stdDeviation="2.5" />
+          <filter id="ql-edge" x="-10%" y="-10%" width="120%" height="120%">
+            <feGaussianBlur stdDeviation="9" />
           </filter>
         </defs>
 
