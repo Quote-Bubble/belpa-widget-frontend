@@ -568,48 +568,49 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
   width: 100%;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 0.15rem;
+  justify-content: flex-start;
+  gap: 0;
+  padding-top: clamp(0.35rem, 2vh, 1rem);
   padding-bottom: 1.25rem;
 }
 
 .quote-link__cue {
   display: flex;
+  flex-shrink: 0;
   flex-direction: column;
   align-items: center;
   width: 100%;
   margin-bottom: 0;
-  gap: 0.1rem;
+  gap: 0.05rem;
 }
 
 .quote-link__prompt {
   margin: 0;
-  max-width: 18ch;
+  max-width: 16ch;
   text-align: center;
   font-family: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
-  font-size: clamp(1.15rem, 3.2vw, 1.45rem);
-  font-weight: 600;
-  letter-spacing: -0.03em;
-  line-height: 1.2;
-  color: #3a4553;
+  font-size: clamp(1.55rem, 4.8vw, 2.15rem);
+  font-weight: 650;
+  letter-spacing: -0.04em;
+  line-height: 1.12;
+  color: var(--ql-ink);
   animation: quote-link-in 560ms var(--ease-out-soft) both;
 }
 
 .quote-link__arrow {
   display: block;
-  width: 2.85rem;
+  width: 3.6rem;
   height: auto;
-  margin-top: 0;
-  margin-bottom: -0.15rem;
-  color: #3b82f6;
-  opacity: 0.85;
+  margin-top: -0.1rem;
+  margin-bottom: -0.5rem;
+  color: #2563eb;
 }
 
 .quote-link__arrow-path,
 .quote-link__arrow-head {
-  stroke-dasharray: 160;
-  stroke-dashoffset: 160;
-  animation: quote-link-arrow-draw 900ms var(--ease-out-soft) 280ms forwards;
+  stroke-dasharray: 220;
+  stroke-dashoffset: 220;
+  animation: quote-link-arrow-draw 1000ms var(--ease-out-soft) 280ms forwards;
 }
 
 .quote-link__arrow-head {
@@ -631,7 +632,8 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
 .quote-link__widget {
   position: relative;
   width: 100%;
-  margin-top: 0;
+  margin-top: auto;
+  margin-bottom: auto;
   animation: quote-link-rise 640ms var(--ease-out-soft) 120ms both;
 }
 
@@ -733,12 +735,16 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
     padding-top: max(3.25rem, calc(env(safe-area-inset-top) + 2.5rem));
   }
 
+  .quote-link__content {
+    padding-top: clamp(0.5rem, 3vh, 1.25rem);
+  }
+
   .quote-link__prompt {
-    max-width: 20ch;
+    max-width: 14ch;
   }
 
   .quote-link__arrow {
-    width: 3.1rem;
+    width: 4rem;
   }
 
   .quote-link__widget::after {
