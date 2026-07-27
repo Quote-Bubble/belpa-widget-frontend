@@ -569,7 +569,51 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 0.15rem;
   padding-bottom: 1.25rem;
+}
+
+.quote-link__cue {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 0.15rem;
+}
+
+.quote-link__prompt {
+  margin: 0;
+  max-width: 16ch;
+  text-align: center;
+  font-family: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  font-size: clamp(1.55rem, 4.8vw, 2.15rem);
+  font-weight: 650;
+  letter-spacing: -0.04em;
+  line-height: 1.12;
+  color: var(--ql-ink);
+  animation: quote-link-in 560ms var(--ease-out-soft) both;
+}
+
+.quote-link__arrow {
+  display: block;
+  width: 4.25rem;
+  height: auto;
+  margin-top: -0.15rem;
+  margin-bottom: -0.35rem;
+  color: #2563eb;
+  transform-origin: 50% 12%;
+  animation: quote-link-arrow-bob 1.8s var(--ease-out-soft) 0.85s infinite;
+}
+
+.quote-link__arrow-path,
+.quote-link__arrow-head {
+  stroke-dasharray: 160;
+  stroke-dashoffset: 160;
+  animation: quote-link-arrow-draw 900ms var(--ease-out-soft) 280ms forwards;
+}
+
+.quote-link__arrow-head {
+  animation-delay: 720ms;
 }
 
 .quote-link__sub {
@@ -588,7 +632,7 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
   position: relative;
   width: 100%;
   margin-top: 0;
-  animation: quote-link-rise 640ms var(--ease-out-soft) 80ms both;
+  animation: quote-link-rise 640ms var(--ease-out-soft) 120ms both;
 }
 
 .quote-link__widget::after {
@@ -660,6 +704,22 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
   }
 }
 
+@keyframes quote-link-arrow-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes quote-link-arrow-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(7px);
+  }
+}
+
 @media (min-width: 640px) {
   .quote-link__seal {
     top: max(1.35rem, env(safe-area-inset-top));
@@ -683,6 +743,14 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
     padding-top: max(3.25rem, calc(env(safe-area-inset-top) + 2.5rem));
   }
 
+  .quote-link__prompt {
+    max-width: 14ch;
+  }
+
+  .quote-link__arrow {
+    width: 4.75rem;
+  }
+
   .quote-link__widget::after {
     left: 12%;
     right: 12%;
@@ -696,6 +764,16 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .quote-link__arrow-path,
+  .quote-link__arrow-head {
+    stroke-dashoffset: 0;
+    animation: none;
+  }
+
+  .quote-link__arrow {
+    animation: none;
+  }
+
   .q,
   .q *,
   .quote-surface,

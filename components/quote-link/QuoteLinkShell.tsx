@@ -1,11 +1,12 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { QuoteLinkArrow } from "@/components/quote-link/QuoteLinkArrow";
 import { QuoteLinkBackdrop } from "@/components/quote-link/QuoteLinkBackdrop";
 
 /**
  * Visual shell around the Quote Link page — atmosphere, top-left seal,
- * footer. Does not touch the quote widget / QuoteFlow itself.
+ * prompt + arrow cue, footer. Does not touch the quote widget itself.
  */
 
 function sealInitials(name: string): string {
@@ -17,11 +18,15 @@ function sealInitials(name: string): string {
 
 export function QuoteLinkShell({
   title,
+  prompt,
   subtitle,
   children,
   footer = true,
 }: {
   title: string;
+  /** Big cue above the card + curly arrow */
+  prompt?: string;
+  /** Quiet helper (e.g. inactive link message) — no arrow */
   subtitle?: string;
   children: ReactNode;
   footer?: boolean;
@@ -34,11 +39,18 @@ export function QuoteLinkShell({
         <span className="quote-link__mark" aria-hidden>
           {sealInitials(title)}
         </span>
-        <h1 className="quote-link__name">{title}</h1>
+        <p className="quote-link__name">{title}</p>
       </header>
 
       <div className="quote-link__frame">
         <div className="quote-link__content">
+          {prompt ? (
+            <div className="quote-link__cue">
+              <h1 className="quote-link__prompt">{prompt}</h1>
+              <QuoteLinkArrow />
+            </div>
+          ) : null}
+
           {subtitle ? (
             <p className="quote-link__sub">{subtitle}</p>
           ) : null}
