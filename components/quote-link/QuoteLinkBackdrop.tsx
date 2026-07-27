@@ -1,6 +1,6 @@
 /**
- * Vector recreation of the soft blue-wave Quote Link backdrop.
- * Distinct sweeping ribbons (light blur only) — not a single soft blob.
+ * Soft blue-wave Quote Link backdrop — ribbons across the full bottom edge,
+ * light edge soften only (readable curves, not a left-corner blob).
  */
 export function QuoteLinkBackdrop() {
   return (
@@ -14,114 +14,72 @@ export function QuoteLinkBackdrop() {
         <defs>
           <linearGradient id="ql-base" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#fcfcfd" />
-            <stop offset="50%" stopColor="#f6f8fb" />
+            <stop offset="55%" stopColor="#f7f9fb" />
             <stop offset="100%" stopColor="#eef2f7" />
           </linearGradient>
 
-          <linearGradient id="ql-ribbon-1" x1="0" y1="0" x2="1" y2="0.15">
-            <stop offset="0%" stopColor="#4f8bff" stopOpacity="0.72" />
-            <stop offset="35%" stopColor="#7aa8ff" stopOpacity="0.45" />
-            <stop offset="70%" stopColor="#b6cef8" stopOpacity="0.22" />
-            <stop offset="100%" stopColor="#e8eef8" stopOpacity="0.06" />
+          {/* Left → right fade so energy spans the width, not one corner */}
+          <linearGradient id="ql-r1" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#4f8bff" stopOpacity="0.55" />
+            <stop offset="50%" stopColor="#7aa8ff" stopOpacity="0.42" />
+            <stop offset="100%" stopColor="#9bbcf5" stopOpacity="0.28" />
           </linearGradient>
-          <linearGradient id="ql-ribbon-2" x1="0" y1="0.1" x2="1" y2="0">
-            <stop offset="0%" stopColor="#6ea0f0" stopOpacity="0.55" />
-            <stop offset="40%" stopColor="#9bbcf5" stopOpacity="0.32" />
-            <stop offset="100%" stopColor="#ffffff" stopOpacity="0.04" />
+          <linearGradient id="ql-r2" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#6ea0f0" stopOpacity="0.4" />
+            <stop offset="55%" stopColor="#8eb4f2" stopOpacity="0.34" />
+            <stop offset="100%" stopColor="#b6cef8" stopOpacity="0.22" />
           </linearGradient>
-          <linearGradient id="ql-ribbon-3" x1="0" y1="0" x2="1" y2="0.2">
-            <stop offset="0%" stopColor="#8eb4f2" stopOpacity="0.4" />
-            <stop offset="55%" stopColor="#c5d6f5" stopOpacity="0.2" />
-            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-          </linearGradient>
-          <linearGradient id="ql-bloom" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#5b92f5" stopOpacity="0.5" />
-            <stop offset="100%" stopColor="#a8c4f0" stopOpacity="0.08" />
+          <linearGradient id="ql-r3" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#8eb4f2" stopOpacity="0.28" />
+            <stop offset="50%" stopColor="#a8c4f0" stopOpacity="0.24" />
+            <stop offset="100%" stopColor="#c5d6f5" stopOpacity="0.16" />
           </linearGradient>
 
-          {/* Light edge soften only — keep ribbon shape readable */}
-          <filter
-            id="ql-edge"
-            x="-8%"
-            y="-8%"
-            width="116%"
-            height="116%"
-          >
-            <feGaussianBlur stdDeviation="6" />
-          </filter>
-          <filter
-            id="ql-edge-soft"
-            x="-12%"
-            y="-12%"
-            width="124%"
-            height="124%"
-          >
-            <feGaussianBlur stdDeviation="10" />
+          <filter id="ql-edge" x="-4%" y="-4%" width="108%" height="108%">
+            <feGaussianBlur stdDeviation="2.5" />
           </filter>
         </defs>
 
         <rect width="1600" height="900" fill="url(#ql-base)" />
 
-        {/* Corner bloom — still soft, anchors the composition */}
-        <ellipse
-          cx="40"
-          cy="900"
-          rx="520"
-          ry="300"
-          fill="url(#ql-bloom)"
-          filter="url(#ql-edge-soft)"
-        />
-
-        {/* Distinct sweeping ribbons (bottom → right) */}
         <g filter="url(#ql-edge)">
-          {/* Back ribbon — highest / thinnest arc */}
+          {/* Top ribbon — spans full width, gentle undulation */}
           <path
-            fill="url(#ql-ribbon-3)"
-            d="M -100 720
-               C 120 560, 320 600, 520 640
-               C 780 700, 980 560, 1220 600
-               C 1420 640, 1540 620, 1700 560
-               L 1700 700
-               C 1540 740, 1420 760, 1220 720
-               C 980 680, 780 820, 520 760
-               C 320 720, 120 700, -100 820
+            fill="url(#ql-r3)"
+            d="M -40 640
+               C 200 580, 400 700, 640 650
+               C 900 590, 1100 700, 1360 640
+               C 1500 600, 1580 620, 1640 600
+               L 1640 700
+               C 1580 720, 1500 700, 1360 740
+               C 1100 800, 900 700, 640 750
+               C 400 800, 200 700, -40 740
                Z"
           />
           {/* Mid ribbon */}
           <path
-            fill="url(#ql-ribbon-2)"
-            d="M -100 780
-               C 160 620, 360 680, 560 720
-               C 820 780, 1020 640, 1260 680
-               C 1460 720, 1560 700, 1700 650
-               L 1700 800
-               C 1560 830, 1460 850, 1260 810
-               C 1020 770, 820 900, 560 850
-               C 360 810, 160 780, -100 880
+            fill="url(#ql-r2)"
+            d="M -40 720
+               C 220 660, 420 780, 680 720
+               C 940 660, 1140 780, 1400 720
+               C 1520 690, 1580 710, 1640 690
+               L 1640 800
+               C 1580 820, 1520 800, 1400 830
+               C 1140 880, 940 780, 680 830
+               C 420 880, 220 790, -40 820
                Z"
           />
-          {/* Front ribbon — strongest, lowest */}
+          {/* Front ribbon — lowest band, full width */}
           <path
-            fill="url(#ql-ribbon-1)"
-            d="M -100 840
-               C 200 700, 400 760, 620 800
-               C 900 860, 1100 740, 1340 780
-               C 1520 820, 1600 800, 1700 760
-               L 1700 980 L -100 980
+            fill="url(#ql-r1)"
+            d="M -40 800
+               C 240 740, 460 860, 720 800
+               C 980 740, 1180 860, 1440 800
+               C 1540 770, 1590 790, 1640 780
+               L 1640 980 L -40 980
                Z"
           />
         </g>
-
-        {/* Keep the upper/center airy for the card */}
-        <ellipse
-          cx="820"
-          cy="80"
-          rx="980"
-          ry="300"
-          fill="#ffffff"
-          opacity="0.65"
-          filter="url(#ql-edge-soft)"
-        />
       </svg>
 
       <div className="quote-link__grain" />
