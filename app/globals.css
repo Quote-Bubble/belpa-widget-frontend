@@ -565,13 +565,13 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
 .quote-link__footer {
   margin: 1.15rem 0 0;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 500;
   color: rgba(255, 255, 255, 0.92);
   animation: quote-link-in 520ms var(--ease-out-soft) 160ms both;
 }
 
 .quote-link__powered {
-  font-weight: 700;
+  font-weight: 500;
   color: #ffffff;
   text-decoration: none;
   transition: opacity 160ms ease;
