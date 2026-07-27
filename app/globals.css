@@ -478,19 +478,20 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
 .quote-link__glow {
   position: absolute;
   left: 50%;
-  bottom: -18%;
-  width: 120%;
-  height: 48%;
+  bottom: -8%;
+  width: 140%;
+  height: 62%;
   transform: translateX(-50%);
   background:
     radial-gradient(
-      55% 70% at 50% 100%,
-      rgba(120, 168, 230, 0.38) 0%,
-      rgba(160, 198, 240, 0.18) 42%,
-      rgba(244, 247, 251, 0) 72%
+      60% 80% at 50% 100%,
+      rgba(70, 140, 235, 0.72) 0%,
+      rgba(110, 170, 245, 0.48) 35%,
+      rgba(160, 200, 250, 0.22) 58%,
+      rgba(244, 247, 251, 0) 78%
     );
-  filter: blur(42px);
-  opacity: 0.9;
+  filter: blur(28px);
+  opacity: 1;
 }
 
 .quote-link__art,
