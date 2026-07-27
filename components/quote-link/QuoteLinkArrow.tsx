@@ -1,33 +1,35 @@
 /**
  * Hand-drawn curly arrow pointing down toward the quote card.
- * Tall enough to bridge the gap from the raised prompt to the widget.
+ * Tall enough to bridge the raised prompt → widget gap.
  */
 export function QuoteLinkArrow() {
   return (
     <svg
       className="quote-link__arrow"
-      viewBox="0 0 120 140"
+      viewBox="0 0 80 120"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden
     >
       <path
         className="quote-link__arrow-path"
-        d="M58 8
-           C 40 28, 30 46, 36 68
-           C 42 90, 62 98, 78 84
-           C 92 72, 86 54, 70 60
-           C 52 68, 54 96, 62 128"
+        pathLength={1}
+        d="M40 6
+           C 28 22, 22 36, 26 52
+           C 30 68, 44 74, 54 64
+           C 62 56, 58 46, 48 50
+           C 36 56, 38 78, 40 108"
         stroke="currentColor"
-        strokeWidth="2.75"
+        strokeWidth="2.4"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
       <path
         className="quote-link__arrow-head"
-        d="M50 118 L62 132 L78 112"
+        pathLength={1}
+        d="M30 96 L40 112 L52 94"
         stroke="currentColor"
-        strokeWidth="2.75"
+        strokeWidth="2.4"
         strokeLinecap="round"
         strokeLinejoin="round"
       />

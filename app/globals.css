@@ -586,31 +586,31 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
 
 .quote-link__prompt {
   margin: 0;
-  max-width: 16ch;
+  max-width: 18ch;
   text-align: center;
   font-family: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
-  font-size: clamp(1.55rem, 4.8vw, 2.15rem);
-  font-weight: 650;
-  letter-spacing: -0.04em;
-  line-height: 1.12;
+  font-size: clamp(1.15rem, 3.2vw, 1.45rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
   color: var(--ql-ink);
   animation: quote-link-in 560ms var(--ease-out-soft) both;
 }
 
 .quote-link__arrow {
   display: block;
-  width: 3.6rem;
+  width: 2.75rem;
   height: auto;
-  margin-top: -0.1rem;
-  margin-bottom: -0.5rem;
+  margin-top: 0.15rem;
+  margin-bottom: -0.35rem;
   color: #2563eb;
 }
 
 .quote-link__arrow-path,
 .quote-link__arrow-head {
-  stroke-dasharray: 220;
-  stroke-dashoffset: 220;
-  animation: quote-link-arrow-draw 1000ms var(--ease-out-soft) 280ms forwards;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: quote-link-arrow-draw 900ms var(--ease-out-soft) 280ms forwards;
 }
 
 .quote-link__arrow-head {
@@ -707,6 +707,9 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
 }
 
 @keyframes quote-link-arrow-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
   to {
     stroke-dashoffset: 0;
   }
@@ -740,11 +743,11 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
   }
 
   .quote-link__prompt {
-    max-width: 14ch;
+    max-width: 20ch;
   }
 
   .quote-link__arrow {
-    width: 4rem;
+    width: 3rem;
   }
 
   .quote-link__widget::after {
