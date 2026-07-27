@@ -471,7 +471,26 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
   inset: 0;
   z-index: 0;
   pointer-events: none;
+  overflow: hidden;
   background: #f4f7fb;
+}
+
+.quote-link__glow {
+  position: absolute;
+  left: 50%;
+  bottom: -18%;
+  width: 120%;
+  height: 48%;
+  transform: translateX(-50%);
+  background:
+    radial-gradient(
+      55% 70% at 50% 100%,
+      rgba(120, 168, 230, 0.38) 0%,
+      rgba(160, 198, 240, 0.18) 42%,
+      rgba(244, 247, 251, 0) 72%
+    );
+  filter: blur(42px);
+  opacity: 0.9;
 }
 
 .quote-link__art,
