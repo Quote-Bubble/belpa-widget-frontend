@@ -463,14 +463,13 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
   min-height: 100dvh;
   overflow: hidden;
   color: var(--ql-ink);
-  /* Soft stage: mostly white around the card, blue reserved for the floor */
+  /* Soft stage: mostly white around the card, quiet blue at the floor */
   background:
     radial-gradient(
-      ellipse 140% 55% at 50% 128%,
-      #3b82f6 0%,
-      #60a5fa 22%,
-      #93c5fd 40%,
-      #dbeafe 58%,
+      ellipse 140% 48% at 50% 130%,
+      #93c5fd 0%,
+      #bfdbfe 28%,
+      #e0effe 52%,
       #f4f7fb 78%
     ),
     #f4f7fb;
@@ -485,21 +484,21 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
   background: transparent;
 }
 
-/* Richer blue kept low — frames the footer, doesn’t climb into the card */
+/* Quiet blue kept low — frames the footer, doesn’t climb into the card */
 .quote-link__glow {
   position: absolute;
   left: -15%;
   right: -15%;
-  bottom: -6%;
-  height: min(38vh, 360px);
+  bottom: -8%;
+  height: min(34vh, 300px);
   background: linear-gradient(
     to top,
-    #1d4ed8 0%,
-    #2563eb 22%,
-    #60a5fa 48%,
-    rgba(239, 246, 255, 0) 100%
+    #60a5fa 0%,
+    #93c5fd 28%,
+    #dbeafe 55%,
+    rgba(244, 247, 251, 0) 100%
   );
-  opacity: 0.72;
+  opacity: 0.45;
   pointer-events: none;
 }
 
