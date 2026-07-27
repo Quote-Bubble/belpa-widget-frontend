@@ -8,6 +8,13 @@ import { QuoteLinkBackdrop } from "@/components/quote-link/QuoteLinkBackdrop";
  * footer. Does not touch the quote widget / QuoteFlow itself.
  */
 
+function sealInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "Q";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0] ?? ""}${parts[parts.length - 1][0] ?? ""}`.toUpperCase();
+}
+
 export function QuoteLinkShell({
   title,
   subtitle,
@@ -24,6 +31,9 @@ export function QuoteLinkShell({
       <QuoteLinkBackdrop />
 
       <header className="quote-link__seal">
+        <span className="quote-link__mark" aria-hidden>
+          {sealInitials(title)}
+        </span>
         <h1 className="quote-link__name">{title}</h1>
       </header>
 
