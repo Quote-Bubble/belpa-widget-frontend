@@ -521,12 +521,12 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
 .quote-link__name {
   margin: 0;
   font-family: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
-  font-size: 0.8125rem;
+  font-size: 0.9375rem;
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.25;
   color: var(--ql-ink);
-  opacity: 0.72;
+  opacity: 0.78;
 }
 
 .quote-link__frame {
@@ -553,13 +553,15 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
 }
 
 .quote-link__sub {
-  margin: 0 0 1.25rem;
+  margin: 0 0 1rem;
   max-width: 28ch;
   text-align: center;
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   font-weight: 500;
-  line-height: 1.4;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
   color: var(--ql-muted);
+  animation: quote-link-in 520ms var(--ease-out-soft) 60ms both;
 }
 
 /* Widget sits bare — no outer border/stage chrome around the card. */
@@ -626,7 +628,12 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
   }
 
   .quote-link__name {
-    font-size: 0.875rem;
+    font-size: 1rem;
+  }
+
+  .quote-link__sub {
+    margin-bottom: 1.15rem;
+    font-size: 0.9375rem;
   }
 
   .quote-link__frame {
