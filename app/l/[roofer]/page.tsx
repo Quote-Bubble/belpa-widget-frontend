@@ -70,7 +70,7 @@ export default async function RooferQuotePage({
   return (
     <QuoteLinkShell
       title={displayName}
-      subtitle="Get your free quote, takes a couple of minutes"
+      subtitle="Get your free quote"
     >
       {/* Expanded quote card, open at step one — widget chrome unchanged. */}
       <div
