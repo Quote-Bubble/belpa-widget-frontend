@@ -52,11 +52,32 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // Everything EXCEPT /embed gets the anti-clickjacking lockdown. The
-        // negative lookahead is essential: without it this catch-all also
-        // matches /embed and re-applies DENY, blocking the embed we just
-        // allowed above.
-        source: "/((?!embed).*)",
+        // Quote Link — framable so host-site “Get a quote” buttons can open
+        // it in a fullscreen modal iframe (see public/quoter-launch.js).
+        source: "/l",
+        headers: [
+          ...securityHeaders,
+          {
+            key: "Content-Security-Policy",
+            value: `frame-ancestors ${embedFrameAncestors()}`,
+          },
+        ],
+      },
+      {
+        source: "/l/:path*",
+        headers: [
+          ...securityHeaders,
+          {
+            key: "Content-Security-Policy",
+            value: `frame-ancestors ${embedFrameAncestors()}`,
+          },
+        ],
+      },
+      {
+        // Everything EXCEPT /embed and /l gets anti-clickjacking lockdown.
+        // Negative lookahead is essential: without it this catch-all also
+        // matches those routes and re-applies DENY.
+        source: "/((?!embed(?:/|$)|l(?:/|$)).*)",
         headers: [
           ...securityHeaders,
           {
