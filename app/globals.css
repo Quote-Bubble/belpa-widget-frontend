@@ -463,7 +463,16 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
   min-height: 100dvh;
   overflow: hidden;
   color: var(--ql-ink);
-  background: #f4f7fb;
+  background:
+    radial-gradient(
+      ellipse 130% 70% at 50% 115%,
+      #3b82f6 0%,
+      #60a5fa 28%,
+      #bfdbfe 52%,
+      #eff6ff 72%,
+      #f4f7fb 88%
+    ),
+    #f4f7fb;
 }
 
 .quote-link__sky {
@@ -472,26 +481,25 @@ body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
-  background: #f4f7fb;
+  background: transparent;
 }
 
+/* Extra saturated blob so the bottom blue reads even on bright screens */
 .quote-link__glow {
   position: absolute;
-  left: 50%;
-  bottom: -8%;
-  width: 140%;
-  height: 62%;
-  transform: translateX(-50%);
-  background:
-    radial-gradient(
-      60% 80% at 50% 100%,
-      rgba(70, 140, 235, 0.72) 0%,
-      rgba(110, 170, 245, 0.48) 35%,
-      rgba(160, 200, 250, 0.22) 58%,
-      rgba(244, 247, 251, 0) 78%
-    );
-  filter: blur(28px);
-  opacity: 1;
+  left: -10%;
+  right: -10%;
+  bottom: 0;
+  height: min(52vh, 520px);
+  background: linear-gradient(
+    to top,
+    #2563eb 0%,
+    #3b82f6 18%,
+    #93c5fd 48%,
+    rgba(239, 246, 255, 0) 100%
+  );
+  opacity: 0.85;
+  pointer-events: none;
 }
 
 .quote-link__art,

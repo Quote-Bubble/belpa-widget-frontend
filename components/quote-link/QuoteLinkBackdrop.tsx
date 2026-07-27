@@ -1,5 +1,5 @@
 /**
- * Quote Link backdrop — bluish white with a soft blue glow at the bottom.
+ * Quote Link backdrop — bluish white with a strong blue wash at the bottom.
  */
 export function QuoteLinkBackdrop() {
   return (
