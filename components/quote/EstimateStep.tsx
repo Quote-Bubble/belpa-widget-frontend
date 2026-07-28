@@ -121,7 +121,7 @@ export function EstimateStep({
     // Terminal step: no pinned Back button, so reclaim its reserved space
     // (!pb-6) and centre the estimate in the fixed panel. Content is kept lean
     // enough to fit as a single page — no overflow, no scrollbar.
-    <StepShell className={variant === "card" ? "!pb-6 justify-center" : ""}>
+    <StepShell className={variant === "card" ? "!pb-6 !pt-6 justify-center" : ""}>
       {/* Heading + address */}
       <div className="shrink-0 text-center">
         <h1
@@ -167,26 +167,23 @@ export function EstimateStep({
       >
         <div className="flex items-stretch">
           <div
-            className={`min-w-0 flex-1 text-left ${
-              variant === "card" ? "px-5 py-5" : "px-7 py-7"
+            className={`flex min-w-0 flex-1 flex-col justify-center text-left ${
+              variant === "card" ? "px-6 py-7" : "px-8 py-8"
             }`}
           >
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-600">
-              Estimate
-            </p>
             <p
-              className={`mt-2 font-[family-name:var(--font-poppins)] font-semibold leading-none tracking-tight text-ink ${
-                variant === "card" ? "text-[1.7rem]" : "text-[2.4rem]"
+              className={`font-[family-name:var(--font-poppins)] font-semibold leading-none tracking-tight text-ink ${
+                variant === "card" ? "text-[2rem]" : "text-[2.6rem]"
               }`}
             >
               {displayQuoteAmount(min, false)} – {displayQuoteAmount(max, false)}
             </p>
-            <p className="mt-2 text-[11px] font-medium text-muted">excl. VAT</p>
+            <p className="mt-2.5 text-[12px] font-medium text-muted">excl. VAT</p>
           </div>
           {chips.length > 0 ? (
             <div
               className={`flex flex-none flex-col items-center justify-center gap-3 border-l border-line ${
-                variant === "card" ? "px-4 py-5" : "px-8 py-7"
+                variant === "card" ? "px-5 py-7" : "px-8 py-8"
               }`}
             >
               {chips.map((chip) => (
@@ -194,10 +191,10 @@ export function EstimateStep({
                   key={chip.key}
                   className="flex flex-col items-center gap-1.5 text-center"
                 >
-                  <span className="grid size-11 place-items-center rounded-2xl bg-brand-50 text-brand-600 [&>svg]:size-5">
+                  <span className="grid size-12 place-items-center rounded-2xl bg-brand-50 text-brand-600 [&>svg]:size-[22px]">
                     {chip.icon}
                   </span>
-                  <span className="whitespace-nowrap text-[12.5px] font-semibold text-ink">
+                  <span className="whitespace-nowrap text-[13px] font-semibold text-ink">
                     {chip.label}
                   </span>
                 </div>
@@ -300,22 +297,8 @@ export function EstimateStep({
             <button
               type="button"
               onClick={onConfirm}
-              className="relative inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-gradient-to-b from-brand-500 to-brand-600 px-7 py-3.5 text-[16.5px] font-semibold text-white shadow-[0_1px_0_rgba(255,255,255,0.25)_inset,0_10px_22px_-8px_rgba(31,87,240,0.6)] transition-all duration-200 hover:-translate-y-px hover:brightness-105 active:translate-y-0"
+              className="relative inline-flex w-full items-center justify-center rounded-full bg-gradient-to-b from-brand-500 to-brand-600 px-7 py-3.5 text-[16.5px] font-semibold text-white shadow-[0_1px_0_rgba(255,255,255,0.25)_inset,0_10px_22px_-8px_rgba(31,87,240,0.6)] transition-all duration-200 hover:-translate-y-px hover:brightness-105 active:translate-y-0"
             >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.9"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="size-[18px] flex-none"
-                aria-hidden="true"
-              >
-                <rect x="5" y="3" width="14" height="18" rx="2" />
-                <path d="M9 7h6" />
-                <path d="M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01" />
-              </svg>
               Get my exact quote
             </button>
           ) : null}
@@ -323,21 +306,8 @@ export function EstimateStep({
             <button
               type="button"
               onClick={onContinue}
-              className="inline-flex w-full items-center justify-center gap-2.5 rounded-full border border-line bg-white px-7 py-3 text-[15px] font-semibold text-ink-soft transition-colors hover:border-brand-300 hover:text-brand-600"
+              className="inline-flex w-full items-center justify-center rounded-full border border-line bg-white px-7 py-3 text-[15px] font-semibold text-ink-soft transition-colors hover:border-brand-300 hover:text-brand-600"
             >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.9"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="size-[17px] flex-none text-brand-500"
-                aria-hidden="true"
-              >
-                <path d="M22 2 11 13" />
-                <path d="M22 2l-7 20-4-9-9-4 20-7z" />
-              </svg>
               Just send me the estimate for now
             </button>
           ) : null}
