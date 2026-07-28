@@ -163,7 +163,12 @@ function reducer(state: FlowState, action: FlowAction): FlowState {
         coords: action.coords,
         address: {
           ...state.answers.address,
-          formatted: action.formatted ?? state.answers.address.formatted,
+          // The user's typed first line is the source of truth — never let the
+          // pin's reverse-geocode overwrite it (the pin can resolve a different
+          // house). Only fall back to the resolved address when no line exists.
+          formatted: state.answers.address.line?.trim()
+            ? state.answers.address.formatted
+            : action.formatted ?? state.answers.address.formatted,
         },
         scan: action.scan,
       };
@@ -176,7 +181,12 @@ function reducer(state: FlowState, action: FlowAction): FlowState {
         coords: action.coords,
         address: {
           ...state.answers.address,
-          formatted: action.formatted ?? state.answers.address.formatted,
+          // The user's typed first line is the source of truth — never let the
+          // pin's reverse-geocode overwrite it (the pin can resolve a different
+          // house). Only fall back to the resolved address when no line exists.
+          formatted: state.answers.address.line?.trim()
+            ? state.answers.address.formatted
+            : action.formatted ?? state.answers.address.formatted,
         },
         fallbackReason: action.reason,
       };
