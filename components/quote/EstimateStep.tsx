@@ -75,6 +75,7 @@ export function EstimateStep({
   measurement,
   address,
   contactName,
+  onConfirm,
   onContinue,
 }: {
   quote: QuoteResult;
@@ -87,7 +88,11 @@ export function EstimateStep({
   contactName: string;
   brandName?: string;
   mapsEnabled?: boolean;
-  /** Continues to the "what happens next" step — does not promote intent. */
+  /** Primary action: they want the real thing. Promotes the lead to a genuine
+   *  request (hot) and moves on. */
+  onConfirm?: () => void;
+  /** Quiet alternative: they just wanted the ballpark. Moves on WITHOUT
+   *  promoting — the lead stays a browser and lands in the follow-up pool. */
   onContinue?: () => void;
 }) {
   const variant = useFlowVariant();
@@ -276,20 +281,33 @@ export function EstimateStep({
         )}
       </div>
 
-      {/* Soft continue — intent is only promoted on the next step's CTA. */}
-      {onContinue ? (
+      {/* The fork. This is where a genuine request separates itself from a
+          browser: the prominent button promotes the lead (hot), the quiet link
+          just carries on with the ballpark (stays in the follow-up pool). */}
+      {onConfirm || onContinue ? (
         <div
-          className={`mx-auto w-full max-w-[560px] shrink-0 ${
-            variant === "card" ? "mt-4" : "mt-6"
+          className={`mx-auto flex w-full max-w-[560px] shrink-0 flex-col items-center ${
+            variant === "card" ? "mt-4 gap-2" : "mt-6 gap-2.5"
           }`}
         >
-          <button
-            type="button"
-            onClick={onContinue}
-            className="relative inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-b from-brand-500 to-brand-600 px-7 py-3.5 text-[16.5px] font-semibold text-white shadow-[0_1px_0_rgba(255,255,255,0.25)_inset,0_10px_22px_-8px_rgba(31,87,240,0.6)] transition-all duration-200 hover:-translate-y-px hover:brightness-105 active:translate-y-0"
-          >
-            Continue
-          </button>
+          {onConfirm ? (
+            <button
+              type="button"
+              onClick={onConfirm}
+              className="relative inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-b from-brand-500 to-brand-600 px-7 py-3.5 text-[16.5px] font-semibold text-white shadow-[0_1px_0_rgba(255,255,255,0.25)_inset,0_10px_22px_-8px_rgba(31,87,240,0.6)] transition-all duration-200 hover:-translate-y-px hover:brightness-105 active:translate-y-0"
+            >
+              Get my exact quote
+            </button>
+          ) : null}
+          {onContinue ? (
+            <button
+              type="button"
+              onClick={onContinue}
+              className="text-[13.5px] font-medium text-muted underline-offset-2 transition-colors hover:text-ink-soft hover:underline"
+            >
+              Just send me the estimate for now
+            </button>
+          ) : null}
         </div>
       ) : null}
     </StepShell>

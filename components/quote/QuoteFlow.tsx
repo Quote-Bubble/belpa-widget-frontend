@@ -819,6 +819,10 @@ function QuoteFlowBody({
             contactName={answers.contact.name}
             brandName={brandName}
             mapsEnabled={mapsEnabled}
+            onConfirm={() => {
+              void promoteToQuoteRequested();
+              dispatch({ type: "GO_NEXT" });
+            }}
             onContinue={() => dispatch({ type: "GO_NEXT" })}
           />
         ) : (
