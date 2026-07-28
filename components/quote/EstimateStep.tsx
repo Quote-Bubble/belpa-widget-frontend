@@ -121,7 +121,7 @@ export function EstimateStep({
     // Terminal step: no pinned Back button, so reclaim its reserved space
     // (!pb-6) and centre the estimate in the fixed panel. Content is kept lean
     // enough to fit as a single page — no overflow, no scrollbar.
-    <StepShell className={variant === "card" ? "!pb-6 !pt-6 justify-center" : ""}>
+    <StepShell className={variant === "card" ? "!pb-6 justify-center" : ""}>
       {/* Heading + address */}
       <div className="shrink-0 text-center">
         <h1
@@ -168,22 +168,22 @@ export function EstimateStep({
         <div className="flex items-stretch">
           <div
             className={`flex min-w-0 flex-1 flex-col justify-center text-left ${
-              variant === "card" ? "px-6 py-7" : "px-8 py-8"
+              variant === "card" ? "px-5 py-5" : "px-8 py-7"
             }`}
           >
             <p
               className={`font-[family-name:var(--font-poppins)] font-semibold leading-none tracking-tight text-ink ${
-                variant === "card" ? "text-[2rem]" : "text-[2.6rem]"
+                variant === "card" ? "text-[1.6rem]" : "text-[2.1rem]"
               }`}
             >
               {displayQuoteAmount(min, false)} – {displayQuoteAmount(max, false)}
             </p>
-            <p className="mt-2.5 text-[12px] font-medium text-muted">excl. VAT</p>
+            <p className="mt-2 text-[11px] font-medium text-muted">excl. VAT</p>
           </div>
           {chips.length > 0 ? (
             <div
-              className={`flex flex-none flex-col items-center justify-center gap-3 border-l border-line ${
-                variant === "card" ? "px-5 py-7" : "px-8 py-8"
+              className={`flex flex-none flex-col items-center justify-center gap-2.5 border-l border-line ${
+                variant === "card" ? "px-4 py-5" : "px-8 py-7"
               }`}
             >
               {chips.map((chip) => (
@@ -191,10 +191,10 @@ export function EstimateStep({
                   key={chip.key}
                   className="flex flex-col items-center gap-1.5 text-center"
                 >
-                  <span className="grid size-12 place-items-center rounded-2xl bg-brand-50 text-brand-600 [&>svg]:size-[22px]">
+                  <span className="grid size-11 place-items-center rounded-2xl bg-brand-50 text-brand-600 [&>svg]:size-5">
                     {chip.icon}
                   </span>
-                  <span className="whitespace-nowrap text-[13px] font-semibold text-ink">
+                  <span className="whitespace-nowrap text-[12.5px] font-semibold text-ink">
                     {chip.label}
                   </span>
                 </div>
