@@ -118,17 +118,26 @@ export function QuoteNextStep({
         </p>
       </div>
 
-      {/* Horizontal timeline — 3 clear steps, bigger type, more air */}
+      {/* Horizontal timeline — one continuous track, nodes on top */}
       <div
         className={`mx-auto w-full max-w-[560px] shrink-0 ${
           card ? "mt-8" : "mt-10"
         }`}
       >
-        <div className="flex items-start">
-          {steps.map((step, i) => {
-            const leftBrand = i > 0 && Boolean(steps[i - 1]?.done);
-            const rightBrand = Boolean(step.done);
-            return (
+        <div className="relative">
+          {/* Full-width rail behind the nodes (no mid-segment gaps) */}
+          <div
+            className="pointer-events-none absolute top-5 right-[16.666%] left-[16.666%] h-[3px] -translate-y-1/2 bg-line"
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute top-5 left-[16.666%] h-[3px] -translate-y-1/2 bg-brand-500"
+            style={{ width: requested ? "66.666%" : "33.333%" }}
+            aria-hidden
+          />
+
+          <div className="relative z-[1] flex items-start">
+            {steps.map((step, i) => (
               <motion.div
                 key={step.key}
                 className="flex flex-1 flex-col items-center px-2 text-center"
@@ -141,21 +150,7 @@ export function QuoteNextStep({
                 }}
               >
                 <div className="relative flex h-10 w-full items-center justify-center">
-                  {i > 0 ? (
-                    <span
-                      className={`absolute left-0 right-1/2 top-1/2 h-[3px] -translate-y-1/2 ${
-                        leftBrand ? "bg-brand-500" : "bg-line"
-                      }`}
-                    />
-                  ) : null}
-                  {i < steps.length - 1 ? (
-                    <span
-                      className={`absolute left-1/2 right-0 top-1/2 h-[3px] -translate-y-1/2 ${
-                        rightBrand ? "bg-brand-500" : "bg-line"
-                      }`}
-                    />
-                  ) : null}
-                  <span className="relative z-[1]">
+                  <span className="relative">
                     {step.next ? (
                       <span className="absolute -inset-1.5 animate-pulse rounded-full bg-brand-500/20" />
                     ) : null}
@@ -180,15 +175,15 @@ export function QuoteNextStep({
                   {step.title}
                 </p>
                 <p
-                  className={`mt-1 max-w-[12ch] leading-snug text-muted ${
+                  className={`mt-1 max-w-[14ch] leading-snug text-muted ${
                     card ? "text-[13px]" : "text-[14px]"
                   }`}
                 >
                   {step.subtitle}
                 </p>
               </motion.div>
-            );
-          })}
+            ))}
+          </div>
         </div>
       </div>
 
