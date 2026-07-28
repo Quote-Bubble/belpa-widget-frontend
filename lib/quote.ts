@@ -173,7 +173,7 @@ function accessAndRooflineItems(input: BaseEstimateInput): QuoteLineItem[] {
         getRate(item.rateId),
         item.quantityM,
         item.rateId === "gutter_replace_m" || item.rateId === "fascia_soffit_m"
-          ? "Unverified placeholder rate — replace before production"
+          ? "Unverified placeholder rate, replace before production"
           : "Experimental Solar plane/bbox length estimate",
       ),
     );
@@ -260,7 +260,7 @@ export function calculateReplacementEstimate(
       rateLineItem(
         getRate("chimney_flashing_allowance"),
         chimneyCount,
-        `${chimneyCount} chimney(s) — unverified flashing allowance`,
+        `${chimneyCount} chimney(s), unverified flashing allowance`,
       ),
     );
   }
@@ -287,7 +287,7 @@ export function calculateReplacementEstimate(
     confidenceWidth,
     modelAssumptions: [
       "Replacement covering rates are from Checkatrade's 2026 roof replacement and flat-roof cost guides.",
-      "Strip-off is modelled at £12/m², capped £1,000–£2,500 — consistent with published basic strip-off (£8–£14/m²) and total removal (£1,000–£2,500) cost guides.",
+      "Strip-off is modelled at £12/m², capped £1,000–£2,500, consistent with published basic strip-off (£8–£14/m²) and total removal (£1,000–£2,500) cost guides.",
       "Scaffolding uses the published £625/week guide; property type, pitch, and roof complexity apply access multipliers on top.",
       ...(input.linearItems?.length
         ? [
@@ -385,7 +385,7 @@ export function calculateRooflineEstimate(
       rateLineItem(
         getRate("gutter_replace_m"),
         length,
-        "Unverified placeholder rate — replace before production",
+        "Unverified placeholder rate, replace before production",
       ),
     );
     if (input.includeFascias) {
@@ -393,7 +393,7 @@ export function calculateRooflineEstimate(
         rateLineItem(
           getRate("fascia_soffit_m"),
           length,
-          "Unverified placeholder rate — replace before production",
+          "Unverified placeholder rate, replace before production",
         ),
       );
     }

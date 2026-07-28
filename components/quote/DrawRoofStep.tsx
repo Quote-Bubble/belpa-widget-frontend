@@ -293,12 +293,12 @@ export function DrawCanvas({
     }
     if (closed.length < 3) return;
     if (!isSimpleRing(closed)) {
-      setCloseError("That outline crosses itself — redraw without crossing lines.");
+      setCloseError("That outline crosses itself, redraw without crossing lines.");
       return;
     }
     if (roofs.some((roof) => ringsOverlapExcessively(closed, roof.path))) {
       setCloseError(
-        "That outline overlaps another roof face too much — redraw so faces barely touch.",
+        "That outline overlaps another roof face too much, redraw so faces barely touch.",
       );
       return;
     }
@@ -436,7 +436,7 @@ export function DrawCanvas({
     0,
   );
 
-  // Only shown while actively placing points — static phase guidance lives in
+  // Only shown while actively placing points, static phase guidance lives in
   // the step heading, so repeating it here would just cover the imagery.
   const instruction = obstructionDraft
     ? !obstructionDraft.first
@@ -796,7 +796,7 @@ export function DrawCanvas({
                 (inObstructions && !ready)
               }
               onClick={() => {
-                // A roof replacement is priced from the outline alone — gutters
+                // A roof replacement is priced from the outline alone, gutters
                 // are a survey-time add, not a reason to make people trace a
                 // second shape. So finishing the outline goes straight on.
                 // (The roofline mode, if ever routed here, still needs gutters.)
@@ -980,7 +980,7 @@ export function DrawRoofStep({
   const info =
     phase === "faces"
       ? "Close each face with the tick on the first point. Shared corners snap automatically."
-      : "Arrows point toward the gutter — the direction rainwater leaves the roof.";
+      : "Arrows point toward the gutter, the direction rainwater leaves the roof.";
 
   return (
     <StepShell bleed>

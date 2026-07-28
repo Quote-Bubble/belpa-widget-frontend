@@ -131,13 +131,13 @@ export function emptyDrawnRoof(path: LatLng[] = []): DrawnRoof {
  * Whether the draw step should have the user trace their roof's area, or
  * only mark where the gutters run.
  *
- * - "gutters_fascias_soffits" only ever prices gutter length — tracing a
+ * - "gutters_fascias_soffits" only ever prices gutter length, tracing a
  *   footprint first was always just a mechanism for clicking its edges, not
  *   something the pricing needed, so gutter lines are drawn directly for
  *   every property type.
  * - A detached house or bungalow's whole-building envelope from the Solar
  *   scan already *is* the customer's complete roof, with no neighbour to
- *   disambiguate — so its area comes straight from the scan and there's
+ *   disambiguate, so its area comes straight from the scan and there's
  *   nothing to trace. Semi-detached, terraced, and flats often share a
  *   roof structure with next door, so the scan can't tell whose portion is
  *   whose; those still need a manual outline.
@@ -210,7 +210,7 @@ export const REPAIR_BANDS: RepairBand[] = [
   {
     id: "patch",
     label: "A small patch",
-    hint: "A few tiles — up to about 3 m²",
+    hint: "A few tiles, up to about 3 m²",
     representativeAreaM2: 2,
   },
   {
@@ -304,7 +304,7 @@ export function stepSequence(answers: QuoteFlowAnswers): FlowStepId[] {
         return ["address", "job_type", "contact", "consultation"];
     }
   })();
-  // A bungalow is single-storey by definition — asking would be redundant.
+  // A bungalow is single-storey by definition, asking would be redundant.
   return answers.propertyType === "bungalow"
     ? steps.filter((step) => step !== "storeys")
     : steps;
@@ -381,7 +381,7 @@ export function measureRoofs(
   for (const roof of roofs) {
     if (roof.path.length < 3) continue;
     // Reject outlines that overlap an already-accepted roof by >10% of the
-    // new ring's area (defence in depth — DrawRoofStep also blocks this).
+    // new ring's area (defence in depth, DrawRoofStep also blocks this).
     if (
       acceptedPaths.some((existing) =>
         ringsOverlapExcessively(roof.path, existing),

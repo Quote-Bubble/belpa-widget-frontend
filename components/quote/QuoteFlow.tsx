@@ -74,7 +74,7 @@ export function previewStep(): string | null {
   }
 }
 
-/** Mock answers that yield a real (repair) quote — used by ?preview=estimate. */
+/** Mock answers that yield a real (repair) quote, used by ?preview=estimate. */
 function buildPreviewAnswers(rooferId: string): QuoteFlowAnswers {
   const answers = createFlowAnswers(rooferId, {
     line: "65 Gannicox Rd, Stroud",
@@ -163,7 +163,7 @@ function reducer(state: FlowState, action: FlowAction): FlowState {
         coords: action.coords,
         address: {
           ...state.answers.address,
-          // The user's typed first line is the source of truth — never let the
+          // The user's typed first line is the source of truth, never let the
           // pin's reverse-geocode overwrite it (the pin can resolve a different
           // house). Only fall back to the resolved address when no line exists.
           formatted: state.answers.address.line?.trim()
@@ -181,7 +181,7 @@ function reducer(state: FlowState, action: FlowAction): FlowState {
         coords: action.coords,
         address: {
           ...state.answers.address,
-          // The user's typed first line is the source of truth — never let the
+          // The user's typed first line is the source of truth, never let the
           // pin's reverse-geocode overwrite it (the pin can resolve a different
           // house). Only fall back to the resolved address when no line exists.
           formatted: state.answers.address.line?.trim()
@@ -207,7 +207,7 @@ function reducer(state: FlowState, action: FlowAction): FlowState {
       {
         // The user types their own first line now, so their address
         // ("14 Elm Grove, M1 2AB", set in continueFromAddress) is the source
-        // of truth — keep it. Only fall back to the reverse-geocoded street if
+        // of truth, keep it. Only fall back to the reverse-geocoded street if
         // for some entry path no first line was captured. Using reverse-geocode
         // when a line exists would duplicate the road name.
         const line = state.answers.address.line?.trim();
@@ -257,7 +257,7 @@ export type QuoteFlowProps = {
   variant?: FlowVariant;
 };
 
-/** Flow without a maps provider — for hosts (like the bubble) that already
+/** Flow without a maps provider, for hosts (like the bubble) that already
  *  mount an APIProvider of their own. */
 export function QuoteFlowInner({
   rooferId = "demo-roofer",
@@ -300,7 +300,7 @@ function QuoteFlowBody({
       });
       // Always land on the address step first, even when the bubble already
       // captured a valid postcode. It shows that postcode pre-filled and asks
-      // for the house number/name — the roofer needs a specific, contactable
+      // for the house number/name, the roofer needs a specific, contactable
       // property, and we capture it up front (lowest drop-off point) rather
       // than at the contact step at the very end.
       return {
@@ -336,7 +336,7 @@ function QuoteFlowBody({
   const { answers, step } = state;
 
   // Resolve the pin location in the background the moment we know an
-  // address — by the time the user reaches "locate" (after job type /
+  // address, by the time the user reaches "locate" (after job type /
   // property type / storeys), the pin is usually already sitting on the
   // roof, so that step only has to ask for confirmation, not look anything up.
   const [prefetchedGeocode, setPrefetchedGeocode] = useState<{
@@ -372,7 +372,7 @@ function QuoteFlowBody({
           });
         }
       } catch {
-        // Silent — LocateStep falls back to its own live geocode call.
+        // Silent, LocateStep falls back to its own live geocode call.
       }
     })();
     return () => {
@@ -479,7 +479,7 @@ function QuoteFlowBody({
     if (!addressEntryReady(postcode) || !line) return;
 
     // The user types the full first line, so "14 Elm Grove, M1 2AB" is already
-    // a complete, contactable address — set it directly. (ADDRESS_RESOLVED
+    // a complete, contactable address, set it directly. (ADDRESS_RESOLVED
     // below deliberately does NOT overwrite this with the reverse-geocoded
     // street, which would duplicate the road name.)
     dispatch({
@@ -540,7 +540,7 @@ function QuoteFlowBody({
     };
     dispatch({ type: "SUBMIT_START", patch: { contact, otherJobDescription } });
     // The consultation path ("request my call back") is already an explicit
-    // ask, so it lands hot. The quote path only saw a ballpark so far — it's a
+    // ask, so it lands hot. The quote path only saw a ballpark so far, it's a
     // "priced only" lead until they request an exact quote on the next step.
     const intent =
       flowPath(merged) === "consultation"
@@ -555,7 +555,7 @@ function QuoteFlowBody({
     // Anti-spam signals travel alongside the payload; the backend silently
     // drops obvious bots (honeypot filled, or submitted implausibly fast).
     // `_submissionId` is generated once per session and reused for retries /
-    // resend-on-mount AND the later intent promotion — the backend upserts on
+    // resend-on-mount AND the later intent promotion, the backend upserts on
     // it, so none of those turn one submission into duplicate rows.
     submissionIdRef.current ??= newSubmissionId();
     const body = {
@@ -608,7 +608,7 @@ function QuoteFlowBody({
     if (result.ok) {
       track("lead_quote_requested", { jobType: payload.jobType });
     } else {
-      // Don't surface an error — the priced lead is already captured; leave the
+      // Don't surface an error, the priced lead is already captured; leave the
       // button in its confirmed state rather than bouncing the user back.
       track("lead_promote_failed", { retriable: result.retriable });
     }
@@ -647,7 +647,7 @@ function QuoteFlowBody({
             options={JOB_TYPE_OPTIONS}
             selected={answers.jobType}
             onSelect={(jobType) => selectAndAdvance({ jobType })}
-            callout="This decides how we price your job — replacements are measured from satellite, smaller jobs are priced by your roofer."
+            callout="This decides how we price your job, replacements are measured from satellite, smaller jobs are priced by your roofer."
             twoCol
           />
         );
@@ -676,7 +676,7 @@ function QuoteFlowBody({
             options={STOREY_OPTIONS}
             selected={answers.storeys}
             onSelect={(storeys) => selectAndAdvance({ storeys })}
-            callout="Roof access changes the price — taller homes usually need scaffolding for longer."
+            callout="Roof access changes the price, taller homes usually need scaffolding for longer."
             twoCol
           />
         );
@@ -830,7 +830,7 @@ function QuoteFlowBody({
             brandName={brandName}
             mapsEnabled={mapsEnabled}
             // "Get my exact quote" leads to the next screen where they arrange
-            // the visit — it doesn't commit here (that would overpromise an
+            // the visit, it doesn't commit here (that would overpromise an
             // instant exact quote). The real intent signal is "Arrange a visit".
             onConfirm={() => dispatch({ type: "GO_NEXT" })}
             // "Just send me the estimate for now" is the browser exit: the

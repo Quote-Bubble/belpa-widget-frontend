@@ -72,7 +72,7 @@ function timelineSteps(requested: boolean): TimelineStep[] {
 
 /**
  * Post-estimate step: roomy timeline + the real intent CTA. This is where the
- * commitment actually happens — "Arrange a visit" promotes a priced-only lead
+ * commitment actually happens, "Arrange a visit" promotes a priced-only lead
  * to hot (the estimate's "Get my exact quote" only routes here, so it can't
  * overpromise an instant exact quote).
  */
@@ -120,7 +120,7 @@ export function QuoteNextStep({
         </p>
       </div>
 
-      {/* Horizontal timeline — continuous rail node→node (no segmented halves) */}
+      {/* Horizontal timeline, continuous rail node→node (no segmented halves) */}
       <div
         className={`mx-auto w-full max-w-[520px] shrink-0 overflow-visible ${
           card ? "mt-8" : "mt-10"
@@ -141,7 +141,7 @@ export function QuoteNextStep({
                   ease: [0.16, 1, 0.3, 1],
                 }}
               >
-                {/* Line from this node’s centre to the next — one piece, no join gap */}
+                {/* Line from this node’s centre to the next, one piece, no join gap */}
                 {i < steps.length - 1 ? (
                   <span
                     aria-hidden
@@ -216,7 +216,7 @@ export function QuoteNextStep({
                 strokeLinejoin="round"
               />
             </svg>
-            Visit requested — we&apos;ll take it from here.
+            Visit requested, we&apos;ll take it from here.
           </div>
         ) : (
           <button

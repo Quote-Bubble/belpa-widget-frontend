@@ -87,7 +87,7 @@ export function AddressStep({
   onContinue: () => void;
 }) {
   const postcodeValid = addressEntryReady(postcode);
-  // First line is required — it's the whole point: the roofer needs a
+  // First line is required, it's the whole point: the roofer needs a
   // specific, contactable property, not just a postcode.
   const lineValid = addressLine.trim().length > 0;
   const lineFeedback = useConfirmingValid(addressLine, lineValid);
@@ -166,7 +166,7 @@ export function RepairSizeStep({
       }))}
       selected={selected}
       onSelect={onSelect}
-      callout="A rough size is fine — your roofer confirms the exact area before any work."
+      callout="A rough size is fine, your roofer confirms the exact area before any work."
     />
   );
 }
@@ -311,7 +311,7 @@ export function ContactStep({
             ? "Just need your details to send this over."
             : "Your local roofer will call you back."
         }
-        info="Your details go straight to the roofer this widget belongs to — never sold on."
+        info="Your details go straight to the roofer this widget belongs to, never sold on."
       >
         {showEstimateNext ? "Nearly there" : "Let's get you a call back"}
       </StepHeading>
@@ -329,7 +329,7 @@ export function ContactStep({
           });
         }}
       >
-        {/* Honeypot — hidden from humans, off the tab order and a11y tree.
+        {/* Honeypot, hidden from humans, off the tab order and a11y tree.
             Bots that auto-fill every field will populate it and get dropped. */}
         <input
           type="text"
@@ -373,7 +373,7 @@ export function ContactStep({
           <label className={flowLabelClass} htmlFor="contact-email">
             Email{" "}
             {emailRequired ? (
-              <span className="font-normal text-muted">— we&apos;ll send your estimate here</span>
+              <span className="font-normal text-muted">(we&apos;ll send your estimate here)</span>
             ) : (
               <span className="font-normal text-muted">(optional)</span>
             )}
@@ -459,9 +459,9 @@ export function ConsultationStep({
       </div>
       <StepHeading
         sub="Your roofer will call to arrange a quick look."
-        info={`This kind of job (${jobLabel.toLowerCase()}) needs a quick look before pricing. Keep your phone handy — most call-backs happen within one working day.`}
+        info={`This kind of job (${jobLabel.toLowerCase()}) needs a quick look before pricing. Keep your phone handy, most call-backs happen within one working day.`}
       >
-        Thanks{name ? `, ${name.split(" ")[0]}` : ""} — you&apos;re all set
+        Thanks{name ? `, ${name.split(" ")[0]}` : ""}, you&apos;re all set
       </StepHeading>
     </StepShell>
   );

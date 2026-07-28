@@ -92,7 +92,7 @@ export function EstimateStep({
    *  request (hot) and moves on. */
   onConfirm?: () => void;
   /** Quiet alternative: they just wanted the ballpark. Moves on WITHOUT
-   *  promoting — the lead stays a browser and lands in the follow-up pool. */
+   *  promoting, the lead stays a browser and lands in the follow-up pool. */
   onContinue?: () => void;
 }) {
   const variant = useFlowVariant();
@@ -120,7 +120,7 @@ export function EstimateStep({
   return (
     // Terminal step: no pinned Back button, so reclaim its reserved space
     // (!pb-6) and centre the estimate in the fixed panel. Content is kept lean
-    // enough to fit as a single page — no overflow, no scrollbar.
+    // enough to fit as a single page, no overflow, no scrollbar.
     <StepShell className={variant === "card" ? "!pb-6 justify-center" : ""}>
       {/* Heading + address */}
       <div className="shrink-0 text-center">
@@ -133,7 +133,7 @@ export function EstimateStep({
           {firstName ? `${firstName}, here's` : "Here's"} your estimate
           <InfoTip>
             Your roofer will call to confirm the final price after a free survey
-            — this range is indicative, not a contract price.
+           , this range is indicative, not a contract price.
           </InfoTip>
         </h1>
         <p
@@ -156,7 +156,7 @@ export function EstimateStep({
         </p>
       </div>
 
-      {/* Estimate — a split of the headline price (left) and the measurement
+      {/* Estimate, a split of the headline price (left) and the measurement
           (right), divided by a hairline rather than boxed separately, then a
           soft "see what's included" row. Follows the approved redesign; kept
           lean so it still fits the fixed panel as a single page. */}

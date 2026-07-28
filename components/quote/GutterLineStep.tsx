@@ -78,7 +78,7 @@ function CounterControl({
 }
 
 /**
- * Draws gutter runs directly as open lines — no roof face to trace first.
+ * Draws gutter runs directly as open lines, no roof face to trace first.
  * Used whenever drawApproach() is "gutter_lines": detached/bungalow full
  * replacements (area already comes from the satellite scan) and every
  * gutters-only job (a footprint was never needed for that price either).
@@ -159,7 +159,7 @@ export function GutterLineStep({
       {variant === "page" ? (
         <StepHeading
           sub="Tap along the gutter run, then finish the line."
-          info="Draw one line per gutter run — a detached extension often needs a second, separate line. Shared corners aren't required to line up."
+          info="Draw one line per gutter run, a detached extension often needs a second, separate line. Shared corners aren't required to line up."
         >
           Mark the gutters
         </StepHeading>
