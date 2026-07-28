@@ -288,7 +288,17 @@ export function ContactStep({
   const showEstimateNext = isQuotePath && !fallbackReason;
 
   return (
-    <StepShell className={variant === "card" ? "!pt-5 overflow-y-auto" : ""}>
+    <StepShell
+      className={
+        variant === "card"
+          ? // Short forms (everything but the tall "other" one, which has the
+            // extra textarea) centre in the panel instead of hugging the top.
+            // The "other" form stays top-anchored + scrollable so it can never
+            // clip against the fixed panel.
+            `!pt-5 overflow-y-auto ${jobType === "other" ? "" : "justify-center"}`
+          : ""
+      }
+    >
       <StepHeading
         compact
         sub={
