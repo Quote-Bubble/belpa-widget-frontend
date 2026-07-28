@@ -287,7 +287,7 @@ export function EstimateStep({
       {onConfirm || onContinue ? (
         <div
           className={`mx-auto flex w-full max-w-[560px] shrink-0 flex-col items-center ${
-            variant === "card" ? "mt-4 gap-2" : "mt-6 gap-2.5"
+            variant === "card" ? "mt-4 gap-2.5" : "mt-6 gap-3"
           }`}
         >
           {onConfirm ? (
@@ -303,7 +303,7 @@ export function EstimateStep({
             <button
               type="button"
               onClick={onContinue}
-              className="text-[13.5px] font-medium text-muted underline-offset-2 transition-colors hover:text-ink-soft hover:underline"
+              className="inline-flex w-full items-center justify-center rounded-full border border-line bg-white px-7 py-3 text-[15px] font-semibold text-ink-soft transition-colors hover:border-brand-300 hover:text-brand-600"
             >
               Just send me the estimate for now
             </button>
