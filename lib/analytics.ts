@@ -35,7 +35,9 @@ export type QuoteEvent =
   | "step_viewed"
   | "quote_shown"
   | "lead_submitted"
-  | "lead_failed";
+  | "lead_failed"
+  | "lead_quote_requested"
+  | "lead_promote_failed";
 
 /**
  * The page the widget is running ON, not the widget's own URL.

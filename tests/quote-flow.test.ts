@@ -421,10 +421,16 @@ describe("buildLeadPayload", () => {
     const answers = measuredAnswers();
     const measurement = measureRoofs(answers.scan!, answers.roofs);
     const quote = computeFlowQuote(answers, measurement);
-    const payload = buildLeadPayload(answers, measurement, quote);
+    const payload = buildLeadPayload(
+      answers,
+      measurement,
+      quote,
+      "estimate_viewed",
+    );
 
     expect(payload.rooferId).toBe("roofer-123");
     expect(payload.leadType).toBe("quote");
+    expect(payload.intent).toBe("estimate_viewed");
     expect(payload.jobType).toBe("full_replacement");
     expect(payload.contact.name).toBe("Ada Lovelace");
     expect(payload.contact.phone).toBe("07700 900123");
@@ -447,9 +453,10 @@ describe("buildLeadPayload", () => {
     });
     answers.jobType = "leak_investigation";
     answers.contact = { name: "Sam", phone: "0117 111 2222", email: "" };
-    const payload = buildLeadPayload(answers, null, null);
+    const payload = buildLeadPayload(answers, null, null, "callback_requested");
 
     expect(payload.leadType).toBe("manual_consultation");
+    expect(payload.intent).toBe("callback_requested");
     expect(payload.quoteRange).toBeNull();
     expect(payload.solar.areaM2).toBeNull();
     expect(payload.roofline).toBeNull();

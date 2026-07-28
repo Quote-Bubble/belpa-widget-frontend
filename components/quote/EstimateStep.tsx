@@ -134,6 +134,9 @@ export function EstimateStep({
   measurement,
   address,
   contactName,
+  brandName = "your local roofer",
+  confirmed = false,
+  onConfirm,
 }: {
   quote: QuoteResult;
   measurement: CombinedMeasurement | null;
@@ -143,7 +146,12 @@ export function EstimateStep({
   materialLabelText: string;
   jobLabel: string;
   contactName: string;
+  brandName?: string;
   mapsEnabled?: boolean;
+  /** True once the person has asked for an exact quote (intent promoted). */
+  confirmed?: boolean;
+  /** Promotes this "priced only" lead to a genuine quote request. */
+  onConfirm?: () => void;
 }) {
   const variant = useFlowVariant();
   const [showBreakdown, setShowBreakdown] = useState(false);
@@ -330,6 +338,46 @@ export function EstimateStep({
           </>
         )}
       </div>
+
+      {/* Intent gate — the ballpark above is captured as a "priced only" lead
+          already; this promotes it to a real quote request so the roofer only
+          chases people who actually want to go ahead. */}
+      {onConfirm ? (
+        <div
+          className={`mx-auto w-full max-w-[560px] shrink-0 ${
+            variant === "card" ? "mt-4" : "mt-6"
+          }`}
+        >
+          {confirmed ? (
+            <div className="flex items-center justify-center gap-2 rounded-full bg-emerald-500/10 px-5 py-3.5 text-center text-[15px] font-semibold text-emerald-700">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M5 12.5 9.5 17 19 7.5"
+                  stroke="currentColor"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              {brandName} will be in touch with your exact quote.
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={onConfirm}
+              className="relative inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-b from-brand-500 to-brand-600 px-7 py-3.5 text-[16.5px] font-semibold text-white shadow-[0_1px_0_rgba(255,255,255,0.25)_inset,0_10px_22px_-8px_rgba(31,87,240,0.6)] transition-all duration-200 hover:-translate-y-px hover:brightness-105 active:translate-y-0"
+            >
+              Get my exact quote
+            </button>
+          )}
+        </div>
+      ) : null}
 
       {/* What happens next — sleek horizontal tracker */}
       <div

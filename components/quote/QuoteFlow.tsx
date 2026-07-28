@@ -303,6 +303,12 @@ function QuoteFlowBody({
   );
   const advanceTimerRef = useRef<number | null>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
+  // One stable id for the whole session so the initial lead and any later
+  // intent promotion (see promoteToQuoteRequested) collapse into one row via
+  // the backend's upsert-on-id. Generated lazily on first submit.
+  const submissionIdRef = useRef<string | null>(null);
+  const flowMountedAtRef = useRef<number>(Date.now());
+  const [intentPromoted, setIntentPromoted] = useState(false);
 
   // Dev shortcut: ?preview=estimate seeds a finished repair estimate so the
   // estimate screen can be opened directly while designing it. Applied after
@@ -522,21 +528,30 @@ function QuoteFlowBody({
       otherJobDescription,
     };
     dispatch({ type: "SUBMIT_START", patch: { contact, otherJobDescription } });
+    // The consultation path ("request my call back") is already an explicit
+    // ask, so it lands hot. The quote path only saw a ballpark so far — it's a
+    // "priced only" lead until they confirm on the estimate screen.
+    const intent =
+      flowPath(merged) === "consultation"
+        ? "callback_requested"
+        : "estimate_viewed";
     const payload = buildLeadPayload(
       merged,
       measurement,
       computeFlowQuote(merged, measurement),
+      intent,
     );
     // Anti-spam signals travel alongside the payload; the backend silently
     // drops obvious bots (honeypot filled, or submitted implausibly fast).
-    // `_submissionId` is generated once here so every retry / resend-on-mount
-    // of THIS submission reuses it — the backend upserts on it, so a flaky
-    // network can't turn one submission into duplicate leads.
+    // `_submissionId` is generated once per session and reused for retries /
+    // resend-on-mount AND the later intent promotion — the backend upserts on
+    // it, so none of those turn one submission into duplicate rows.
+    submissionIdRef.current ??= newSubmissionId();
     const body = {
       ...payload,
       _hp: botCheck.hp,
       _elapsedMs: botCheck.elapsedMs,
-      _submissionId: newSubmissionId(),
+      _submissionId: submissionIdRef.current,
     };
 
     // Stash before sending so a reload/crash mid-send doesn't lose the lead;
@@ -555,6 +570,36 @@ function QuoteFlowBody({
       // postLeadWithRetry; transient failures keep it for flush-on-mount.
       track("lead_failed", { retriable: result.retriable });
       dispatch({ type: "SUBMIT_ERROR", message: result.message });
+    }
+  }
+
+  // Fired when someone clicks "get my exact quote" on the estimate. Re-posts
+  // the SAME submission with a raised intent; the backend upserts on the id and
+  // only ever raises intent, so this promotes the existing "priced only" lead
+  // to "quote requested" (and notifies the roofer) rather than creating a
+  // second row. Optimistic + best-effort: the lead already exists either way.
+  async function promoteToQuoteRequested() {
+    if (intentPromoted || !submissionIdRef.current) return;
+    setIntentPromoted(true);
+    const payload = buildLeadPayload(
+      answers,
+      measurement,
+      computeFlowQuote(answers, measurement),
+      "quote_requested",
+    );
+    const body = {
+      ...payload,
+      _hp: "",
+      _elapsedMs: Date.now() - flowMountedAtRef.current,
+      _submissionId: submissionIdRef.current,
+    };
+    const result = await postLeadWithRetry(body);
+    if (result.ok) {
+      track("lead_quote_requested", { jobType: payload.jobType });
+    } else {
+      // Don't surface an error — the priced lead is already captured; leave the
+      // button in its confirmed state rather than bouncing the user back.
+      track("lead_promote_failed", { retriable: result.retriable });
     }
   }
 
@@ -769,7 +814,10 @@ function QuoteFlowBody({
             }
             jobLabel={jobLabel}
             contactName={answers.contact.name}
+            brandName={brandName}
             mapsEnabled={mapsEnabled}
+            confirmed={intentPromoted}
+            onConfirm={promoteToQuoteRequested}
           />
         ) : (
           <ConsultationStep name={answers.contact.name} jobLabel={jobLabel} />

@@ -593,6 +593,7 @@ export function buildLeadPayload(
   answers: QuoteFlowAnswers,
   measurement: CombinedMeasurement | null,
   quote: QuoteResult | null,
+  intent: LeadPayload["intent"],
 ): LeadPayload {
   const path = flowPath(answers);
   const primaryRoofPath =
@@ -606,6 +607,7 @@ export function buildLeadPayload(
   return {
     rooferId: answers.rooferId,
     leadType: path === "consultation" ? "manual_consultation" : "quote",
+    intent,
     jobType: answers.jobType ?? "other",
     otherJobDescription:
       answers.otherJobDescription.trim() === ""
