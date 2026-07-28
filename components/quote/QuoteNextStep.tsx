@@ -71,8 +71,10 @@ function timelineSteps(requested: boolean): TimelineStep[] {
 }
 
 /**
- * Post-estimate step: roomy timeline + the real intent CTA.
- * "Request a free visit" promotes a priced-only lead to hot.
+ * Post-estimate step: roomy timeline + the real intent CTA. This is where the
+ * commitment actually happens — "Arrange a visit" promotes a priced-only lead
+ * to hot (the estimate's "Get my exact quote" only routes here, so it can't
+ * overpromise an instant exact quote).
  */
 export function QuoteNextStep({
   contactName,
@@ -114,7 +116,7 @@ export function QuoteNextStep({
         >
           {requested
             ? `${brandName} will be in touch to arrange your visit.`
-            : "Request a free visit and your roofer will follow up with an exact quote."}
+            : "Arrange a free visit and your roofer will confirm your exact quote."}
         </p>
       </div>
 
@@ -222,7 +224,7 @@ export function QuoteNextStep({
             onClick={onRequest}
             className="relative inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-b from-brand-500 to-brand-600 px-7 py-3.5 text-[16.5px] font-semibold text-white shadow-[0_1px_0_rgba(255,255,255,0.25)_inset,0_10px_22px_-8px_rgba(31,87,240,0.6)] transition-all duration-200 hover:-translate-y-px hover:brightness-105 active:translate-y-0"
           >
-            Request a free visit
+            Arrange a visit
           </button>
         )}
       </div>

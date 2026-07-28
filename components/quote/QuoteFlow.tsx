@@ -829,10 +829,10 @@ function QuoteFlowBody({
             contactName={answers.contact.name}
             brandName={brandName}
             mapsEnabled={mapsEnabled}
-            onConfirm={() => {
-              void promoteToQuoteRequested();
-              dispatch({ type: "GO_NEXT" });
-            }}
+            // "Get my exact quote" leads to the next screen where they arrange
+            // the visit — it doesn't commit here (that would overpromise an
+            // instant exact quote). The real intent signal is "Arrange a visit".
+            onConfirm={() => dispatch({ type: "GO_NEXT" })}
             onContinue={() => dispatch({ type: "GO_NEXT" })}
           />
         ) : (
