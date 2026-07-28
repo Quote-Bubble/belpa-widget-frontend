@@ -288,9 +288,7 @@ export function LocateStep({
             <div className="q-spinner" />
           </div>
           <p className="mt-5 text-center text-[15px] font-semibold text-ink">
-            {phase === "geocoding"
-              ? "Finding your house…"
-              : "Preparing your roof…"}
+            Finding your house…
           </p>
           <p className="mt-1 text-center text-[13px] text-muted">{postcode}</p>
         </div>
@@ -301,7 +299,7 @@ export function LocateStep({
   return (
     <StepShell bleed>
       {variant === "page" ? (
-        <StepHeading sub="Drag the pin onto your roof.">
+        <StepHeading sub="Drag the map so the pin sits on your roof.">
           Is this your house?
         </StepHeading>
       ) : null}
@@ -326,13 +324,13 @@ export function LocateStep({
           />
         ) : null}
 
-        {variant === "card" ? (
+        {variant === "card" && phase === "confirm" ? (
           <div className="pointer-events-none absolute left-3 right-3 top-3 z-10 text-center">
             <p className="text-[17px] font-semibold tracking-tight text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.65)]">
               Is this your house?
             </p>
             <p className="mt-0.5 text-[12px] font-medium text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.65)]">
-              Drag the pin onto your roof.
+              Drag the map so the pin sits on your roof.
             </p>
           </div>
         ) : null}
@@ -366,6 +364,15 @@ export function LocateStep({
               ariaLabel="Yes, measure this roof"
               onClick={() => void confirmAndScan()}
             />
+          </div>
+        ) : null}
+
+        {phase === "scanning" ? (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-white/70 backdrop-blur-sm">
+            <span className="q-spinner" />
+            <p className="text-[15px] font-semibold text-ink">
+              Measuring your roof…
+            </p>
           </div>
         ) : null}
       </div>

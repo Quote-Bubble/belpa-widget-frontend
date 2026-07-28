@@ -188,7 +188,7 @@ export function MaterialStep({
   return (
     <StepShell>
       <StepHeading
-        sub="Not sure? Just pick that option."
+        sub="Not sure? Tap ‘Not sure’ and your roofer will confirm it."
         info="The covering changes material cost more than anything else in your estimate."
       >
         What&apos;s on the roof?
@@ -451,7 +451,7 @@ export function ConsultationStep({
         sub="Your roofer will call to arrange a quick look."
         info={`This kind of job (${jobLabel.toLowerCase()}) needs a quick look before pricing. Keep your phone handy — most call-backs happen within one working day.`}
       >
-        Thanks{name ? `, ${name.split(" ")[0]}` : ""} — you&apos;re booked in
+        Thanks{name ? `, ${name.split(" ")[0]}` : ""} — you&apos;re all set
       </StepHeading>
     </StepShell>
   );

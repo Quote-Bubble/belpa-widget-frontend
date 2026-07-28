@@ -796,10 +796,14 @@ export function DrawCanvas({
                 (inObstructions && !ready)
               }
               onClick={() => {
-                if (inFaces) onPhaseChange("gutters");
-                // Obstruction marking is intentionally bypassed for now.
-                else if (inGutters) onContinue();
-                else onContinue();
+                // A roof replacement is priced from the outline alone — gutters
+                // are a survey-time add, not a reason to make people trace a
+                // second shape. So finishing the outline goes straight on.
+                // (The roofline mode, if ever routed here, still needs gutters.)
+                if (inFaces) {
+                  if (mode === "roofline") onPhaseChange("gutters");
+                  else onContinue();
+                } else onContinue();
               }}
             />
           </div>
@@ -844,7 +848,9 @@ export function DrawCanvas({
         {inFaces && !drawing && roofs.length > 0 ? (
           <button
             type="button"
-            onClick={() => onPhaseChange("gutters")}
+            onClick={() =>
+              mode === "roofline" ? onPhaseChange("gutters") : onContinue()
+            }
             className={toolbarPrimary}
           >
             Done
