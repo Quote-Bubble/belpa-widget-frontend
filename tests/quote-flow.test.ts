@@ -96,6 +96,7 @@ describe("step sequencing", () => {
       "material",
       "contact",
       "estimate",
+      "quote_next",
     ]);
     expect(stepSequence(answers)).not.toContain("condition");
     expect(stepSequence(answers)).not.toContain("scanning");
@@ -125,6 +126,7 @@ describe("step sequencing", () => {
       "roofline_scope",
       "contact",
       "estimate",
+      "quote_next",
     ]);
   });
 
@@ -156,7 +158,8 @@ describe("step sequencing", () => {
     expect(nextStep(answers, "locate")).toBe("draw_roof");
     expect(previousStep(answers, "draw_roof")).toBe("storeys");
     expect(previousStep(answers, "address")).toBeNull();
-    expect(nextStep(answers, "estimate")).toBeNull();
+    expect(nextStep(answers, "estimate")).toBe("quote_next");
+    expect(nextStep(answers, "quote_next")).toBeNull();
   });
 
   it("reports monotonically increasing progress along the sequence", () => {

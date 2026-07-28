@@ -6,6 +6,7 @@ import { AnimatePresence, MotionConfig, motion } from "motion/react";
 
 import { DrawRoofStep } from "@/components/quote/DrawRoofStep";
 import { EstimateStep } from "@/components/quote/EstimateStep";
+import { QuoteNextStep } from "@/components/quote/QuoteNextStep";
 import { GutterLineStep } from "@/components/quote/GutterLineStep";
 import { LocateStep } from "@/components/quote/LocateStep";
 import {
@@ -530,7 +531,7 @@ function QuoteFlowBody({
     dispatch({ type: "SUBMIT_START", patch: { contact, otherJobDescription } });
     // The consultation path ("request my call back") is already an explicit
     // ask, so it lands hot. The quote path only saw a ballpark so far — it's a
-    // "priced only" lead until they confirm on the estimate screen.
+    // "priced only" lead until they request an exact quote on the next step.
     const intent =
       flowPath(merged) === "consultation"
         ? "callback_requested"
@@ -573,11 +574,11 @@ function QuoteFlowBody({
     }
   }
 
-  // Fired when someone clicks "get my exact quote" on the estimate. Re-posts
-  // the SAME submission with a raised intent; the backend upserts on the id and
-  // only ever raises intent, so this promotes the existing "priced only" lead
-  // to "quote requested" (and notifies the roofer) rather than creating a
-  // second row. Optimistic + best-effort: the lead already exists either way.
+  // Fired when someone clicks "Request my exact quote" on the post-estimate
+  // step. Re-posts the SAME submission with a raised intent; the backend
+  // upserts on the id and only ever raises intent, so this promotes the
+  // existing "priced only" lead to "quote requested" (and notifies the roofer)
+  // rather than creating a second row. Optimistic + best-effort.
   async function promoteToQuoteRequested() {
     if (intentPromoted || !submissionIdRef.current) return;
     setIntentPromoted(true);
@@ -605,9 +606,11 @@ function QuoteFlowBody({
 
   const sequence = stepSequence(answers);
   const percent = progressPercent(answers, step);
-  const isTerminal = step === "estimate" || step === "consultation";
   const showBack =
-    !isTerminal && step !== "locate" && sequence.indexOf(step) > 0;
+    step !== "locate" &&
+    sequence.indexOf(step) > 0 &&
+    !(step === "consultation") &&
+    !(step === "quote_next" && intentPromoted);
   const path = flowPath(answers);
 
   const jobLabel =
@@ -816,11 +819,19 @@ function QuoteFlowBody({
             contactName={answers.contact.name}
             brandName={brandName}
             mapsEnabled={mapsEnabled}
-            confirmed={intentPromoted}
-            onConfirm={promoteToQuoteRequested}
+            onContinue={() => dispatch({ type: "GO_NEXT" })}
           />
         ) : (
           <ConsultationStep name={answers.contact.name} jobLabel={jobLabel} />
+        );
+      case "quote_next":
+        return (
+          <QuoteNextStep
+            contactName={answers.contact.name}
+            brandName={brandName}
+            requested={intentPromoted}
+            onRequest={() => void promoteToQuoteRequested()}
+          />
         );
       case "consultation":
         return (

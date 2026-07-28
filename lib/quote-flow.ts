@@ -51,6 +51,7 @@ export type FlowStepId =
   | "roofline_scope"
   | "contact"
   | "estimate"
+  | "quote_next"
   | "consultation";
 
 export type FlowPath = "measured" | "repair" | "roofline" | "consultation";
@@ -272,6 +273,7 @@ export function stepSequence(answers: QuoteFlowAnswers): FlowStepId[] {
           "material",
           "contact",
           "estimate",
+          "quote_next",
         ];
       case "repair":
         return [
@@ -283,6 +285,7 @@ export function stepSequence(answers: QuoteFlowAnswers): FlowStepId[] {
           "material",
           "contact",
           "estimate",
+          "quote_next",
         ];
       case "roofline":
         return [
@@ -295,6 +298,7 @@ export function stepSequence(answers: QuoteFlowAnswers): FlowStepId[] {
           "roofline_scope",
           "contact",
           "estimate",
+          "quote_next",
         ];
       case "consultation":
         return ["address", "job_type", "contact", "consultation"];
