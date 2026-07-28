@@ -591,7 +591,6 @@ function QuoteFlowBody({
             onSelect={(jobType) => selectAndAdvance({ jobType })}
             callout="This decides how we price your job — replacements are measured from satellite, smaller jobs are priced by your roofer."
             twoCol
-            alignStart
           />
         );
       case "property_type":

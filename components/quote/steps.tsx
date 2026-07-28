@@ -35,7 +35,6 @@ export function OptionListStep<Value extends string | number>({
   onSelect,
   callout,
   twoCol = false,
-  alignStart = false,
 }: {
   heading: string;
   sub?: string;
@@ -44,10 +43,6 @@ export function OptionListStep<Value extends string | number>({
   onSelect: (value: Value) => void;
   callout?: string;
   twoCol?: boolean;
-  /** Card variant: top-align the options (leftover space collects at the
-   *  bottom) instead of centering. Keeps a long list off the pinned Back
-   *  button so the last row isn't crammed against the panel edge. */
-  alignStart?: boolean;
 }) {
   const variant = useFlowVariant();
   return (
@@ -58,7 +53,7 @@ export function OptionListStep<Value extends string | number>({
       <div
         className={`grid ${variant === "card" ? "gap-3.5" : "gap-3"} ${
           twoCol ? "sm:grid-cols-2" : "grid-cols-1"
-        } ${variant === "card" ? `flex-1 ${alignStart ? "content-start" : "content-center"}` : ""}`}
+        } ${variant === "card" ? "flex-1 content-center" : ""}`}
       >
         {options.map((option) => (
           <OptionPill
