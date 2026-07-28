@@ -103,7 +103,7 @@ export function StepHeading({
   return (
     <div
       className={`text-center ${
-        variant === "card" ? "mb-7" : compact ? "mb-5" : "mb-8"
+        variant === "card" ? (compact ? "mb-4" : "mb-7") : compact ? "mb-5" : "mb-8"
       }`}
     >
       <h1

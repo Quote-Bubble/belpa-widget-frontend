@@ -288,8 +288,9 @@ export function ContactStep({
   const showEstimateNext = isQuotePath && !fallbackReason;
 
   return (
-    <StepShell>
+    <StepShell className={variant === "card" ? "!pt-5 overflow-y-auto" : ""}>
       <StepHeading
+        compact
         sub={
           showEstimateNext
             ? "Just need your details to send this over."
@@ -303,7 +304,7 @@ export function ContactStep({
       {fallbackReason ? <InfoCallout>{fallbackReason}</InfoCallout> : null}
 
       <form
-        className={`mt-1 flex flex-col ${variant === "card" ? "gap-3.5" : "gap-4"}`}
+        className={`mt-1 flex flex-col ${variant === "card" ? "gap-3" : "gap-4"}`}
         onSubmit={(event) => {
           event.preventDefault();
           if (!ready || busy) return;
