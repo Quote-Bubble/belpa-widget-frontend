@@ -156,31 +156,54 @@ export function EstimateStep({
         </p>
       </div>
 
-      {/* Estimate card */}
-      {/* Card variant is a fixed 544px panel — the vertical rhythm is tightened
-          there so the estimate + measurement chips fit as a single page. The
-          full-page variant keeps the roomier spacing. */}
+      {/* Estimate — a split of the headline price (left) and the measurement
+          (right), divided by a hairline rather than boxed separately, then a
+          soft "see what's included" row. Follows the approved redesign; kept
+          lean so it still fits the fixed panel as a single page. */}
       <div
         className={`mx-auto w-full shrink-0 overflow-hidden rounded-3xl border border-line bg-white shadow-[var(--shadow-soft)] ${
-          variant === "card" ? "mt-4" : "mt-6"
+          variant === "card" ? "mt-5" : "mt-8"
         }`}
       >
-        <div
-          className={`text-center ${
-            variant === "card" ? "px-5 pb-3 pt-4" : "px-5 pb-4 pt-5"
-          }`}
-        >
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
-            Estimate
-          </p>
-          <p
-            className={`mt-1.5 font-[family-name:var(--font-poppins)] font-semibold leading-tight tracking-tight text-ink ${
-              variant === "card" ? "text-[1.8rem]" : "text-[2rem] sm:text-5xl"
+        <div className="flex items-stretch">
+          <div
+            className={`min-w-0 flex-1 text-left ${
+              variant === "card" ? "px-5 py-5" : "px-7 py-7"
             }`}
           >
-            {displayQuoteAmount(min, false)} – {displayQuoteAmount(max, false)}
-          </p>
-          <p className="mt-1 text-[11px] font-medium text-muted">excl. VAT</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-600">
+              Estimate
+            </p>
+            <p
+              className={`mt-2 font-[family-name:var(--font-poppins)] font-semibold leading-none tracking-tight text-ink ${
+                variant === "card" ? "text-[1.7rem]" : "text-[2.4rem]"
+              }`}
+            >
+              {displayQuoteAmount(min, false)} – {displayQuoteAmount(max, false)}
+            </p>
+            <p className="mt-2 text-[11px] font-medium text-muted">excl. VAT</p>
+          </div>
+          {chips.length > 0 ? (
+            <div
+              className={`flex flex-none flex-col items-center justify-center gap-3 border-l border-line ${
+                variant === "card" ? "px-4 py-5" : "px-8 py-7"
+              }`}
+            >
+              {chips.map((chip) => (
+                <div
+                  key={chip.key}
+                  className="flex flex-col items-center gap-1.5 text-center"
+                >
+                  <span className="grid size-11 place-items-center rounded-2xl bg-brand-50 text-brand-600 [&>svg]:size-5">
+                    {chip.icon}
+                  </span>
+                  <span className="whitespace-nowrap text-[12.5px] font-semibold text-ink">
+                    {chip.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : null}
         </div>
 
         {showBreakdown ? (
@@ -227,29 +250,13 @@ export function EstimateStep({
             </button>
           </div>
         ) : (
-          <>
-            {chips.length > 0 ? (
-              <div className="flex flex-col divide-y divide-[#e9eaee] border-t border-line sm:flex-row sm:divide-x sm:divide-y-0">
-                {chips.map((chip) => (
-                  <span
-                    key={chip.key}
-                    className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 px-2 text-center font-medium text-ink-soft ${
-                      variant === "card" ? "py-2 text-[12px]" : "py-2.5 text-[12.5px]"
-                    }`}
-                  >
-                    <span className="text-brand-500">{chip.icon}</span>
-                    <span className="truncate">{chip.label}</span>
-                  </span>
-                ))}
-              </div>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => setShowBreakdown(true)}
-              className={`flex w-full items-center gap-3 border-t border-line px-5 text-left font-semibold text-brand-600 transition-colors hover:text-brand-700 ${
-                variant === "card" ? "py-2.5 text-[14px]" : "py-3.5 text-[15px]"
-              }`}
-            >
+          <button
+            type="button"
+            onClick={() => setShowBreakdown(true)}
+            className={`flex w-full items-center gap-3 border-t border-line px-5 text-left font-semibold text-brand-600 transition-colors hover:bg-brand-50/50 hover:text-brand-700 ${
+              variant === "card" ? "py-3 text-[14px]" : "py-4 text-[15px]"
+            }`}
+          >
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -277,7 +284,6 @@ export function EstimateStep({
                 <path d="m9 6 6 6-6 6" />
               </svg>
             </button>
-          </>
         )}
       </div>
 
@@ -287,15 +293,29 @@ export function EstimateStep({
       {onConfirm || onContinue ? (
         <div
           className={`mx-auto flex w-full max-w-[560px] shrink-0 flex-col items-center ${
-            variant === "card" ? "mt-4 gap-2.5" : "mt-6 gap-3"
+            variant === "card" ? "mt-5 gap-2.5" : "mt-8 gap-3"
           }`}
         >
           {onConfirm ? (
             <button
               type="button"
               onClick={onConfirm}
-              className="relative inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-b from-brand-500 to-brand-600 px-7 py-3.5 text-[16.5px] font-semibold text-white shadow-[0_1px_0_rgba(255,255,255,0.25)_inset,0_10px_22px_-8px_rgba(31,87,240,0.6)] transition-all duration-200 hover:-translate-y-px hover:brightness-105 active:translate-y-0"
+              className="relative inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-gradient-to-b from-brand-500 to-brand-600 px-7 py-3.5 text-[16.5px] font-semibold text-white shadow-[0_1px_0_rgba(255,255,255,0.25)_inset,0_10px_22px_-8px_rgba(31,87,240,0.6)] transition-all duration-200 hover:-translate-y-px hover:brightness-105 active:translate-y-0"
             >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.9"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="size-[18px] flex-none"
+                aria-hidden="true"
+              >
+                <rect x="5" y="3" width="14" height="18" rx="2" />
+                <path d="M9 7h6" />
+                <path d="M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01" />
+              </svg>
               Get my exact quote
             </button>
           ) : null}
@@ -303,8 +323,21 @@ export function EstimateStep({
             <button
               type="button"
               onClick={onContinue}
-              className="inline-flex w-full items-center justify-center rounded-full border border-line bg-white px-7 py-3 text-[15px] font-semibold text-ink-soft transition-colors hover:border-brand-300 hover:text-brand-600"
+              className="inline-flex w-full items-center justify-center gap-2.5 rounded-full border border-line bg-white px-7 py-3 text-[15px] font-semibold text-ink-soft transition-colors hover:border-brand-300 hover:text-brand-600"
             >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.9"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="size-[17px] flex-none text-brand-500"
+                aria-hidden="true"
+              >
+                <path d="M22 2 11 13" />
+                <path d="M22 2l-7 20-4-9-9-4 20-7z" />
+              </svg>
               Just send me the estimate for now
             </button>
           ) : null}
