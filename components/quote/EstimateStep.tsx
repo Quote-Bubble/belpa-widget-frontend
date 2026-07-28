@@ -288,7 +288,7 @@ export function EstimateStep({
             onClick={onContinue}
             className="relative inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-b from-brand-500 to-brand-600 px-7 py-3.5 text-[16.5px] font-semibold text-white shadow-[0_1px_0_rgba(255,255,255,0.25)_inset,0_10px_22px_-8px_rgba(31,87,240,0.6)] transition-all duration-200 hover:-translate-y-px hover:brightness-105 active:translate-y-0"
           >
-            Get my exact quote
+            Continue
           </button>
         </div>
       ) : null}
