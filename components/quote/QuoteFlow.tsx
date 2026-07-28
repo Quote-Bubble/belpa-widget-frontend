@@ -833,7 +833,11 @@ function QuoteFlowBody({
             // the visit — it doesn't commit here (that would overpromise an
             // instant exact quote). The real intent signal is "Arrange a visit".
             onConfirm={() => dispatch({ type: "GO_NEXT" })}
-            onContinue={() => dispatch({ type: "GO_NEXT" })}
+            // "Just send me the estimate for now" is the browser exit: the
+            // estimate is emailed to them on lead creation, so just close.
+            onContinue={() =>
+              onClose ? onClose() : dispatch({ type: "GO_NEXT" })
+            }
           />
         ) : (
           <ConsultationStep name={answers.contact.name} jobLabel={jobLabel} />

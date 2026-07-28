@@ -279,13 +279,18 @@ export function ContactStep({
   const mountedAtRef = useRef(Date.now());
 
   const phoneValid = /^[0-9+()\s-]{7,}$/.test(phone.trim());
-  const ready = name.trim().length >= 2 && phoneValid;
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const isQuotePath =
     jobType === "full_replacement" ||
     jobType === "flat_roof_replacement" ||
     jobType === "tile_or_slate_repair" ||
     jobType === "gutters_fascias_soffits";
   const showEstimateNext = isQuotePath && !fallbackReason;
+  // On the estimate path the customer can have their estimate emailed to them,
+  // so email is required here; the callback path keeps it optional.
+  const emailRequired = showEstimateNext;
+  const ready =
+    name.trim().length >= 2 && phoneValid && (!emailRequired || emailValid);
 
   return (
     <StepShell
@@ -366,7 +371,12 @@ export function ContactStep({
         </div>
         <div>
           <label className={flowLabelClass} htmlFor="contact-email">
-            Email <span className="font-normal text-muted">(optional)</span>
+            Email{" "}
+            {emailRequired ? (
+              <span className="font-normal text-muted">— we&apos;ll send your estimate here</span>
+            ) : (
+              <span className="font-normal text-muted">(optional)</span>
+            )}
           </label>
           <input
             id="contact-email"
