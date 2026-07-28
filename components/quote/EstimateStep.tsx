@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { motion } from "motion/react";
 
 import { InfoTip, StepShell, useFlowVariant } from "@/components/quote/ui";
 import type { CombinedMeasurement } from "@/lib/quote-flow";
@@ -69,64 +68,6 @@ const ICONS: Record<string, ReactNode> = {
   ),
 };
 
-/* "What happens next" tracker steps. First is already complete (the lead was
-   sent at the contact step); the second is the next thing to happen. */
-type NextStep = {
-  key: string;
-  title: string;
-  subtitle: string;
-  icon: ReactNode;
-  done?: boolean;
-  next?: boolean;
-};
-
-const NEXT_STEPS: NextStep[] = [
-  {
-    key: "sent",
-    title: "Details sent",
-    subtitle: "With your roofer",
-    done: true,
-    icon: (
-      <Icon>
-        <path d="M4 12.5 9.5 18 20 6.5" />
-      </Icon>
-    ),
-  },
-  {
-    key: "call",
-    title: "Roofer calls",
-    subtitle: "Within a day",
-    next: true,
-    icon: (
-      <Icon>
-        <path d="M5 4h3l1.4 5-2 1.2a11 11 0 0 0 5 5l1.2-2 5 1.4V19a2 2 0 0 1-2.2 2A16 16 0 0 1 3 6.2 2 2 0 0 1 5 4Z" />
-      </Icon>
-    ),
-  },
-  {
-    key: "survey",
-    title: "Free survey",
-    subtitle: "Exact price",
-    icon: (
-      <Icon>
-        <path d="M3 11 12 4l9 7" />
-        <path d="M5 10v9h14v-9" />
-      </Icon>
-    ),
-  },
-  {
-    key: "quote",
-    title: "Fixed quote",
-    subtitle: "No obligation",
-    icon: (
-      <Icon>
-        <rect x="5" y="3" width="14" height="18" rx="2" />
-        <path d="M9 8h6M9 12h6M9 16h4" />
-      </Icon>
-    ),
-  },
-];
-
 type Chip = { key: string; icon: ReactNode; label: string };
 
 export function EstimateStep({
@@ -176,10 +117,10 @@ export function EstimateStep({
   ].filter(Boolean) as Chip[];
 
   return (
-    // StepShell reserves pb-14 in the card to clear the pinned Back button,
-    // but this step is terminal and never shows one — reclaim it so the
-    // estimate, chips and tracker fit the fixed panel without scrolling.
-    <StepShell className={`overflow-y-auto ${variant === "card" ? "!pb-6" : ""}`}>
+    // Terminal step: no pinned Back button, so reclaim its reserved space
+    // (!pb-6) and centre the estimate in the fixed panel. Content is kept lean
+    // enough to fit as a single page — no overflow, no scrollbar.
+    <StepShell className={variant === "card" ? "!pb-6 justify-center" : ""}>
       {/* Heading + address */}
       <div className="shrink-0 text-center">
         <h1
@@ -216,8 +157,8 @@ export function EstimateStep({
 
       {/* Estimate card */}
       {/* Card variant is a fixed 544px panel — the vertical rhythm is tightened
-          there so the estimate + measurement chips + tracker all fit without a
-          scrollbar. The full-page variant keeps the roomier spacing. */}
+          there so the estimate + measurement chips fit as a single page. The
+          full-page variant keeps the roomier spacing. */}
       <div
         className={`mx-auto w-full shrink-0 overflow-hidden rounded-3xl border border-line bg-white shadow-[var(--shadow-soft)] ${
           variant === "card" ? "mt-4" : "mt-6"
@@ -378,81 +319,6 @@ export function EstimateStep({
           )}
         </div>
       ) : null}
-
-      {/* What happens next — sleek horizontal tracker */}
-      <div
-        className={`mx-auto w-full max-w-[560px] shrink-0 ${
-          variant === "card" ? "mt-4" : "mt-6"
-        }`}
-      >
-        <p
-          className={`text-center text-[12px] font-semibold uppercase tracking-[0.12em] text-muted ${
-            variant === "card" ? "mb-2.5" : "mb-4"
-          }`}
-        >
-          What happens next
-        </p>
-        <div className="flex items-start">
-          {NEXT_STEPS.map((step, i) => {
-            const leftBrand = i > 0 && Boolean(NEXT_STEPS[i - 1].done);
-            const rightBrand = Boolean(step.done);
-            return (
-              <motion.div
-                key={step.key}
-                className="flex flex-1 flex-col items-center px-1 text-center"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  delay: 0.15 + i * 0.08,
-                  duration: 0.32,
-                  ease: [0.16, 1, 0.3, 1],
-                }}
-              >
-                {/* Node + connectors. Line is solid brand out of the done step,
-                    light grey after. */}
-                <div className="relative flex h-7 w-full items-center justify-center">
-                  {i > 0 ? (
-                    <span
-                      className={`absolute left-0 right-1/2 top-1/2 h-0.5 -translate-y-1/2 ${
-                        leftBrand ? "bg-brand-500" : "bg-line"
-                      }`}
-                    />
-                  ) : null}
-                  {i < NEXT_STEPS.length - 1 ? (
-                    <span
-                      className={`absolute left-1/2 right-0 top-1/2 h-0.5 -translate-y-1/2 ${
-                        rightBrand ? "bg-brand-500" : "bg-line"
-                      }`}
-                    />
-                  ) : null}
-                  <span className="relative">
-                    {step.next ? (
-                      <span className="absolute -inset-1 animate-pulse rounded-full bg-brand-500/20" />
-                    ) : null}
-                    <span
-                      className={`relative grid size-7 place-items-center rounded-full ${
-                        step.done
-                          ? "bg-brand-500 text-white"
-                          : step.next
-                            ? "border-2 border-brand-500 bg-white text-brand-600"
-                            : "border border-line bg-white text-muted"
-                      }`}
-                    >
-                      {step.icon}
-                    </span>
-                  </span>
-                </div>
-                <p className="mt-2 text-[12.5px] font-semibold leading-tight text-ink">
-                  {step.title}
-                </p>
-                <p className="mt-0.5 text-[11px] leading-tight text-muted">
-                  {step.subtitle}
-                </p>
-              </motion.div>
-            );
-          })}
-        </div>
-      </div>
     </StepShell>
   );
 }
