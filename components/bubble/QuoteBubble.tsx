@@ -263,11 +263,18 @@ function QuoteBubbleShell({
               {flow ? (
                 <motion.div
                   key={flow.key}
-                  className="quote-surface fixed inset-0 z-[2147483000] overflow-hidden overscroll-none"
+                  className="quote-surface fixed inset-0 z-[2147483000] overflow-y-auto overscroll-contain"
                   style={{
                     // Solid white — glass lets the host landing page bleed
                     // through the transparent iframe on real iOS Safari.
                     background: "#ffffff",
+                    // The flow is `min-h-dvh`; the page variant has no inner
+                    // scroller, so THIS overlay must scroll or any step taller
+                    // than the viewport (contact form / estimate, or anything
+                    // with the keyboard up) gets clipped and the button becomes
+                    // unreachable. overscroll-contain stops the scroll from
+                    // chaining to the (locked) host page underneath.
+                    WebkitOverflowScrolling: "touch",
                     // Fill the visual viewport including notches once the
                     // host iframe is fullscreen.
                     paddingTop: "env(safe-area-inset-top, 0px)",
