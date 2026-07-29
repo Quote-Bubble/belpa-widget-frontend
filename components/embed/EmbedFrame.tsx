@@ -142,9 +142,19 @@ export function EmbedFrame({ rooferId }: { rooferId: string }) {
       postSoonTimers.clear();
     };
 
-    // data-stage flips (collapsed <-> expanded / overlay).
+    // data-stage flips (collapsed <-> expanded / overlay). Post SYNCHRONOUSLY
+    // here rather than via rAF: on mobile the host must resize the iframe to
+    // fullscreen the instant the flow opens, or the widget's own overlay paints
+    // first and is briefly clipped to the little collapsed slot (the two-stage
+    // "flash"). The other triggers (typing, resize) can stay rAF-batched.
     const widget = document.getElementById("quoter-widget");
-    const stageMo = new MutationObserver(schedulePost);
+    const stageMo = new MutationObserver(() => {
+      if (rafId) {
+        window.cancelAnimationFrame(rafId);
+        rafId = 0;
+      }
+      post();
+    });
     if (widget) {
       stageMo.observe(widget, {
         attributes: true,

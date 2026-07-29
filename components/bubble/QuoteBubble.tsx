@@ -280,10 +280,14 @@ function QuoteBubbleShell({
                     paddingTop: "env(safe-area-inset-top, 0px)",
                     paddingBottom: "env(safe-area-inset-bottom, 0px)",
                   }}
-                  initial={{ opacity: 0, scale: 0.985 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.985 }}
-                  transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                  // Pure fade, no scale-pop. The host needs a frame or two to
+                  // resize the iframe to fullscreen; a fade keeps the overlay
+                  // near-invisible during that window so the brief clip to the
+                  // collapsed slot never shows, whereas a scaling box would.
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
                 >
                   {flowContent}
                 </motion.div>
