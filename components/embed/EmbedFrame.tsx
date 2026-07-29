@@ -100,7 +100,9 @@ export function EmbedFrame({ rooferId }: { rooferId: string }) {
         height = suggestionsBottom();
       } else {
         mode = "collapsed";
-        height = QUOTE_SIZES.collapsed;
+        height = desktopQuery.matches
+          ? QUOTE_SIZES.collapsed
+          : QUOTE_SIZES.collapsedMobile;
       }
 
       // De-dupe identical frames so we don't spam the parent.
@@ -117,7 +119,9 @@ export function EmbedFrame({ rooferId }: { rooferId: string }) {
       if (!postedSizes) {
         postedSizes = true;
         payload.sizes = {
-          collapsed: QUOTE_SIZES.collapsed,
+          collapsed: desktopQuery.matches
+            ? QUOTE_SIZES.collapsed
+            : QUOTE_SIZES.collapsedMobile,
           expanded: QUOTE_SIZES.expanded,
         };
       }
@@ -198,7 +202,13 @@ export function EmbedFrame({ rooferId }: { rooferId: string }) {
     document.addEventListener("focusin", postSoon, true);
     document.addEventListener("focusout", onFocusOut, true);
 
-    desktopQuery.addEventListener("change", schedulePost);
+    const onBreakpointChange = () => {
+      // Re-announce sizes when crossing the mobile breakpoint.
+      postedSizes = false;
+      lastKey = "";
+      schedulePost();
+    };
+    desktopQuery.addEventListener("change", onBreakpointChange);
     // A couple of delayed posts catch late layout (fonts, first paint).
     const t1 = window.setTimeout(schedulePost, 60);
     const t2 = window.setTimeout(schedulePost, 400);
@@ -213,7 +223,7 @@ export function EmbedFrame({ rooferId }: { rooferId: string }) {
       document.removeEventListener("focusin", postSoon, true);
       document.removeEventListener("focusout", onFocusOut, true);
       window.removeEventListener("message", onHostMessage);
-      desktopQuery.removeEventListener("change", schedulePost);
+      desktopQuery.removeEventListener("change", onBreakpointChange);
       if (rafId) window.cancelAnimationFrame(rafId);
       clearPostSoonTimers();
     };

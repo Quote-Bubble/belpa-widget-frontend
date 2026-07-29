@@ -11,10 +11,14 @@ export const QUOTE_SIZES = {
   /** The glass card (.q) itself when collapsed — its natural search-bar
    *  height. */
   collapsedBar: 90,
+  /** Slim collapsed card on phones — less chrome, same control. */
+  collapsedBarMobile: 62,
   /** Full collapsed iframe height = the card + room BELOW it for the card's
    *  drop shadow to render (the card is top-aligned in the iframe). Without
    *  this the iframe clips the shadow at the bar's bottom edge. */
   collapsed: 120,
+  /** Mobile iframe height for the slim bar + a tight shadow room. */
+  collapsedMobile: 82,
   /** The expanded panel card itself — the step body scrolls internally past
    *  this. */
   expandedPanel: 544,

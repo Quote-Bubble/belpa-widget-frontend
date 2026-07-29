@@ -29,7 +29,10 @@ type OpenFlow = {
 };
 
 function useIsDesktop(breakpoint = 640) {
-  const [desktop, setDesktop] = useState(false);
+  const [desktop, setDesktop] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia(`(min-width: ${breakpoint}px)`).matches;
+  });
   useEffect(() => {
     const mq = window.matchMedia(`(min-width: ${breakpoint}px)`);
     const update = () => setDesktop(mq.matches);
@@ -160,7 +163,11 @@ function QuoteBubbleShell({
         data-suggesting="false"
         initial={false}
         animate={{
-          height: expanded ? QUOTE_SIZES.expandedPanel : QUOTE_SIZES.collapsedBar,
+          height: expanded
+            ? QUOTE_SIZES.expandedPanel
+            : isDesktop
+              ? QUOTE_SIZES.collapsedBar
+              : QUOTE_SIZES.collapsedBarMobile,
         }}
         transition={SHELL_TRANSITION}
       >

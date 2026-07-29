@@ -34,19 +34,7 @@ export default async function EmbedPage({
   if (!isValidRooferId(rooferId)) notFound();
 
   return (
-    <div
-      style={{
-        minHeight: "100dvh",
-        display: "flex",
-        alignItems: "flex-start",
-        justifyContent: "center",
-        // Horizontal room so the card's drop shadow isn't clipped at the
-        // iframe's left/right edges (the vertical room comes from the iframe
-        // height reserving space below the card).
-        padding: "0 22px",
-        background: "transparent",
-      }}
-    >
+    <div className="quoter-embed-page">
       <EmbedFrame rooferId={rooferId} />
     </div>
   );
