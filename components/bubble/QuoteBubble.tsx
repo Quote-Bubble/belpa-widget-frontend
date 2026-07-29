@@ -265,9 +265,13 @@ function QuoteBubbleShell({
                   key={flow.key}
                   className="quote-surface fixed inset-0 z-[2147483000] overflow-hidden overscroll-none"
                   style={{
-                    background: "rgba(255,255,255,0.55)",
-                    backdropFilter: "blur(30px) saturate(1.8)",
-                    WebkitBackdropFilter: "blur(30px) saturate(1.8)",
+                    // Solid white — glass lets the host landing page bleed
+                    // through the transparent iframe on real iOS Safari.
+                    background: "#ffffff",
+                    // Fill the visual viewport including notches once the
+                    // host iframe is fullscreen.
+                    paddingTop: "env(safe-area-inset-top, 0px)",
+                    paddingBottom: "env(safe-area-inset-bottom, 0px)",
                   }}
                   initial={{ opacity: 0, scale: 0.985 }}
                   animate={{ opacity: 1, scale: 1 }}

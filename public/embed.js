@@ -84,11 +84,34 @@
     }
 
     var overlaid = false;
+    var lockedY = 0;
+    function lockHostScroll() {
+      lockedY = window.scrollY || window.pageYOffset || 0;
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.position = "fixed";
+      document.body.style.top = "-" + lockedY + "px";
+      document.body.style.left = "0";
+      document.body.style.right = "0";
+      document.body.style.width = "100%";
+      document.body.style.overflow = "hidden";
+    }
+    function unlockHostScroll() {
+      document.documentElement.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.left = "";
+      document.body.style.right = "";
+      document.body.style.width = "";
+      document.body.style.overflow = "";
+      window.scrollTo(0, lockedY);
+    }
     function setOverlay(on) {
       if (on === overlaid) return;
       overlaid = on;
       if (on) {
         // Mobile: pin the iframe to the whole viewport for the flow.
+        // Opaque white so the host page can't ghost through on real iOS
+        // Safari (transparent iframe + glass UI = classic DevTools-only pass).
         frame.style.transition = "none";
         frame.style.position = "fixed";
         frame.style.top = "0";
@@ -97,13 +120,17 @@
         frame.style.height = "100vh"; // fallback first...
         frame.style.height = "100dvh"; // ...then dvh where supported
         frame.style.zIndex = "2147483000";
+        frame.style.background = "#ffffff";
+        lockHostScroll();
       } else {
         frame.style.position = "";
         frame.style.top = "";
         frame.style.left = "";
         frame.style.width = "100%";
         frame.style.zIndex = "";
+        frame.style.background = "transparent";
         frame.style.transition = "height 320ms " + EASE;
+        unlockHostScroll();
       }
     }
 
