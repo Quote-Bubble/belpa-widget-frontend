@@ -261,6 +261,38 @@ body:has(#quoter-widget[data-stage="flow"]) .quoter-bubble-host {
   outline-offset: 2px;
 }
 
+/* Phones: the collapsed bar was too chunky and the "Get quote" button squeezed
+   the input until the placeholder clipped. Slim the padding, shrink the button
+   (drop its arrow), and give the input the freed width. Scoped under 480px so
+   the wider desktop iframe keeps the roomy version. */
+@media (max-width: 480px) {
+  .q {
+    padding: 12px;
+    border-radius: 22px;
+  }
+  .q-search {
+    gap: 8px;
+    padding: 6px 6px 6px 13px;
+    border-radius: 15px;
+  }
+  .q-search-icon {
+    width: 17px;
+    height: 17px;
+  }
+  .q-bare-input,
+  .q-search input {
+    font-size: 15px;
+  }
+  .q-go {
+    gap: 0;
+    padding: 9px 13px;
+    font-size: 13px;
+  }
+  .q-go svg {
+    display: none;
+  }
+}
+
 .q-hint {
   margin: 8px 2px 0;
   font-size: 13px;
