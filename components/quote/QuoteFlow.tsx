@@ -333,12 +333,13 @@ function QuoteFlowBody({
     });
   }, [rooferId]);
 
-  // Mobile (page variant): when a field is focused the on-screen keyboard
-  // covers the lower half of the viewport. Once it has settled, scroll the
-  // focused control to the centre of the (now shorter) overlay so the user
-  // never types blind or loses the submit button behind the keyboard.
+  // Mobile: when a field is focused the on-screen keyboard covers the lower
+  // half of the viewport. Once it has settled, scroll the focused control to
+  // the centre of the (now shorter) body scroller so the user never types blind
+  // or loses the submit button behind the keyboard. Gate on viewport width, not
+  // variant — mobile now uses the card layout too.
   useEffect(() => {
-    if (variant !== "page") return;
+    if (!window.matchMedia("(max-width: 639px)").matches) return;
     const root = bodyRef.current;
     if (!root) return;
     let timer = 0;
@@ -356,7 +357,7 @@ function QuoteFlowBody({
       window.clearTimeout(timer);
       root.removeEventListener("focusin", onFocusIn);
     };
-  }, [variant]);
+  }, []);
 
   const { answers, step } = state;
 
