@@ -333,6 +333,31 @@ function QuoteFlowBody({
     });
   }, [rooferId]);
 
+  // Mobile (page variant): when a field is focused the on-screen keyboard
+  // covers the lower half of the viewport. Once it has settled, scroll the
+  // focused control to the centre of the (now shorter) overlay so the user
+  // never types blind or loses the submit button behind the keyboard.
+  useEffect(() => {
+    if (variant !== "page") return;
+    const root = bodyRef.current;
+    if (!root) return;
+    let timer = 0;
+    const onFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target || !target.matches("input, textarea, select")) return;
+      window.clearTimeout(timer);
+      // Wait out the keyboard-open + visualViewport resize before scrolling.
+      timer = window.setTimeout(() => {
+        target.scrollIntoView({ block: "center", behavior: "smooth" });
+      }, 350);
+    };
+    root.addEventListener("focusin", onFocusIn);
+    return () => {
+      window.clearTimeout(timer);
+      root.removeEventListener("focusin", onFocusIn);
+    };
+  }, [variant]);
+
   const { answers, step } = state;
 
   // Resolve the pin location in the background the moment we know an
