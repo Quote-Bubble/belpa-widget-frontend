@@ -276,32 +276,40 @@ body:has(#quoter-widget[data-stage="flow"]) .quoter-bubble-host {
   outline-offset: 2px;
 }
 
-/* Phones: slim, high-contrast collapsed bar. Height is driven by
-   QUOTE_SIZES.collapsedBarMobile (62) — keep this padding in sync. */
+/* Phones: keep the glass, just slim it. Height = collapsedBarMobile (62). */
 @media (max-width: 640px) {
   .q[data-stage="input"] {
     padding: 6px;
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.94);
-    border: 1px solid rgba(15, 40, 100, 0.16);
+    border-radius: 20px;
+    /* Same glass language as desktop — frosted, not a solid white slab. */
+    background: rgba(255, 255, 255, 0.42);
+    backdrop-filter: blur(28px) saturate(1.85);
+    -webkit-backdrop-filter: blur(28px) saturate(1.85);
+    border: 1px solid rgba(255, 255, 255, 0.72);
     box-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.9) inset,
-      0 1px 2px rgba(16, 24, 40, 0.06),
-      0 12px 24px -12px rgba(23, 60, 160, 0.32);
+      0 1px 0 rgba(255, 255, 255, 0.85) inset,
+      0 2px 8px rgba(16, 24, 40, 0.06),
+      0 14px 30px -12px rgba(23, 60, 160, 0.34);
   }
   .q-search {
     gap: 8px;
     padding: 4px 4px 4px 11px;
-    border-radius: 13px;
-    background: #ffffff;
-    border: 1px solid rgba(15, 40, 100, 0.18);
-    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.95) inset,
+      0 2px 6px rgba(16, 24, 40, 0.05);
+  }
+  .q-search:hover {
+    background: rgba(255, 255, 255, 0.82);
   }
   .q-search:focus-within {
-    border-color: rgba(47, 107, 255, 0.55);
+    border-color: rgba(47, 107, 255, 0.45);
     box-shadow:
-      0 0 0 3px rgba(47, 107, 255, 0.16),
-      0 1px 2px rgba(16, 24, 40, 0.04);
+      0 0 0 3px rgba(47, 107, 255, 0.14),
+      0 1px 0 rgba(255, 255, 255, 0.95) inset,
+      0 2px 6px rgba(16, 24, 40, 0.05);
   }
   .q-search-icon {
     width: 16px;
@@ -316,13 +324,15 @@ body:has(#quoter-widget[data-stage="flow"]) .quoter-bubble-host {
     color: #6b7280;
   }
   .q-go {
-    gap: 0;
-    padding: 8px 12px;
+    gap: 5px;
+    padding: 8px 11px;
     font-size: 13px;
     border-radius: 11px;
   }
   .q-go svg {
-    display: none;
+    display: block;
+    width: 13px;
+    height: 13px;
   }
 }
 
