@@ -511,8 +511,10 @@ export function useMapHeightClass() {
   return variant === "card" ? "h-[320px]" : "h-[380px] sm:h-[440px]";
 }
 
+// 16px minimum: below it iOS Safari zooms the page on focus, which inside the
+// fixed, scroll-locked mobile overlay misaligns the whole flow.
 export const flowInputClass =
-  "w-full rounded-2xl border border-line bg-white px-4 py-3 text-[15.5px] text-ink outline-none transition-shadow placeholder:text-muted/70 focus:border-brand-400 focus:ring-4 focus:ring-brand-500/15";
+  "w-full rounded-2xl border border-line bg-white px-4 py-3 text-[16px] text-ink outline-none transition-shadow placeholder:text-muted/70 focus:border-brand-400 focus:ring-4 focus:ring-brand-500/15";
 
 export const flowLabelClass =
   "mb-1.5 block text-[14px] font-semibold text-ink-soft";
