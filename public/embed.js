@@ -85,6 +85,11 @@
 
     var overlaid = false;
     var lockedY = 0;
+    // Holds the iframe fullscreen while the widget's close fade plays before
+    // shrinking back to the collapsed slot (must match the widget overlay's
+    // exit transition, ~0.26s).
+    var overlayCloseTimer = 0;
+    var OVERLAY_EXIT_MS = 300;
     function lockHostScroll() {
       lockedY = window.scrollY || window.pageYOffset || 0;
       document.documentElement.style.overflow = "hidden";
@@ -154,18 +159,34 @@
       var h = typeof d.height === "number" && d.height > 0 ? d.height : 0;
 
       if (mode === "overlay") {
+        if (overlayCloseTimer) {
+          window.clearTimeout(overlayCloseTimer);
+          overlayCloseTimer = 0;
+        }
         setOverlay(true);
         return;
       }
-      setOverlay(false);
 
       // collapsed / expanded (and the now-unused "suggesting") all just set the
       // iframe to the reported height, falling back to the known fixed sizes.
-      if (mode === "expanded") {
-        frame.style.height = (h || EXPANDED_H) + "px";
-      } else {
-        frame.style.height = (h || COLLAPSED_H) + "px";
+      var targetH =
+        mode === "expanded" ? (h || EXPANDED_H) : (h || COLLAPSED_H);
+
+      // Closing FROM the mobile overlay: keep the iframe fullscreen + host
+      // locked while the widget's overlay fades out, then shrink + unlock in
+      // one step so the closing flow is never clipped back to the slot.
+      if (overlaid) {
+        if (overlayCloseTimer) window.clearTimeout(overlayCloseTimer);
+        overlayCloseTimer = window.setTimeout(function () {
+          overlayCloseTimer = 0;
+          setOverlay(false);
+          frame.style.height = targetH + "px";
+        }, OVERLAY_EXIT_MS);
+        return;
       }
+
+      setOverlay(false);
+      frame.style.height = targetH + "px";
     });
   }
 
