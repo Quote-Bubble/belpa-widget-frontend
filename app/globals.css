@@ -269,11 +269,23 @@ body:has(#quoter-widget[data-stage="flow"]) .quoter-bubble-host {
   .q {
     padding: 12px;
     border-radius: 22px;
+    /* On the white mobile hero the white-on-white glass all but disappears.
+       Give the panel a defined tinted edge and a stronger lift shadow so it
+       reads as a distinct control rather than blending into the page. */
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(23, 60, 160, 0.14);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.8) inset,
+      0 2px 8px rgba(16, 24, 40, 0.08),
+      0 18px 36px -14px rgba(23, 60, 160, 0.4);
   }
   .q-search {
     gap: 8px;
     padding: 6px 6px 6px 13px;
     border-radius: 15px;
+    /* Crisper edge so the input field separates from the panel behind it. */
+    background: #fff;
+    border: 1px solid rgba(16, 24, 40, 0.1);
   }
   .q-search-icon {
     width: 17px;
