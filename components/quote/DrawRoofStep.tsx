@@ -251,6 +251,16 @@ export function DrawCanvas({
   const [closeError, setCloseError] = useState<string | null>(null);
   const mapHeight = useMapHeightClass();
 
+  // Magnifier loupe: a small satellite map that follows the corner you're
+  // dragging, so your finger never hides the roof corner you're aiming at.
+  const [loupe, setLoupe] = useState<LatLng | null>(null);
+  const loupeTimer = useRef<number | null>(null);
+  function showLoupe(center: LatLng) {
+    setLoupe(center);
+    if (loupeTimer.current) window.clearTimeout(loupeTimer.current);
+    loupeTimer.current = window.setTimeout(() => setLoupe(null), 800);
+  }
+
   useEffect(() => {
     if (startDrawingToken === 0) return;
     setDraft([]);
@@ -549,6 +559,28 @@ export function DrawCanvas({
                 lng: point.lng(),
               }));
               if (nextPath && nextPath.length >= 3) {
+                // Point the loupe at whichever corner just moved (or was added).
+                const prev = roof.path;
+                let moved: LatLng | null = null;
+                if (nextPath.length !== prev.length) {
+                  moved =
+                    nextPath.find(
+                      (p, i) =>
+                        !prev[i] || p.lat !== prev[i].lat || p.lng !== prev[i].lng,
+                    ) ?? nextPath[nextPath.length - 1];
+                } else {
+                  let maxD = 0;
+                  for (let i = 0; i < nextPath.length; i++) {
+                    const d =
+                      Math.abs(nextPath[i].lat - prev[i].lat) +
+                      Math.abs(nextPath[i].lng - prev[i].lng);
+                    if (d > maxD) {
+                      maxD = d;
+                      moved = nextPath[i];
+                    }
+                  }
+                }
+                if (moved) showLoupe(moved);
                 updateRoof(roofIndex, { ...roof, path: nextPath });
               }
             }}
@@ -718,6 +750,33 @@ export function DrawCanvas({
           );
         })}
       </Map>
+
+        {/* Magnifier loupe: a zoomed satellite view centred on the corner being
+            dragged, with a crosshair marking exactly where it will land — so
+            the finger never hides the roof corner. pointer-events:none so it
+            never intercepts the drag. */}
+        {loupe ? (
+          <div
+            className="pointer-events-none absolute left-1/2 top-3 z-30 size-[128px] -translate-x-1/2 overflow-hidden rounded-full border-[3px] border-white shadow-[0_10px_30px_-8px_rgba(0,0,0,0.5)]"
+          >
+            <Map
+              mapTypeId="satellite"
+              disableDefaultUI
+              gestureHandling="none"
+              keyboardShortcuts={false}
+              clickableIcons={false}
+              center={loupe}
+              zoom={Math.min(22, zoom + 2)}
+              reuseMaps
+              style={{ width: "100%", height: "100%" }}
+            />
+            <div className="pointer-events-none absolute inset-0">
+              <span className="absolute left-1/2 top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-brand-500/70 shadow" />
+              <span className="absolute left-1/2 top-1/2 h-5 w-px -translate-x-1/2 -translate-y-1/2 bg-white/80" />
+              <span className="absolute left-1/2 top-1/2 h-px w-5 -translate-x-1/2 -translate-y-1/2 bg-white/80" />
+            </div>
+          </div>
+        ) : null}
 
         {variant === "card" && measurementAreaM2 !== null && !drawing && mode === "roof" ? (
           <span className="absolute left-3 top-3 z-10 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-ink shadow-sm backdrop-blur-sm">
