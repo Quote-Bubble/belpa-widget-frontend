@@ -40,6 +40,15 @@ const TICK_CIRCLE_PATH = "M -13 0 a 13 13 0 1 0 26 0 a 13 13 0 1 0 -26 0";
 const SHARE_CIRCLE_PATH = "M -5 0 a 5 5 0 1 0 10 0 a 5 5 0 1 0 -10 0";
 const SNAP_PX = 12;
 const CLOSE_M = 0.8;
+// Fat, grabby handle for dragging a whole side of the box (crop-style).
+const EDGE_HANDLE = {
+  path: CIRCLE_PATH,
+  fillColor: BRAND,
+  fillOpacity: 1,
+  strokeColor: "#ffffff",
+  strokeWeight: 3.5,
+  scale: 2.2,
+};
 const BLUE_DOT_CURSOR =
   'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'14\' height=\'14\' viewBox=\'0 0 14 14\'%3E%3Ccircle cx=\'7\' cy=\'7\' r=\'4\' fill=\'%232f6bff\' stroke=\'white\' stroke-width=\'2\'/%3E%3C/svg%3E") 7 7, crosshair';
 
@@ -316,6 +325,34 @@ export function DrawCanvas({
     });
   }
 
+  function readLL(e: google.maps.MapMouseEvent): LatLng | null {
+    const ll = e.latLng;
+    return ll ? { lat: ll.lat(), lng: ll.lng() } : null;
+  }
+
+  // Crop-style: drag a whole SIDE. Moves both its endpoints, constrained to the
+  // edge's perpendicular so the box stays a clean rectangle — you pull a side
+  // in/out (like cropping a photo), and the long edge line stays visible past
+  // your finger, so nothing is hidden under it.
+  function moveEdge(roofIndex: number, i: number, newMid: LatLng) {
+    const current = roofsRef.current;
+    const roof = current[roofIndex];
+    if (!roof) return;
+    const n = roof.path.length;
+    const a = roof.path[i];
+    const b = roof.path[(i + 1) % n];
+    const horizontal = Math.abs(b.lng - a.lng) > Math.abs(b.lat - a.lat);
+    const curMid = { lat: (a.lat + b.lat) / 2, lng: (a.lng + b.lng) / 2 };
+    const dLat = horizontal ? newMid.lat - curMid.lat : 0;
+    const dLng = horizontal ? 0 : newMid.lng - curMid.lng;
+    const path = roof.path.slice();
+    path[i] = { lat: a.lat + dLat, lng: a.lng + dLng };
+    path[(i + 1) % n] = { lat: b.lat + dLat, lng: b.lng + dLng };
+    const copy = current.slice();
+    copy[roofIndex] = { ...roof, path };
+    onRoofsChange(copy);
+  }
+
   function closeDraft(path: LatLng[]) {
     let closed = path;
     if (closed.length >= 3) {
@@ -528,32 +565,52 @@ export function DrawCanvas({
         onMousemove={handleMouseMove}
         onCameraChanged={handleCameraChanged}
       >
-        {roofs.map((roof, roofIndex) => (
+        {roofs.map((roof) => (
           <Polygon
             key={roof.id}
             ref={(poly) => registerRoofPoly(roof.id, poly)}
             paths={roof.path}
-            editable={inFaces && !drawing}
-            // Let the whole outline be dragged over the roof (not just its
-            // corners). The move is captured on `dragend` via registerRoofPoly.
+            // Reshape via the fat edge handles below (not native handles). The
+            // fill is draggable so the whole box can be moved; captured on
+            // `dragend` via registerRoofPoly.
+            editable={false}
             draggable={inFaces && !drawing}
             geodesic
             fillColor={BRAND}
-            fillOpacity={0.22}
+            fillOpacity={0.2}
             strokeColor={BRAND}
             strokeOpacity={1}
-            strokeWeight={3}
-            onPathsChanged={(paths) => {
-              const nextPath = paths[0]?.map((point) => ({
-                lat: point.lat(),
-                lng: point.lng(),
-              }));
-              if (nextPath && nextPath.length >= 3) {
-                updateRoof(roofIndex, { ...roof, path: nextPath });
-              }
-            }}
+            strokeWeight={6}
           />
         ))}
+
+        {/* Fat, grabby SIDE handles: drag a side to crop the box to your roof.
+            The whole box (fill) drags to move it. */}
+        {inFaces && !drawing
+          ? roofs.flatMap((roof, roofIndex) =>
+              roof.path.map((a, i) => {
+                const b = roof.path[(i + 1) % roof.path.length];
+                const mid = { lat: (a.lat + b.lat) / 2, lng: (a.lng + b.lng) / 2 };
+                return (
+                  <Marker
+                    key={`edge-${roof.id}-${i}`}
+                    position={mid}
+                    draggable
+                    zIndex={20}
+                    icon={EDGE_HANDLE}
+                    onDrag={(e) => {
+                      const ll = readLL(e);
+                      if (ll) moveEdge(roofIndex, i, ll);
+                    }}
+                    onDragEnd={(e) => {
+                      const ll = readLL(e);
+                      if (ll) moveEdge(roofIndex, i, ll);
+                    }}
+                  />
+                );
+              }),
+            )
+          : null}
 
         {/* Shared-vertex markers exist to START a new face by snapping to an
             existing corner. They must only appear while actively drawing —
