@@ -5,6 +5,7 @@ import {
   edgeLengthM,
   haversineM,
   metersPerPixel,
+  offsetByPixels,
   pathLengthM,
   polygonPerimeterM,
 } from "@/lib/geo";
@@ -73,5 +74,51 @@ describe("boundsAreaM2", () => {
 describe("metersPerPixel", () => {
   it("shrinks as zoom increases", () => {
     expect(metersPerPixel(51.5, 20)).toBeLessThan(metersPerPixel(51.5, 18));
+  });
+});
+
+describe("offsetByPixels", () => {
+  const origin = { lat: 51.5, lng: -0.12 };
+  const zoom = 20;
+
+  it("moves north for bearing 0 and south for bearing pi", () => {
+    expect(offsetByPixels(origin, 0, 48, zoom).lat).toBeGreaterThan(origin.lat);
+    expect(offsetByPixels(origin, Math.PI, 48, zoom).lat).toBeLessThan(
+      origin.lat,
+    );
+  });
+
+  it("moves east for bearing pi/2 and west for -pi/2", () => {
+    expect(offsetByPixels(origin, Math.PI / 2, 48, zoom).lng).toBeGreaterThan(
+      origin.lng,
+    );
+    expect(offsetByPixels(origin, -Math.PI / 2, 48, zoom).lng).toBeLessThan(
+      origin.lng,
+    );
+  });
+
+  it("keeps the requested pixel distance on the ground", () => {
+    const moved = offsetByPixels(origin, 0, 48, zoom);
+    const expectedM = 48 * metersPerPixel(origin.lat, zoom);
+    expect(haversineM(origin, moved)).toBeCloseTo(expectedM, 0);
+  });
+
+  it("covers less ground as zoom increases", () => {
+    const near = haversineM(origin, offsetByPixels(origin, 0, 48, 21));
+    const far = haversineM(origin, offsetByPixels(origin, 0, 48, 18));
+    expect(near).toBeLessThan(far);
+  });
+
+  it("round-trips: offsetting back by the opposite bearing returns the origin", () => {
+    const out = offsetByPixels(origin, Math.PI / 3, 48, zoom);
+    const back = offsetByPixels(out, Math.PI / 3 + Math.PI, 48, zoom);
+    expect(back.lat).toBeCloseTo(origin.lat, 6);
+    expect(back.lng).toBeCloseTo(origin.lng, 6);
+  });
+
+  it("is a no-op on longitude at the pole rather than exploding", () => {
+    const polar = offsetByPixels({ lat: 90, lng: 10 }, Math.PI / 2, 48, zoom);
+    expect(Number.isFinite(polar.lng)).toBe(true);
+    expect(polar.lng).toBe(10);
   });
 });

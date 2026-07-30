@@ -66,3 +66,32 @@ export function metersPerPixel(lat: number, zoom: number): number {
 export function midpoint(a: LatLng, b: LatLng): LatLng {
   return { lat: (a.lat + b.lat) / 2, lng: (a.lng + b.lng) / 2 };
 }
+
+/**
+ * Shift a point by a screen-pixel distance along a screen bearing (0 = up/north,
+ * increasing clockwise, so π/2 = right/east).
+ *
+ * Used to convert a marker icon's fixed pixel offset into real coordinates: the
+ * roof-corner handle draws its crosshair a constant number of pixels from the
+ * grab ball, so committing the corner means resolving that same offset back into
+ * a LatLng at the current zoom.
+ */
+export function offsetByPixels(
+  from: LatLng,
+  bearingRad: number,
+  pixels: number,
+  zoom: number,
+): LatLng {
+  const mPerPx = metersPerPixel(from.lat, zoom);
+  const northM = Math.cos(bearingRad) * pixels * mPerPx;
+  const eastM = Math.sin(bearingRad) * pixels * mPerPx;
+  const cosLat = Math.cos(toRad(from.lat));
+  return {
+    lat: from.lat + northM / 111_320,
+    // Guard the pole singularity — cos(lat) → 0 would blow the longitude up.
+    lng:
+      Math.abs(cosLat) < 1e-9
+        ? from.lng
+        : from.lng + eastM / (111_320 * cosLat),
+  };
+}
