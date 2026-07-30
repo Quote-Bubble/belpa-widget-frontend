@@ -289,18 +289,19 @@ export function DrawCanvas({
   // the listener reading current state (it's attached once, on mount).
   const roofsRef = useRef(roofs);
   roofsRef.current = roofs;
-  const polyListeners = useRef<Map<string, google.maps.MapsEventListener>>(
-    new Map(),
-  );
+  // NB: `Map` is the vis.gl component in this file, so use a plain record.
+  const polyListeners = useRef<
+    Record<string, google.maps.MapsEventListener>
+  >({});
   function registerRoofPoly(id: string, poly: google.maps.Polygon | null) {
     const listeners = polyListeners.current;
     if (!poly) {
-      listeners.get(id)?.remove();
-      listeners.delete(id);
+      listeners[id]?.remove();
+      delete listeners[id];
       return;
     }
-    if (listeners.has(id)) return;
-    const listener = poly.addListener("dragend", () => {
+    if (listeners[id]) return;
+    listeners[id] = poly.addListener("dragend", () => {
       const path = poly
         .getPath()
         .getArray()
@@ -313,7 +314,6 @@ export function DrawCanvas({
       next[index] = { ...current[index], path };
       onRoofsChange(next);
     });
-    listeners.set(id, listener);
   }
 
   function closeDraft(path: LatLng[]) {
