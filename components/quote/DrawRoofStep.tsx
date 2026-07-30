@@ -745,7 +745,7 @@ export function DrawCanvas({
         {variant === "card" && phase === "faces" && !drawing && roofs.length > 0 ? (
           <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex justify-center">
             <span className="rounded-full bg-black/45 px-3 py-1.5 text-[12px] font-medium text-white/95 shadow-sm backdrop-blur-sm">
-              {closeError ?? "Drag the box onto your roof, pull the corners to fit, then Done"}
+              {closeError ?? "Pull the corners in to cover just your roof, then Done"}
             </span>
           </div>
         ) : null}
@@ -1026,7 +1026,7 @@ export function DrawRoofStep({
       ? mode === "roofline"
         ? "Draw each section, then press Done."
         : roofs.length > 0
-          ? "Drag the box onto your roof and pull the corners to fit, then Done."
+          ? "Pull the corners in to cover just your roof, then press Done."
           : "Tap corners, then press Done."
       : "Tap edges where water runs off.";
 
