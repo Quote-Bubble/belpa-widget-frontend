@@ -40,14 +40,23 @@ const TICK_CIRCLE_PATH = "M -13 0 a 13 13 0 1 0 26 0 a 13 13 0 1 0 -26 0";
 const SHARE_CIRCLE_PATH = "M -5 0 a 5 5 0 1 0 10 0 a 5 5 0 1 0 -10 0";
 const SNAP_PX = 12;
 const CLOSE_M = 0.8;
-// Fat, grabby handle for dragging a whole side of the box (crop-style).
+// Grabby handles. Sides = solid blue (drag a whole side, crop-style); corners =
+// white (drag a single corner). A touch smaller than fat, still easy to grab.
 const EDGE_HANDLE = {
   path: CIRCLE_PATH,
   fillColor: BRAND,
   fillOpacity: 1,
   strokeColor: "#ffffff",
-  strokeWeight: 3.5,
-  scale: 2.2,
+  strokeWeight: 3,
+  scale: 1.65,
+};
+const CORNER_HANDLE = {
+  path: CIRCLE_PATH,
+  fillColor: "#ffffff",
+  fillOpacity: 1,
+  strokeColor: BRAND,
+  strokeWeight: 3,
+  scale: 1.65,
 };
 const BLUE_DOT_CURSOR =
   'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'14\' height=\'14\' viewBox=\'0 0 14 14\'%3E%3Ccircle cx=\'7\' cy=\'7\' r=\'4\' fill=\'%232f6bff\' stroke=\'white\' stroke-width=\'2\'/%3E%3C/svg%3E") 7 7, crosshair';
@@ -353,6 +362,18 @@ export function DrawCanvas({
     onRoofsChange(copy);
   }
 
+  // Drag a single corner (fine-tune / angled roofs).
+  function moveCorner(roofIndex: number, i: number, next: LatLng) {
+    const current = roofsRef.current;
+    const roof = current[roofIndex];
+    if (!roof) return;
+    const path = roof.path.slice();
+    path[i] = next;
+    const copy = current.slice();
+    copy[roofIndex] = { ...roof, path };
+    onRoofsChange(copy);
+  }
+
   function closeDraft(path: LatLng[]) {
     let closed = path;
     if (closed.length >= 3) {
@@ -609,6 +630,29 @@ export function DrawCanvas({
                   />
                 );
               }),
+            )
+          : null}
+
+        {/* Corner handles: drag a single corner (fine-tune / angled roofs). */}
+        {inFaces && !drawing
+          ? roofs.flatMap((roof, roofIndex) =>
+              roof.path.map((corner, i) => (
+                <Marker
+                  key={`corner-${roof.id}-${i}`}
+                  position={corner}
+                  draggable
+                  zIndex={21}
+                  icon={CORNER_HANDLE}
+                  onDrag={(e) => {
+                    const ll = readLL(e);
+                    if (ll) moveCorner(roofIndex, i, ll);
+                  }}
+                  onDragEnd={(e) => {
+                    const ll = readLL(e);
+                    if (ll) moveCorner(roofIndex, i, ll);
+                  }}
+                />
+              )),
             )
           : null}
 
