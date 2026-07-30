@@ -699,6 +699,16 @@ export function DrawCanvas({
           </div>
         ) : null}
 
+        {/* Seeded/placed outline (not drawing): guide the user to adjust it,
+            since the corners are draggable editable-polygon handles. */}
+        {variant === "card" && phase === "faces" && !drawing && roofs.length > 0 ? (
+          <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex justify-center">
+            <span className="rounded-full bg-black/45 px-3 py-1.5 text-[12px] font-medium text-white/95 shadow-sm backdrop-blur-sm">
+              {closeError ?? "Drag the corners to fit your roof, then Done"}
+            </span>
+          </div>
+        ) : null}
+
         {variant === "page" && (instruction || closeError) ? (
           <div className="pointer-events-none absolute left-3 right-3 top-3 flex justify-center">
             <span className="rounded-full bg-[rgba(10,11,13,0.75)] px-4 py-2 text-[13px] font-semibold text-white backdrop-blur-sm">
@@ -974,7 +984,9 @@ export function DrawRoofStep({
     phase === "faces"
       ? mode === "roofline"
         ? "Draw each section, then press Done."
-        : "Tap corners, then press Done."
+        : roofs.length > 0
+          ? "Drag the corners to fit your roof, then press Done."
+          : "Tap corners, then press Done."
       : "Tap edges where water runs off.";
 
   const info =

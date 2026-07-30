@@ -43,6 +43,7 @@ import {
   createFlowAnswers,
   displayAddress,
   drawApproach,
+  emptyDrawnRoof,
   flowPath,
   measureRoofs,
   measureWholeRoof,
@@ -53,6 +54,7 @@ import {
   type FlowStepId,
   type QuoteFlowAnswers,
 } from "@/lib/quote-flow";
+import { selectBoundsShare } from "@/lib/roof-geometry";
 import type { LatLng, SolarScan } from "@/lib/types";
 import { ADVANCE_DELAY_MS, STEP_TRANSITION } from "@/lib/motion";
 import { track } from "@/lib/analytics";
@@ -158,6 +160,25 @@ function reducer(state: FlowState, action: FlowAction): FlowState {
     case "SCAN_SUCCESS": {
       // Ignore late scan responses after the user has left the locate step.
       if (state.step !== "locate") return state;
+      // For the shared-building outline path (semi / terrace), seed the roof
+      // outline with a best-guess share of the detected building footprint so
+      // the user starts from a rough outline they just drag to fit — instead of
+      // tracing from a blank map. Detached/bungalow auto-measure the whole roof
+      // and never hit this. Only seed once, and never clobber existing work.
+      const seedApproach = drawApproach(
+        state.answers.jobType,
+        state.answers.propertyType,
+      );
+      let seededRoofs = state.answers.roofs;
+      if (seedApproach === "outline" && seededRoofs.length === 0) {
+        const shares = state.answers.propertyType === "terraced" ? 3 : 2;
+        const shareIndex = state.answers.propertyType === "terraced" ? 1 : 0;
+        seededRoofs = [
+          emptyDrawnRoof(
+            selectBoundsShare(action.scan.boundingBox, shares, shareIndex),
+          ),
+        ];
+      }
       const answers = {
         ...state.answers,
         coords: action.coords,
@@ -171,6 +192,7 @@ function reducer(state: FlowState, action: FlowAction): FlowState {
             : action.formatted ?? state.answers.address.formatted,
         },
         scan: action.scan,
+        roofs: seededRoofs,
       };
       return { ...state, answers, step: "draw_roof", direction: 1 };
     }
