@@ -40,24 +40,48 @@ const TICK_CIRCLE_PATH = "M -13 0 a 13 13 0 1 0 26 0 a 13 13 0 1 0 -26 0";
 const SHARE_CIRCLE_PATH = "M -5 0 a 5 5 0 1 0 10 0 a 5 5 0 1 0 -10 0";
 const SNAP_PX = 12;
 const CLOSE_M = 0.8;
-// Grabby handles. Sides = solid blue (drag a whole side, crop-style); corners =
-// white (drag a single corner). A touch smaller than fat, still easy to grab.
-const EDGE_HANDLE = {
-  path: CIRCLE_PATH,
-  fillColor: BRAND,
-  fillOpacity: 1,
-  strokeColor: "#ffffff",
-  strokeWeight: 3,
-  scale: 1.65,
-};
-const CORNER_HANDLE = {
-  path: CIRCLE_PATH,
-  fillColor: "#ffffff",
-  fillOpacity: 1,
-  strokeColor: BRAND,
-  strokeWeight: 3,
-  scale: 1.65,
-};
+
+// Lollipop corner handle: the actual vertex is the small ring at the TOP, and
+// the fat grab ball sits ~LIFT px BELOW it — so the finger grabs the ball while
+// the corner point floats above the fingertip, unoccluded. LIFT is the single
+// knob to tune the float height.
+const PIN_LIFT = 48;
+function cornerPinIcon(): google.maps.Icon | undefined {
+  if (typeof google === "undefined" || !google.maps) return undefined;
+  const w = 46;
+  const h = PIN_LIFT + 16;
+  const tipY = 6;
+  const ballY = h - 14;
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">` +
+    `<circle cx="${w / 2}" cy="${ballY}" r="13" fill="#fff" stroke="${BRAND}" stroke-width="2.5"/>` +
+    `<circle cx="${w / 2}" cy="${ballY}" r="3.5" fill="${BRAND}"/>` +
+    `<line x1="${w / 2}" y1="${tipY + 5}" x2="${w / 2}" y2="${ballY - 13}" stroke="${BRAND}" stroke-width="2.5"/>` +
+    `<circle cx="${w / 2}" cy="${tipY}" r="5" fill="${BRAND}" stroke="#fff" stroke-width="2"/>` +
+    `</svg>`;
+  return {
+    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+    anchor: new google.maps.Point(w / 2, tipY),
+    scaledSize: new google.maps.Size(w, h),
+  };
+}
+
+// Marker drag events can arrive as a raw google event (`.latLng` with lat()/lng()
+// methods) or a vis.gl-wrapped one (`.detail.latLng`); coords may be methods or
+// literals. Read defensively so it works across the library's shapes.
+function readEventLatLng(event: unknown): LatLng | null {
+  const e = event as {
+    latLng?: unknown;
+    detail?: { latLng?: unknown };
+  };
+  const raw = e?.latLng ?? e?.detail?.latLng;
+  if (!raw) return null;
+  const o = raw as { lat: number | (() => number); lng: number | (() => number) };
+  const lat = typeof o.lat === "function" ? o.lat() : o.lat;
+  const lng = typeof o.lng === "function" ? o.lng() : o.lng;
+  if (typeof lat !== "number" || typeof lng !== "number") return null;
+  return { lat, lng };
+}
 const BLUE_DOT_CURSOR =
   'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'14\' height=\'14\' viewBox=\'0 0 14 14\'%3E%3Ccircle cx=\'7\' cy=\'7\' r=\'4\' fill=\'%232f6bff\' stroke=\'white\' stroke-width=\'2\'/%3E%3C/svg%3E") 7 7, crosshair';
 
@@ -334,41 +358,14 @@ export function DrawCanvas({
     });
   }
 
-  function readLL(e: google.maps.MapMouseEvent): LatLng | null {
-    const ll = e.latLng;
-    return ll ? { lat: ll.lat(), lng: ll.lng() } : null;
-  }
-
-  // Crop-style: drag a whole SIDE. Moves both its endpoints, constrained to the
-  // edge's perpendicular so the box stays a clean rectangle — you pull a side
-  // in/out (like cropping a photo), and the long edge line stays visible past
-  // your finger, so nothing is hidden under it.
-  function moveEdge(roofIndex: number, i: number, newMid: LatLng) {
-    const current = roofsRef.current;
-    const roof = current[roofIndex];
-    if (!roof) return;
-    const n = roof.path.length;
-    const a = roof.path[i];
-    const b = roof.path[(i + 1) % n];
-    const horizontal = Math.abs(b.lng - a.lng) > Math.abs(b.lat - a.lat);
-    const curMid = { lat: (a.lat + b.lat) / 2, lng: (a.lng + b.lng) / 2 };
-    const dLat = horizontal ? newMid.lat - curMid.lat : 0;
-    const dLng = horizontal ? 0 : newMid.lng - curMid.lng;
-    const path = roof.path.slice();
-    path[i] = { lat: a.lat + dLat, lng: a.lng + dLng };
-    path[(i + 1) % n] = { lat: b.lat + dLat, lng: b.lng + dLng };
-    const copy = current.slice();
-    copy[roofIndex] = { ...roof, path };
-    onRoofsChange(copy);
-  }
-
-  // Drag a single corner (fine-tune / angled roofs).
-  function moveCorner(roofIndex: number, i: number, next: LatLng) {
+  // Move a single corner (from a lollipop pin drag). Reads current state so the
+  // inline drag handlers never write from a stale snapshot.
+  function moveVertex(roofIndex: number, vertexIndex: number, next: LatLng) {
     const current = roofsRef.current;
     const roof = current[roofIndex];
     if (!roof) return;
     const path = roof.path.slice();
-    path[i] = next;
+    path[vertexIndex] = next;
     const copy = current.slice();
     copy[roofIndex] = { ...roof, path };
     onRoofsChange(copy);
@@ -586,70 +583,51 @@ export function DrawCanvas({
         onMousemove={handleMouseMove}
         onCameraChanged={handleCameraChanged}
       >
-        {roofs.map((roof) => (
+        {roofs.map((roof, roofIndex) => (
           <Polygon
             key={roof.id}
             ref={(poly) => registerRoofPoly(roof.id, poly)}
             paths={roof.path}
-            // Reshape via the fat edge handles below (not native handles). The
-            // fill is draggable so the whole box can be moved; captured on
-            // `dragend` via registerRoofPoly.
+            // Corners are edited via custom lollipop pins (below) so the point
+            // floats above the finger — so native vertex handles are OFF. The
+            // body stays draggable to move the whole box (captured on dragend).
             editable={false}
             draggable={inFaces && !drawing}
             geodesic
             fillColor={BRAND}
-            fillOpacity={0.2}
+            fillOpacity={0.22}
             strokeColor={BRAND}
             strokeOpacity={1}
-            strokeWeight={6}
+            strokeWeight={3}
+            onPathsChanged={(paths) => {
+              const nextPath = paths[0]?.map((point) => ({
+                lat: point.lat(),
+                lng: point.lng(),
+              }));
+              if (nextPath && nextPath.length >= 3) {
+                updateRoof(roofIndex, { ...roof, path: nextPath });
+              }
+            }}
           />
         ))}
 
-        {/* Fat, grabby SIDE handles: drag a side to crop the box to your roof.
-            The whole box (fill) drags to move it. */}
+        {/* Lollipop corner handles: grab the ball, the actual corner point
+            floats ~PIN_LIFT px above your fingertip so the house corner stays
+            visible while you drag. Only in confirm mode (not while drawing a
+            fresh face). */}
         {inFaces && !drawing
           ? roofs.flatMap((roof, roofIndex) =>
-              roof.path.map((a, i) => {
-                const b = roof.path[(i + 1) % roof.path.length];
-                const mid = { lat: (a.lat + b.lat) / 2, lng: (a.lng + b.lng) / 2 };
-                return (
-                  <Marker
-                    key={`edge-${roof.id}-${i}`}
-                    position={mid}
-                    draggable
-                    zIndex={20}
-                    icon={EDGE_HANDLE}
-                    onDrag={(e) => {
-                      const ll = readLL(e);
-                      if (ll) moveEdge(roofIndex, i, ll);
-                    }}
-                    onDragEnd={(e) => {
-                      const ll = readLL(e);
-                      if (ll) moveEdge(roofIndex, i, ll);
-                    }}
-                  />
-                );
-              }),
-            )
-          : null}
-
-        {/* Corner handles: drag a single corner (fine-tune / angled roofs). */}
-        {inFaces && !drawing
-          ? roofs.flatMap((roof, roofIndex) =>
-              roof.path.map((corner, i) => (
+              roof.path.map((point, vertexIndex) => (
                 <Marker
-                  key={`corner-${roof.id}-${i}`}
-                  position={corner}
+                  key={`pin-${roof.id}-${vertexIndex}`}
+                  position={point}
                   draggable
-                  zIndex={21}
-                  icon={CORNER_HANDLE}
-                  onDrag={(e) => {
-                    const ll = readLL(e);
-                    if (ll) moveCorner(roofIndex, i, ll);
-                  }}
-                  onDragEnd={(e) => {
-                    const ll = readLL(e);
-                    if (ll) moveCorner(roofIndex, i, ll);
+                  clickable
+                  zIndex={30}
+                  icon={cornerPinIcon()}
+                  onDragEnd={(event) => {
+                    const next = readEventLatLng(event);
+                    if (next) moveVertex(roofIndex, vertexIndex, next);
                   }}
                 />
               )),
