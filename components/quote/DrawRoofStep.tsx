@@ -41,29 +41,124 @@ const SHARE_CIRCLE_PATH = "M -5 0 a 5 5 0 1 0 10 0 a 5 5 0 1 0 -10 0";
 const SNAP_PX = 12;
 const CLOSE_M = 0.8;
 
-// Lollipop corner handle: the actual vertex is the small ring at the TOP, and
-// the fat grab ball sits ~LIFT px BELOW it — so the finger grabs the ball while
-// the corner point floats above the fingertip, unoccluded. LIFT is the single
-// knob to tune the float height.
+/**
+ * Corner handles.
+ *
+ * The lift — keeping a fingertip off the roof corner you're placing — comes
+ * from the icon's ANCHOR sitting on the crosshair tip while the grab ball is
+ * drawn PIN_LIFT px away from it. Google captures the pointer→anchor offset at
+ * mousedown and preserves it for the whole drag, so pressing the ball keeps the
+ * tip floating clear of the finger.
+ *
+ * That only works because the ball is visibly offset BEFORE the press. A handle
+ * that is just a dot on the corner at rest cannot lift: pressing it captures a
+ * ~zero offset, so the corner stays pinned under the fingertip no matter what
+ * artwork is swapped in afterwards. Hence the ball is always present, and the
+ * decluttering happens by collapsing every OTHER corner to a bare crosshair for
+ * the duration of a drag (see the handle block in the map below).
+ */
 const PIN_LIFT = 48;
-function cornerPinIcon(): google.maps.Icon | undefined {
+const BALL_R = 14;
+const PIN_CANVAS = 2 * (PIN_LIFT + BALL_R + 5); // tip dead centre, ball anywhere
+const TIP_CANVAS = 30;
+
+/**
+ * Screen-space bearing from a face's centre out through `point`, 0 = up/north.
+ * Longitude is scaled by cos(lat) so this matches the angle actually rendered
+ * rather than the angle in raw degrees.
+ */
+function outwardBearing(point: LatLng, centre: LatLng): number {
+  const dx = (point.lng - centre.lng) * Math.cos((point.lat * Math.PI) / 180);
+  const dy = point.lat - centre.lat;
+  // Vertex sitting on the centroid (degenerate face): fall back to pointing
+  // down, which is where the handle used to live unconditionally.
+  if (Math.abs(dx) < 1e-12 && Math.abs(dy) < 1e-12) return Math.PI;
+  return Math.atan2(dx, dy);
+}
+
+/** The corner point itself. A crosshair reads as "this exact spot" in a way a
+ *  filled dot does not, and the white underlay keeps it legible over both pale
+ *  roofs and shadow. */
+function crosshairMarkup(cx: number, cy: number): string {
+  const t0 = 7;
+  const t1 = 10.5;
+  const ticks =
+    `M ${cx - t1} ${cy} H ${cx - t0} M ${cx + t0} ${cy} H ${cx + t1} ` +
+    `M ${cx} ${cy - t1} V ${cy - t0} M ${cx} ${cy + t0} V ${cy + t1}`;
+  return (
+    `<circle cx="${cx}" cy="${cy}" r="6.5" fill="#fff" fill-opacity="0.92"/>` +
+    `<path d="${ticks}" stroke="#fff" stroke-width="3.4" stroke-opacity="0.85" stroke-linecap="round" fill="none"/>` +
+    `<path d="${ticks}" stroke="${BRAND}" stroke-width="1.8" stroke-linecap="round" fill="none"/>` +
+    `<circle cx="${cx}" cy="${cy}" r="5" fill="none" stroke="${BRAND}" stroke-width="2.4"/>` +
+    `<circle cx="${cx}" cy="${cy}" r="1.7" fill="${BRAND}"/>`
+  );
+}
+
+// vis.gl calls marker.setIcon() whenever the icon prop's identity changes, and
+// doing that mid-drag can jar the captured grab offset. Cache by 5° bucket so
+// re-renders (and the dragstart re-render in particular) reuse one object.
+// A plain record, not a Map — `Map` is vis.gl's component import in this file.
+const pinIconCache: Record<number, google.maps.Icon> = {};
+let tipIconCache: google.maps.Icon | undefined;
+
+/** Grab ball + dashed tether + crosshair tip, with the ball pushed OUTWARD from
+ *  the face centre so it never covers the roof or collides with its neighbour. */
+function cornerPinIcon(bearingRad: number): google.maps.Icon | undefined {
   if (typeof google === "undefined" || !google.maps) return undefined;
-  const w = 46;
-  const h = PIN_LIFT + 16;
-  const tipY = 6;
-  const ballY = h - 14;
+  const bucket = Math.round((bearingRad * 180) / Math.PI / 5) * 5;
+  const cached = pinIconCache[bucket];
+  if (cached) return cached;
+
+  const s = PIN_CANVAS;
+  const c = s / 2;
+  const rad = (bucket * Math.PI) / 180;
+  const ux = Math.sin(rad);
+  const uy = -Math.cos(rad);
+  const bx = c + ux * PIN_LIFT;
+  const by = c + uy * PIN_LIFT;
+  // Stem stops clear of both ends so it reads as "handle → point" rather than
+  // one solid lollipop with two ambiguous ends.
+  const sx = c + ux * 12;
+  const sy = c + uy * 12;
+  const ex = c + ux * (PIN_LIFT - BALL_R);
+  const ey = c + uy * (PIN_LIFT - BALL_R);
+
   const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">` +
-    `<circle cx="${w / 2}" cy="${ballY}" r="13" fill="#fff" stroke="${BRAND}" stroke-width="2.5"/>` +
-    `<circle cx="${w / 2}" cy="${ballY}" r="3.5" fill="${BRAND}"/>` +
-    `<line x1="${w / 2}" y1="${tipY + 5}" x2="${w / 2}" y2="${ballY - 13}" stroke="${BRAND}" stroke-width="2.5"/>` +
-    `<circle cx="${w / 2}" cy="${tipY}" r="5" fill="${BRAND}" stroke="#fff" stroke-width="2"/>` +
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 ${s} ${s}">` +
+    `<line x1="${sx}" y1="${sy}" x2="${ex}" y2="${ey}" stroke="#fff" stroke-width="4" stroke-opacity="0.5" stroke-linecap="round"/>` +
+    `<line x1="${sx}" y1="${sy}" x2="${ex}" y2="${ey}" stroke="${BRAND}" stroke-width="2" stroke-opacity="0.6" stroke-dasharray="4 3.5" stroke-linecap="round"/>` +
+    // Translucent, knurled ball: obviously a grip. A solid centre dot read as a
+    // second candidate "point", which was half the which-end-is-it confusion.
+    `<circle cx="${bx}" cy="${by}" r="${BALL_R}" fill="#fff" fill-opacity="0.7" stroke="${BRAND}" stroke-opacity="0.75" stroke-width="2"/>` +
+    `<circle cx="${bx}" cy="${by}" r="${BALL_R - 5}" fill="none" stroke="${BRAND}" stroke-opacity="0.45" stroke-width="1.4" stroke-dasharray="3 2.5"/>` +
+    // Tip last so it always sits above the tether.
+    crosshairMarkup(c, c) +
     `</svg>`;
-  return {
+
+  const icon: google.maps.Icon = {
     url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-    anchor: new google.maps.Point(w / 2, tipY),
-    scaledSize: new google.maps.Size(w, h),
+    anchor: new google.maps.Point(c, c),
+    scaledSize: new google.maps.Size(s, s),
   };
+  pinIconCache[bucket] = icon;
+  return icon;
+}
+
+/** Bare corner, no handle — what the other corners collapse to during a drag. */
+function cornerTipIcon(): google.maps.Icon | undefined {
+  if (typeof google === "undefined" || !google.maps) return undefined;
+  if (tipIconCache) return tipIconCache;
+  const c = TIP_CANVAS / 2;
+  tipIconCache = {
+    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${TIP_CANVAS}" height="${TIP_CANVAS}" viewBox="0 0 ${TIP_CANVAS} ${TIP_CANVAS}">` +
+        crosshairMarkup(c, c) +
+        `</svg>`,
+    )}`,
+    anchor: new google.maps.Point(c, c),
+    scaledSize: new google.maps.Size(TIP_CANVAS, TIP_CANVAS),
+  };
+  return tipIconCache;
 }
 
 // Marker drag events can arrive as a raw google event (`.latLng` with lat()/lng()
@@ -291,6 +386,12 @@ export function DrawCanvas({
   const [obstructionDraft, setObstructionDraft] =
     useState<ObstructionDraft | null>(null);
   const [closeError, setCloseError] = useState<string | null>(null);
+  // Which corner is mid-drag, so every other one can drop its handle and leave a
+  // single unambiguous lollipop on screen.
+  const [dragCorner, setDragCorner] = useState<{
+    roofIndex: number;
+    vertexIndex: number;
+  } | null>(null);
   const mapHeight = useMapHeightClass();
 
   useEffect(() => {
@@ -611,27 +712,49 @@ export function DrawCanvas({
           />
         ))}
 
-        {/* Lollipop corner handles: grab the ball, the actual corner point
-            floats ~PIN_LIFT px above your fingertip so the house corner stays
-            visible while you drag. Only in confirm mode (not while drawing a
-            fresh face). */}
+        {/* Corner handles. Grab the ball and the crosshair floats ~PIN_LIFT px
+            clear of your fingertip, so the house corner stays visible while you
+            place it. The ball points away from the face centre, keeping it off
+            the roof and away from its neighbours. While one corner is being
+            dragged the rest collapse to bare crosshairs, so there is only ever
+            one handle on screen at the moment it matters. Confirm mode only —
+            not while drawing a fresh face. */}
         {inFaces && !drawing
-          ? roofs.flatMap((roof, roofIndex) =>
-              roof.path.map((point, vertexIndex) => (
-                <Marker
-                  key={`pin-${roof.id}-${vertexIndex}`}
-                  position={point}
-                  draggable
-                  clickable
-                  zIndex={30}
-                  icon={cornerPinIcon()}
-                  onDragEnd={(event) => {
-                    const next = readEventLatLng(event);
-                    if (next) moveVertex(roofIndex, vertexIndex, next);
-                  }}
-                />
-              )),
-            )
+          ? roofs.flatMap((roof, roofIndex) => {
+              const centre = polygonCentroid(roof.path);
+              return roof.path.map((point, vertexIndex) => {
+                const resting =
+                  dragCorner !== null &&
+                  !(
+                    dragCorner.roofIndex === roofIndex &&
+                    dragCorner.vertexIndex === vertexIndex
+                  );
+                return (
+                  <Marker
+                    key={`pin-${roof.id}-${vertexIndex}`}
+                    position={point}
+                    // Inert while another corner is mid-drag: a second touch
+                    // landing on a handle would otherwise start a rival drag.
+                    draggable={!resting}
+                    clickable={!resting}
+                    zIndex={resting ? 20 : 30}
+                    icon={
+                      resting
+                        ? cornerTipIcon()
+                        : cornerPinIcon(outwardBearing(point, centre))
+                    }
+                    onDragStart={() =>
+                      setDragCorner({ roofIndex, vertexIndex })
+                    }
+                    onDragEnd={(event) => {
+                      setDragCorner(null);
+                      const next = readEventLatLng(event);
+                      if (next) moveVertex(roofIndex, vertexIndex, next);
+                    }}
+                  />
+                );
+              });
+            })
           : null}
 
         {/* Shared-vertex markers exist to START a new face by snapping to an
