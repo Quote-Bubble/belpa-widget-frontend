@@ -449,6 +449,30 @@ describe("buildLeadPayload", () => {
     expect(Number.isNaN(Date.parse(payload.timestamp))).toBe(false);
   });
 
+  // The dashboard reopens the roof on this framing, so it has to survive the
+  // trip rather than being inferred from the polygon later.
+  it("carries the map framing the customer drew on", () => {
+    const answers = measuredAnswers();
+    const measurement = measureRoofs(answers.scan!, answers.roofs);
+    const view = { center: { lat: 51.5014, lng: -0.1419 }, zoom: 20 };
+    const payload = buildLeadPayload(
+      answers,
+      measurement,
+      computeFlowQuote(answers, measurement),
+      "estimate_viewed",
+      view,
+    );
+
+    expect(payload.mapView).toEqual(view);
+  });
+
+  it("stores a null map view when the flow never showed a map", () => {
+    const answers = measuredAnswers();
+    const payload = buildLeadPayload(answers, null, null, "estimate_viewed");
+
+    expect(payload.mapView).toBeNull();
+  });
+
   it("builds a manual-consultation lead for non-quotable jobs", () => {
     const answers = createFlowAnswers("roofer-9", {
       line: "4 Elm Grove",

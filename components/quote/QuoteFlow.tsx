@@ -593,6 +593,7 @@ function QuoteFlowBody({
       measurement,
       computeFlowQuote(merged, measurement),
       intent,
+      mapView,
     );
     // Anti-spam signals travel alongside the payload; the backend silently
     // drops obvious bots (honeypot filled, or submitted implausibly fast).
@@ -639,6 +640,7 @@ function QuoteFlowBody({
       measurement,
       computeFlowQuote(answers, measurement),
       "quote_requested",
+      mapView,
     );
     const body = {
       ...payload,
