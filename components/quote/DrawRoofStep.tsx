@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Map,
   Marker,
@@ -282,6 +282,40 @@ export function DrawCanvas({
     onRoofsChange(copy);
   }
 
+  // Whole-polygon drag ("move the box over the roof") is captured off the live
+  // google.maps.Polygon on `dragend`, not via onPathsChanged — dragging the
+  // polygon body doesn't fire the per-vertex path events onPathsChanged relies
+  // on, so without this the box would snap back after a move. A roofsRef keeps
+  // the listener reading current state (it's attached once, on mount).
+  const roofsRef = useRef(roofs);
+  roofsRef.current = roofs;
+  const polyListeners = useRef<Map<string, google.maps.MapsEventListener>>(
+    new Map(),
+  );
+  function registerRoofPoly(id: string, poly: google.maps.Polygon | null) {
+    const listeners = polyListeners.current;
+    if (!poly) {
+      listeners.get(id)?.remove();
+      listeners.delete(id);
+      return;
+    }
+    if (listeners.has(id)) return;
+    const listener = poly.addListener("dragend", () => {
+      const path = poly
+        .getPath()
+        .getArray()
+        .map((ll) => ({ lat: ll.lat(), lng: ll.lng() }));
+      if (path.length < 3) return;
+      const current = roofsRef.current;
+      const index = current.findIndex((roof) => roof.id === id);
+      if (index < 0) return;
+      const next = current.slice();
+      next[index] = { ...current[index], path };
+      onRoofsChange(next);
+    });
+    listeners.set(id, listener);
+  }
+
   function closeDraft(path: LatLng[]) {
     let closed = path;
     if (closed.length >= 3) {
@@ -497,9 +531,12 @@ export function DrawCanvas({
         {roofs.map((roof, roofIndex) => (
           <Polygon
             key={roof.id}
+            ref={(poly) => registerRoofPoly(roof.id, poly)}
             paths={roof.path}
             editable={inFaces && !drawing}
-            draggable={false}
+            // Let the whole outline be dragged over the roof (not just its
+            // corners). The move is captured on `dragend` via registerRoofPoly.
+            draggable={inFaces && !drawing}
             geodesic
             fillColor={BRAND}
             fillOpacity={0.22}
@@ -518,7 +555,11 @@ export function DrawCanvas({
           />
         ))}
 
-        {inFaces
+        {/* Shared-vertex markers exist to START a new face by snapping to an
+            existing corner. They must only appear while actively drawing —
+            otherwise they sit on top of the editable polygon's corner handles
+            and every attempt to drag a corner starts a new face instead. */}
+        {inFaces && drawing
           ? roofs.flatMap((roof, roofIndex) =>
               roof.path.map((point, pointIndex) => (
                 <Marker
@@ -704,7 +745,7 @@ export function DrawCanvas({
         {variant === "card" && phase === "faces" && !drawing && roofs.length > 0 ? (
           <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex justify-center">
             <span className="rounded-full bg-black/45 px-3 py-1.5 text-[12px] font-medium text-white/95 shadow-sm backdrop-blur-sm">
-              {closeError ?? "Drag the corners to fit your roof, then Done"}
+              {closeError ?? "Drag the box onto your roof, pull the corners to fit, then Done"}
             </span>
           </div>
         ) : null}
@@ -985,7 +1026,7 @@ export function DrawRoofStep({
       ? mode === "roofline"
         ? "Draw each section, then press Done."
         : roofs.length > 0
-          ? "Drag the corners to fit your roof, then press Done."
+          ? "Drag the box onto your roof and pull the corners to fit, then Done."
           : "Tap corners, then press Done."
       : "Tap edges where water runs off.";
 
