@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import {
   Map,
   Marker,
@@ -189,6 +189,67 @@ function cornerTipIcon(): google.maps.Icon | undefined {
   };
   return tipIconCache;
 }
+
+/**
+ * One editable corner handle, memoised.
+ *
+ * The whole point of the memo is drag smoothness. Every `onDrag` frame the
+ * parent calls setState (to rubber-band the polygon), which re-renders the map
+ * subtree. vis.gl's <Marker> re-applies *all* options on every render —
+ * `marker.setOptions({ position, ... })` — with no draggable guard, so a plain
+ * re-render mid-drag re-sets the marker's position to its resting corner while
+ * Google is mid-drag moving it under the thumb. The two fight frame-by-frame
+ * and the lollipop jitters. Skipping the marker's re-render (props are
+ * referentially stable during a drag — position, icon and the callbacks below
+ * never change until release) leaves Google's native drag uncontested, so the
+ * ball tracks the thumb cleanly while the polygon still rubber-bands.
+ */
+type CornerMarkerProps = {
+  position: LatLng;
+  roofIndex: number;
+  vertexIndex: number;
+  draggable: boolean;
+  clickable: boolean;
+  zIndex: number;
+  icon: google.maps.Icon | undefined;
+  onCornerDragStart: (
+    roofIndex: number,
+    vertexIndex: number,
+    point: LatLng,
+  ) => void;
+  onCornerDrag: (event: unknown) => void;
+  onCornerDragEnd: (
+    event: unknown,
+    roofIndex: number,
+    vertexIndex: number,
+  ) => void;
+};
+
+const CornerMarker = memo(function CornerMarker({
+  position,
+  roofIndex,
+  vertexIndex,
+  draggable,
+  clickable,
+  zIndex,
+  icon,
+  onCornerDragStart,
+  onCornerDrag,
+  onCornerDragEnd,
+}: CornerMarkerProps) {
+  return (
+    <Marker
+      position={position}
+      draggable={draggable}
+      clickable={clickable}
+      zIndex={zIndex}
+      icon={icon}
+      onDragStart={() => onCornerDragStart(roofIndex, vertexIndex, position)}
+      onDrag={(event) => onCornerDrag(event)}
+      onDragEnd={(event) => onCornerDragEnd(event, roofIndex, vertexIndex)}
+    />
+  );
+});
 
 // Marker drag events can arrive as a raw google event (`.latLng` with lat()/lng()
 // methods) or a vis.gl-wrapped one (`.detail.latLng`); coords may be methods or
@@ -512,18 +573,62 @@ export function DrawCanvas({
     return path;
   }
 
-  // Move a single corner (from a handle drag). Reads current state so the
-  // inline drag handlers never write from a stale snapshot.
-  function moveVertex(roofIndex: number, vertexIndex: number, next: LatLng) {
-    const current = roofsRef.current;
-    const roof = current[roofIndex];
-    if (!roof) return;
-    const path = roof.path.slice();
-    path[vertexIndex] = next;
-    const copy = current.slice();
-    copy[roofIndex] = { ...roof, path };
-    onRoofsChange(copy);
-  }
+  // Corner-drag handlers are stable (useCallback with no deps) so the memoised
+  // CornerMarker never re-renders mid-drag — see CornerMarker for why that's
+  // what stops the jitter. They read live values off refs, never a render
+  // snapshot: zoom and onRoofsChange as refs, roofs via the existing roofsRef.
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
+  const onRoofsChangeRef = useRef(onRoofsChange);
+  onRoofsChangeRef.current = onRoofsChange;
+
+  // Grab-start: freeze the lift bearing and zoom for the drag, then swap the
+  // corner's icon to the grab lollipop. Google only fires this once the pointer
+  // actually moves, so a plain tap leaves the corner alone.
+  const handleCornerDragStart = useCallback(
+    (roofIndex: number, vertexIndex: number, point: LatLng) => {
+      const roof = roofsRef.current[roofIndex];
+      if (!roof) return;
+      const bearing = liftBearing(point, polygonCentroid(roof.path));
+      dragSessionRef.current = { bearing, zoom: zoomRef.current };
+      setDragCorner({ roofIndex, vertexIndex, bearing, preview: null });
+    },
+    [],
+  );
+
+  // Per-frame: the drag reports where the BALL is; the corner is PIN_LIFT px
+  // along the frozen bearing from it. Only the polygon preview reads this.
+  const handleCornerDrag = useCallback((event: unknown) => {
+    const session = dragSessionRef.current;
+    const ball = readEventLatLng(event);
+    if (!session || !ball) return;
+    const corner = offsetByPixels(ball, session.bearing, PIN_LIFT, session.zoom);
+    setDragCorner((current) =>
+      current ? { ...current, preview: corner } : current,
+    );
+  }, []);
+
+  // Release: commit the resolved corner into roofs. Reads roofsRef so it never
+  // writes from a stale snapshot.
+  const handleCornerDragEnd = useCallback(
+    (event: unknown, roofIndex: number, vertexIndex: number) => {
+      const session = dragSessionRef.current;
+      dragSessionRef.current = null;
+      setDragCorner(null);
+      const ball = readEventLatLng(event);
+      if (!session || !ball) return;
+      const next = offsetByPixels(ball, session.bearing, PIN_LIFT, session.zoom);
+      const current = roofsRef.current;
+      const roof = current[roofIndex];
+      if (!roof) return;
+      const path = roof.path.slice();
+      path[vertexIndex] = next;
+      const copy = current.slice();
+      copy[roofIndex] = { ...roof, path };
+      onRoofsChangeRef.current(copy);
+    },
+    [],
+  );
 
   function closeDraft(path: LatLng[]) {
     let closed = path;
@@ -773,22 +878,23 @@ export function DrawCanvas({
             what does the work. Confirm mode only, not while drawing a fresh
             face. */}
         {inFaces && !drawing
-          ? roofs.flatMap((roof, roofIndex) => {
-              const centre = polygonCentroid(roof.path);
-              return roof.path.map((point, vertexIndex) => {
+          ? roofs.flatMap((roof, roofIndex) =>
+              roof.path.map((point, vertexIndex) => {
                 const dragging =
                   dragCorner !== null &&
                   dragCorner.roofIndex === roofIndex &&
                   dragCorner.vertexIndex === vertexIndex;
                 const otherDragging = dragCorner !== null && !dragging;
                 return (
-                  <Marker
+                  <CornerMarker
                     key={`pin-${roof.id}-${vertexIndex}`}
-                    // Deliberately NOT the preview while dragging: Google owns
-                    // the marker's position for the duration, and feeding it a
-                    // controlled value every frame would fight the drag. State
-                    // is committed once, on release.
+                    // Resting position. Google owns it for the duration of a
+                    // drag; state is committed once, on release. During the
+                    // drag CornerMarker is memoised so this never re-applies —
+                    // that's what keeps the ball from fighting the drag.
                     position={point}
+                    roofIndex={roofIndex}
+                    vertexIndex={vertexIndex}
                     // Inert while a different corner is mid-drag, so a stray
                     // second touch can't start a rival drag.
                     draggable={!otherDragging}
@@ -799,53 +905,13 @@ export function DrawCanvas({
                         ? cornerGrabIcon(dragCorner.bearing)
                         : cornerTipIcon()
                     }
-                    onDragStart={() => {
-                      const bearing = liftBearing(point, centre);
-                      dragSessionRef.current = { bearing, zoom };
-                      setDragCorner({
-                        roofIndex,
-                        vertexIndex,
-                        bearing,
-                        preview: null,
-                      });
-                    }}
-                    onDrag={(event) => {
-                      const session = dragSessionRef.current;
-                      const ball = readEventLatLng(event);
-                      if (!session || !ball) return;
-                      const corner = offsetByPixels(
-                        ball,
-                        session.bearing,
-                        PIN_LIFT,
-                        session.zoom,
-                      );
-                      setDragCorner((current) =>
-                        current ? { ...current, preview: corner } : current,
-                      );
-                    }}
-                    onDragEnd={(event) => {
-                      const session = dragSessionRef.current;
-                      dragSessionRef.current = null;
-                      setDragCorner(null);
-                      const ball = readEventLatLng(event);
-                      if (!session || !ball) return;
-                      // The drag reports where the BALL landed; the corner is
-                      // PIN_LIFT px along the frozen bearing from there.
-                      moveVertex(
-                        roofIndex,
-                        vertexIndex,
-                        offsetByPixels(
-                          ball,
-                          session.bearing,
-                          PIN_LIFT,
-                          session.zoom,
-                        ),
-                      );
-                    }}
+                    onCornerDragStart={handleCornerDragStart}
+                    onCornerDrag={handleCornerDrag}
+                    onCornerDragEnd={handleCornerDragEnd}
                   />
                 );
-              });
-            })
+              }),
+            )
           : null}
 
         {/* Shared-vertex markers exist to START a new face by snapping to an
