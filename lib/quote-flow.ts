@@ -598,6 +598,9 @@ export function buildLeadPayload(
   measurement: CombinedMeasurement | null,
   quote: QuoteResult | null,
   intent: LeadPayload["intent"],
+  /** Map framing at submit time. Optional so existing callers/tests that
+   *  never showed a map keep working — it stores as null. */
+  mapView: LeadPayload["mapView"] = null,
 ): LeadPayload {
   const path = flowPath(answers);
   const primaryRoofPath =
@@ -638,6 +641,7 @@ export function buildLeadPayload(
       imageryDate: answers.scan?.imageryDate ?? null,
     },
     polygonCoords: primaryRoofPath,
+    mapView,
     conditionAnswer: answers.condition,
     conditionFlagged: answers.condition === "yes",
     material: answers.material,

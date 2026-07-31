@@ -213,6 +213,12 @@ export type LeadPayload = {
     imageryDate: string | null;
   };
   polygonCoords: LatLng[] | null;
+  /**
+   * Centre + zoom of the satellite map the customer drew on, so the roofer's
+   * dashboard can reopen the roof on the same framing rather than inferring
+   * one from the polygon. Null when the flow never showed a map.
+   */
+  mapView: { center: LatLng; zoom: number } | null;
   conditionAnswer: ConditionAnswer | null;
   conditionFlagged: boolean;
   material: Material | null;
