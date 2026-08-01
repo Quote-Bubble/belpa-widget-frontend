@@ -3,133 +3,137 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Ridgeway Roofing — inline widget demo</title>
+    <title>Kingfisher Roofing — Modern roofing, instant quotes</title>
     <style>
       :root {
-        --ink: #142033;
-        --muted: #5a6678;
-        --paper: #f3f6fa;
-        --line: #d7e0ec;
-        --accent: #1f57f0;
+        --ink: #0c1830;
+        --blue: #1d4ed8;
+        --blue-soft: #eaf0ff;
+        --sky: #f4f8ff;
+        --line: #dde6f5;
+        --muted: #57637a;
       }
       * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
       body {
         margin: 0;
-        min-height: 100dvh;
         font-family: "Segoe UI", ui-sans-serif, system-ui, sans-serif;
         color: var(--ink);
         background:
-          radial-gradient(120% 80% at 10% -10%, #dbe7ff 0%, transparent 55%),
-          var(--paper);
-      }
-      .wrap {
-        width: min(920px, calc(100% - 2rem));
-        margin: 0 auto;
-        padding: 2.5rem 0 4rem;
-      }
-      .badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.45rem;
-        margin: 0 0 1.25rem;
-        padding: 0.35rem 0.7rem;
-        border: 1px solid var(--line);
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.75);
-        color: var(--muted);
-        font-size: 0.75rem;
-        font-weight: 600;
-        letter-spacing: 0.02em;
-      }
-      .badge i {
-        width: 0.45rem;
-        height: 0.45rem;
-        border-radius: 50%;
-        background: #22c55e;
-      }
-      h1 {
-        margin: 0;
-        max-width: 16ch;
-        font-size: clamp(2.2rem, 6vw, 3.4rem);
-        font-weight: 700;
-        letter-spacing: -0.045em;
-        line-height: 1.05;
-      }
-      .lede {
-        margin: 1rem 0 0;
-        max-width: 42ch;
-        color: var(--muted);
-        font-size: 1.05rem;
+          radial-gradient(120% 60% at 100% 0%, #e5edff 0%, transparent 55%),
+          var(--sky);
         line-height: 1.5;
       }
-      .embed-slot {
-        margin-top: 2.25rem;
-      }
-      .after {
-        margin-top: 2.75rem;
-        padding-top: 1.5rem;
-        border-top: 1px dashed var(--line);
-        color: var(--muted);
-        font-size: 0.95rem;
-        line-height: 1.55;
-      }
-      .card {
-        margin-top: 1.5rem;
-        padding: 1.25rem 1.35rem;
-        border: 1px solid var(--line);
-        border-radius: 1rem;
-        background: rgba(255, 255, 255, 0.72);
-      }
-      .card h2 {
-        margin: 0 0 0.5rem;
-        font-size: 0.95rem;
-        font-weight: 700;
-        letter-spacing: -0.02em;
-      }
-      .card p { margin: 0; color: var(--muted); font-size: 0.875rem; line-height: 1.5; }
-      .card code {
-        display: block;
-        margin-top: 0.85rem;
-        padding: 0.9rem 1rem;
-        border-radius: 0.75rem;
-        background: #0f172a;
-        color: #e2e8f0;
-        overflow-x: auto;
-        white-space: pre;
-        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-        font-size: 0.78rem;
-      }
+      a { color: inherit; }
+      .wrap { width: min(1140px, calc(100% - 2.5rem)); margin: 0 auto; }
+
+      header.nav { position: sticky; top: 0; z-index: 20; background: rgba(244, 248, 255, 0.82); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+      .nav-inner { display: flex; align-items: center; justify-content: space-between; padding: 0.9rem 0; }
+      .brand { display: flex; align-items: center; gap: 0.55rem; font-weight: 800; letter-spacing: -0.02em; font-size: 1.15rem; }
+      .brand .mark { width: 2rem; height: 2rem; border-radius: 999px; background: linear-gradient(180deg, #3b82f6, var(--blue)); color: #fff; display: grid; place-items: center; font-size: 0.9rem; }
+      .nav-links { display: flex; gap: 1.6rem; font-weight: 600; font-size: 0.95rem; color: var(--muted); }
+      .nav-links a { text-decoration: none; }
+      .nav-links a:hover { color: var(--ink); }
+      @media (max-width: 760px) { .nav-links { display: none; } }
+      .pill { display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 700; font-size: 0.9rem; color: var(--blue); text-decoration: none; }
+
+      .hero { padding: 4rem 0 1rem; text-align: center; }
+      .eyebrow { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.8rem; border-radius: 999px; background: var(--blue-soft); color: var(--blue); font-size: 0.8rem; font-weight: 700; }
+      h1 { font-size: clamp(2.3rem, 6vw, 3.8rem); line-height: 1.04; letter-spacing: -0.03em; margin: 1.1rem auto 0; max-width: 16ch; }
+      .lede { font-size: 1.15rem; color: var(--muted); max-width: 44ch; margin: 1.1rem auto 0; }
+
+      /* Inline widget slot */
+      .quote-slot { margin: 2.5rem auto 0; }
+      .quote-caption { text-align: center; color: var(--muted); font-size: 0.92rem; margin: 0.75rem 0 0; }
+
+      .section { padding: 3.5rem 0; }
+      .section h2 { font-size: clamp(1.7rem, 4vw, 2.4rem); letter-spacing: -0.02em; text-align: center; margin: 0 0 2rem; }
+      .cards { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+      .card { background: #fff; border: 1px solid var(--line); border-radius: 1.1rem; padding: 1.5rem; box-shadow: 0 12px 30px -22px rgba(29, 78, 216, 0.35); }
+      .card .ic { width: 2.4rem; height: 2.4rem; border-radius: 0.7rem; background: var(--blue-soft); display: grid; place-items: center; margin-bottom: 0.9rem; }
+      .card h3 { margin: 0 0 0.35rem; font-size: 1.08rem; }
+      .card p { margin: 0; color: var(--muted); font-size: 0.95rem; }
+      .steps { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); max-width: 900px; margin: 0 auto; }
+      .step { text-align: center; }
+      .step .n { width: 2.4rem; height: 2.4rem; border-radius: 999px; background: var(--blue); color: #fff; font-weight: 800; display: grid; place-items: center; margin: 0 auto 0.7rem; }
+      .step p { color: var(--muted); font-size: 0.95rem; margin: 0.2rem 0 0; }
+
+      footer { padding: 2.5rem 0 4rem; color: var(--muted); font-size: 0.9rem; border-top: 1px solid var(--line); margin-top: 2rem; }
+      .foot-inner { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; }
     </style>
   </head>
   <body>
-    <div class="wrap">
-      <p class="badge"><i></i> Quoter inline widget demo</p>
-      <h1>Ridgeway Roofing</h1>
-      <p class="lede">
-        Fake roofer homepage. The quote widget below is embedded straight into
-        the page, already expanded — it opens on the address step, no search
-        bar in front of it. Same pattern roofers drop on their own sites.
-      </p>
-
-      <!-- The inline widget mounts right here (where the script tag sits). -->
-      <div class="embed-slot">
-        <script src="/widget.js" data-roofer="quoter-landing-demo" async></script>
+    <header class="nav">
+      <div class="wrap nav-inner">
+        <span class="brand"><span class="mark">K</span> Kingfisher Roofing</span>
+        <nav class="nav-links">
+          <a href="#quote">Instant quote</a>
+          <a href="#services">Services</a>
+          <a href="#how">How it works</a>
+        </nav>
+        <a class="pill" href="#quote">Get a quote →</a>
       </div>
+    </header>
 
-      <p class="after">
-        ↑ This is real content below the widget. Because the widget lives at a
-        fixed height, nothing on this page jumps around as the customer moves
-        through the flow.
-      </p>
+    <section class="hero" id="quote">
+      <div class="wrap">
+        <span class="eyebrow">⚡ Instant online quotes</span>
+        <h1>Your new roof, priced in 60 seconds.</h1>
+        <p class="lede">
+          No waiting for a callback. Pop in your address, outline your roof, and
+          get a real price range on the spot.
+        </p>
 
-      <section class="card">
-        <h2>Snippet for any site</h2>
-        <p>Drop the widget where you want it and load the script once.</p>
-        <code>&lt;script
-  src="https://quoter-widget-frontend.vercel.app/widget.js"
-  data-roofer="your-slug"
-  async&gt;&lt;/script&gt;</code>
-      </section>
-    </div>
+        <!-- The Quoter widget mounts right here, inline and already expanded. -->
+        <div class="quote-slot" id="quoter-slot"></div>
+        <p class="quote-caption">Free · no obligation · takes about 2 minutes</p>
+      </div>
+    </section>
+
+    <section class="section" id="how">
+      <div class="wrap">
+        <h2>How it works</h2>
+        <div class="steps">
+          <div class="step"><div class="n">1</div><strong>Enter your address</strong><p>We pull up your roof on satellite imagery.</p></div>
+          <div class="step"><div class="n">2</div><strong>Outline your roof</strong><p>Trace the edges — we measure the area for you.</p></div>
+          <div class="step"><div class="n">3</div><strong>Get your price</strong><p>An instant range, plus a proper quote if you want one.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="services">
+      <div class="wrap">
+        <h2>Roofing we handle</h2>
+        <div class="cards">
+          <div class="card"><div class="ic">🏠</div><h3>Re-roofing</h3><p>Full replacements in tile, slate and more.</p></div>
+          <div class="card"><div class="ic">💧</div><h3>Leaks &amp; repairs</h3><p>Fast fixes for leaks, slips and storm damage.</p></div>
+          <div class="card"><div class="ic">🟦</div><h3>Flat roofs</h3><p>Long-life EPDM and fibreglass systems.</p></div>
+          <div class="card"><div class="ic">🌧️</div><h3>Gutters &amp; fascias</h3><p>Seamless guttering, fascias and soffits.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="wrap foot-inner">
+        <span>© <span id="year"></span> Kingfisher Roofing · hello@kingfisherroofing.co.uk</span>
+        <span>Demo site · powered by Quoter</span>
+      </div>
+    </footer>
+
+    <script>
+      document.getElementById("year").textContent = new Date().getFullYear();
+      // Mount the inline widget for any roofer via ?roofer=<slug>.
+      (function () {
+        var slug =
+          new URLSearchParams(location.search).get("roofer") ||
+          "quoter-landing-demo";
+        var s = document.createElement("script");
+        s.src = "/widget.js";
+        s.async = true;
+        s.setAttribute("data-roofer", slug);
+        s.setAttribute("data-target", "#quoter-slot");
+        document.body.appendChild(s);
+      })();
+    </script>
   </body>
 </html>

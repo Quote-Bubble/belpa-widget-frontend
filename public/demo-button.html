@@ -3,197 +3,171 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Ridgeway Roofing — button launch demo</title>
+    <title>Summit &amp; Slate Roofing — Roofers you can trust</title>
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+    />
     <style>
       :root {
-        --ink: #142033;
-        --muted: #5a6678;
-        --paper: #f3f6fa;
-        --line: #d7e0ec;
-        --accent: #1f57f0;
-        --accent-ink: #ffffff;
+        --ink: #10241c;
+        --moss: #1f5c46;
+        --moss-dark: #17493703;
+        --accent: #2f9e6f;
+        --paper: #f5f3ec;
+        --line: #e2ddcf;
+        --muted: #5c6b63;
       }
-
-      * {
-        box-sizing: border-box;
-      }
-
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
       body {
         margin: 0;
-        min-height: 100dvh;
         font-family: "Segoe UI", ui-sans-serif, system-ui, sans-serif;
         color: var(--ink);
-        background:
-          radial-gradient(120% 80% at 10% -10%, #dbe7ff 0%, transparent 55%),
-          var(--paper);
-      }
-
-      .wrap {
-        width: min(920px, calc(100% - 2rem));
-        margin: 0 auto;
-        padding: 2.5rem 0 4rem;
-      }
-
-      .badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.45rem;
-        margin: 0 0 1.25rem;
-        padding: 0.35rem 0.7rem;
-        border: 1px solid var(--line);
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.75);
-        color: var(--muted);
-        font-size: 0.75rem;
-        font-weight: 600;
-        letter-spacing: 0.02em;
-      }
-
-      .badge i {
-        width: 0.45rem;
-        height: 0.45rem;
-        border-radius: 50%;
-        background: #22c55e;
-      }
-
-      h1 {
-        margin: 0;
-        max-width: 14ch;
-        font-size: clamp(2.2rem, 6vw, 3.4rem);
-        font-weight: 700;
-        letter-spacing: -0.045em;
-        line-height: 1.05;
-      }
-
-      .lede {
-        margin: 1rem 0 0;
-        max-width: 36ch;
-        color: var(--muted);
-        font-size: 1.05rem;
+        background: var(--paper);
         line-height: 1.5;
       }
+      a { color: inherit; }
+      .wrap { width: min(1120px, calc(100% - 2.5rem)); margin: 0 auto; }
 
-      .actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-        margin-top: 1.75rem;
+      /* Top bar */
+      header.nav {
+        position: sticky; top: 0; z-index: 20;
+        background: rgba(245, 243, 236, 0.85);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--line);
       }
+      .nav-inner { display: flex; align-items: center; justify-content: space-between; padding: 0.9rem 0; }
+      .brand { display: flex; align-items: center; gap: 0.6rem; font-weight: 800; letter-spacing: -0.02em; font-size: 1.15rem; }
+      .brand .mark { width: 2rem; height: 2rem; border-radius: 0.55rem; background: var(--moss); color: #fff; display: grid; place-items: center; font-size: 0.95rem; }
+      .nav-links { display: flex; gap: 1.6rem; font-weight: 600; font-size: 0.95rem; color: var(--muted); }
+      .nav-links a { text-decoration: none; }
+      .nav-links a:hover { color: var(--ink); }
+      @media (max-width: 720px) { .nav-links { display: none; } }
 
       .btn {
-        appearance: none;
-        border: 0;
-        border-radius: 0.85rem;
-        padding: 0.95rem 1.25rem;
-        font: inherit;
-        font-size: 1rem;
-        font-weight: 650;
-        letter-spacing: -0.02em;
-        cursor: pointer;
-        transition: transform 160ms ease, opacity 160ms ease;
+        appearance: none; border: 0; cursor: pointer; font: inherit;
+        font-weight: 700; letter-spacing: -0.01em;
+        border-radius: 0.75rem; padding: 0.85rem 1.35rem;
+        transition: transform 140ms ease, filter 140ms ease;
       }
+      .btn:active { transform: translateY(1px); }
+      .btn-primary { background: var(--moss); color: #fff; box-shadow: 0 12px 26px -12px rgba(31, 92, 70, 0.7); }
+      .btn-primary:hover { filter: brightness(1.07); }
+      .btn-sm { padding: 0.6rem 1rem; font-size: 0.92rem; border-radius: 0.6rem; }
 
-      .btn:active {
-        transform: translateY(1px);
-      }
+      /* Hero */
+      .hero { padding: 4.5rem 0 3.5rem; }
+      .eyebrow { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--moss); }
+      .eyebrow i { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--accent); }
+      h1 { font-size: clamp(2.4rem, 6vw, 4rem); line-height: 1.03; letter-spacing: -0.03em; margin: 1rem 0 0; max-width: 15ch; }
+      .lede { font-size: 1.15rem; color: var(--muted); max-width: 46ch; margin: 1.25rem 0 0; }
+      .hero-actions { display: flex; flex-wrap: wrap; gap: 0.9rem; margin-top: 2rem; align-items: center; }
+      .hero-note { font-size: 0.9rem; color: var(--muted); }
+      .trust { display: flex; flex-wrap: wrap; gap: 1.5rem 2.2rem; margin-top: 3rem; color: var(--muted); font-weight: 600; font-size: 0.95rem; }
+      .trust span { display: inline-flex; align-items: center; gap: 0.5rem; }
+      .trust svg { color: var(--moss); }
 
-      .btn-primary {
-        background: var(--accent);
-        color: var(--accent-ink);
-        box-shadow: 0 12px 28px rgba(31, 87, 240, 0.28);
-      }
+      /* Services */
+      .section { padding: 3.5rem 0; }
+      .section h2 { font-size: clamp(1.8rem, 4vw, 2.5rem); letter-spacing: -0.02em; margin: 0 0 0.5rem; }
+      .section .sub { color: var(--muted); max-width: 50ch; margin: 0 0 2rem; }
+      .cards { display: grid; gap: 1.1rem; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+      .card { background: #fff; border: 1px solid var(--line); border-radius: 1rem; padding: 1.4rem; }
+      .card .ic { width: 2.4rem; height: 2.4rem; border-radius: 0.7rem; background: #eaf3ee; color: var(--moss); display: grid; place-items: center; margin-bottom: 0.9rem; }
+      .card h3 { margin: 0 0 0.35rem; font-size: 1.1rem; letter-spacing: -0.01em; }
+      .card p { margin: 0; color: var(--muted); font-size: 0.95rem; }
 
-      .btn-primary:hover {
-        opacity: 0.94;
-      }
+      /* CTA band */
+      .cta { background: var(--moss); color: #fff; border-radius: 1.5rem; padding: 3rem; text-align: center; margin: 1rem 0 0; }
+      .cta h2 { color: #fff; margin: 0 0 0.5rem; }
+      .cta p { color: rgba(255,255,255,0.85); max-width: 46ch; margin: 0 auto 1.6rem; }
+      .cta .btn-primary { background: #fff; color: var(--moss); box-shadow: none; }
 
-      .btn-ghost {
-        background: #fff;
-        color: var(--ink);
-        border: 1px solid var(--line);
-      }
-
-      .card {
-        margin-top: 2.75rem;
-        padding: 1.25rem 1.35rem;
-        border: 1px solid var(--line);
-        border-radius: 1rem;
-        background: rgba(255, 255, 255, 0.72);
-      }
-
-      .card h2 {
-        margin: 0 0 0.5rem;
-        font-size: 0.95rem;
-        font-weight: 700;
-        letter-spacing: -0.02em;
-      }
-
-      .card p,
-      .card code {
-        margin: 0;
-        color: var(--muted);
-        font-size: 0.875rem;
-        line-height: 1.5;
-      }
-
-      .card code {
-        display: block;
-        margin-top: 0.85rem;
-        padding: 0.9rem 1rem;
-        border-radius: 0.75rem;
-        background: #0f172a;
-        color: #e2e8f0;
-        overflow-x: auto;
-        white-space: pre;
-        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-        font-size: 0.78rem;
-      }
+      footer { padding: 3rem 0 4rem; color: var(--muted); font-size: 0.9rem; border-top: 1px solid var(--line); margin-top: 3.5rem; }
+      .foot-inner { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; }
     </style>
   </head>
   <body>
-    <div class="wrap">
-      <p class="badge"><i></i> Quoter launch demo</p>
-      <h1>Ridgeway Roofing</h1>
-      <p class="lede">
-        Fake roofer homepage. The button opens the Quote Link fullscreen over
-        this page — same pattern roofers can drop on their own sites.
-      </p>
-
-      <div class="actions">
-        <button
-          class="btn btn-primary"
-          type="button"
-          data-quoter-launch
-          data-roofer="quoter-landing-demo"
-        >
-          Get a free quote
-        </button>
-        <button class="btn btn-ghost" type="button" id="open-api">
-          Open via QuoterLaunch.open()
-        </button>
+    <header class="nav">
+      <div class="wrap nav-inner">
+        <span class="brand"><span class="mark">S</span> Summit &amp; Slate</span>
+        <nav class="nav-links">
+          <a href="#services">Services</a>
+          <a href="#why">Why us</a>
+          <a href="#contact">Contact</a>
+        </nav>
+        <button class="btn btn-primary btn-sm" data-quoter-launch>Free quote</button>
       </div>
+    </header>
 
-      <section class="card">
-        <h2>Snippet for any site</h2>
-        <p>
-          Put a button with <code style="display:inline;padding:0.1rem 0.35rem;background:#e8eef8;color:inherit;border-radius:0.35rem;white-space:normal">data-quoter-launch</code>
-          and load the script once.
+    <section class="hero">
+      <div class="wrap">
+        <span class="eyebrow"><i></i> Family roofers since 1998</span>
+        <h1>Roofing done properly, first time.</h1>
+        <p class="lede">
+          Slate, tile and flat roofing across the county. Honest advice, tidy
+          work, and a written guarantee on every job.
         </p>
-        <code>&lt;button data-quoter-launch data-roofer="your-slug"&gt;
-  Get a free quote
-&lt;/button&gt;
-&lt;script
-  src="https://quoter-widget-frontend.vercel.app/launch.js"
-  async&gt;&lt;/script&gt;</code>
-      </section>
-    </div>
+        <div class="hero-actions">
+          <button class="btn btn-primary" data-quoter-launch>
+            Get your free quote →
+          </button>
+          <span class="hero-note">Takes 2 minutes · no obligation</span>
+        </div>
+        <div class="trust">
+          <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg> Fully insured</span>
+          <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg> 10-year guarantee</span>
+          <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg> Checkatrade approved</span>
+        </div>
+      </div>
+    </section>
 
-    <script src="/launch.js" async></script>
+    <section class="section" id="services">
+      <div class="wrap">
+        <h2>What we do</h2>
+        <p class="sub">From a slipped tile to a full re-roof — one trusted team.</p>
+        <div class="cards">
+          <div class="card"><div class="ic">🏠</div><h3>Full re-roofs</h3><p>Complete tear-off and replacement in slate, clay or concrete tile.</p></div>
+          <div class="card"><div class="ic">🔧</div><h3>Repairs</h3><p>Leaks, slipped tiles, flashing and storm damage sorted fast.</p></div>
+          <div class="card"><div class="ic">🟦</div><h3>Flat roofing</h3><p>EPDM rubber and GRP fibreglass with a 20-year lifespan.</p></div>
+          <div class="card"><div class="ic">🌧️</div><h3>Guttering</h3><p>Fascias, soffits and seamless gutter replacement.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="why">
+      <div class="wrap">
+        <div class="cta" id="contact">
+          <h2>Wondering what your roof will cost?</h2>
+          <p>Get an instant ballpark online — trace your roof on the map and see a price in seconds. No waiting for a callback.</p>
+          <button class="btn btn-primary" data-quoter-launch>Get your free quote →</button>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="wrap foot-inner">
+        <span>© <span id="year"></span> Summit &amp; Slate Roofing Ltd · 01234 567 890</span>
+        <span>Demo site · powered by Quoter</span>
+      </div>
+    </footer>
+
     <script>
-      document.getElementById("open-api").addEventListener("click", function () {
-        if (!window.QuoterLaunch) return;
-        window.QuoterLaunch.open({ roofer: "quoter-landing-demo" });
-      });
+      document.getElementById("year").textContent = new Date().getFullYear();
+      // Let this demo target any roofer via ?roofer=<slug> (defaults to demo).
+      (function () {
+        var slug =
+          new URLSearchParams(location.search).get("roofer") ||
+          "quoter-landing-demo";
+        document
+          .querySelectorAll("[data-quoter-launch]")
+          .forEach(function (b) { b.setAttribute("data-roofer", slug); });
+        var s = document.createElement("script");
+        s.src = "/launch.js";
+        s.async = true;
+        document.body.appendChild(s);
+      })();
     </script>
   </body>
 </html>
