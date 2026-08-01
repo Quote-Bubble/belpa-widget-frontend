@@ -55,7 +55,7 @@ import {
   type QuoteFlowAnswers,
 } from "@/lib/quote-flow";
 import { pathFromBounds } from "@/lib/roof-geometry";
-import type { LatLng, SolarScan } from "@/lib/types";
+import type { LatLng, RooferPricing, SolarScan } from "@/lib/types";
 import { ADVANCE_DELAY_MS, STEP_TRANSITION } from "@/lib/motion";
 import { track } from "@/lib/analytics";
 import {
@@ -337,6 +337,31 @@ function QuoteFlowBody({
   const flowMountedAtRef = useRef<number>(Date.now());
   const [intentPromoted, setIntentPromoted] = useState(false);
 
+  // The roofer's own saved pricing (null until fetched, and null for roofers
+  // who never set custom rates — the quote model then uses its defaults). The
+  // estimate isn't shown until several steps in, so this always resolves in
+  // time; if it somehow doesn't, the quote just uses defaults.
+  const [pricing, setPricing] = useState<RooferPricing | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          apiUrl(`/api/roofer?slug=${encodeURIComponent(rooferId)}`),
+          { cache: "no-store" },
+        );
+        if (!res.ok) return;
+        const body = (await res.json()) as { pricing?: RooferPricing | null };
+        if (!cancelled) setPricing(body.pricing ?? null);
+      } catch {
+        /* leave pricing null → default model */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [rooferId]);
+
   // Dev shortcut: ?preview=estimate seeds a finished repair estimate so the
   // estimate screen can be opened directly while designing it. Applied after
   // mount so SSR / first paint stay non-preview (avoids hydration mismatch).
@@ -454,8 +479,8 @@ function QuoteFlowBody({
     approach,
   ]);
   const quote = useMemo(
-    () => computeFlowQuote(answers, measurement),
-    [answers, measurement],
+    () => computeFlowQuote(answers, measurement, pricing),
+    [answers, measurement, pricing],
   );
 
   // Funnel analytics: one event per step reached, so drop-off is visible.
@@ -591,7 +616,7 @@ function QuoteFlowBody({
     const payload = buildLeadPayload(
       merged,
       measurement,
-      computeFlowQuote(merged, measurement),
+      computeFlowQuote(merged, measurement, pricing),
       intent,
       mapView,
     );
@@ -638,7 +663,7 @@ function QuoteFlowBody({
     const payload = buildLeadPayload(
       answers,
       measurement,
-      computeFlowQuote(answers, measurement),
+      computeFlowQuote(answers, measurement, pricing),
       "quote_requested",
       mapView,
     );

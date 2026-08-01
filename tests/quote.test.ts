@@ -35,6 +35,42 @@ describe("replacement estimate", () => {
     expect(covering?.sourceTitle).toContain("Checkatrade roof replacement");
   });
 
+  it("uses the roofer's own £/m² when they've set a custom rate", () => {
+    const quote = calculateReplacementEstimate({
+      ...baseInput,
+      pricing: {
+        materials: [{ key: "natural_slate", rate: 120 }],
+        labourPerDay: null,
+        minimumCallout: null,
+        skipHire: null,
+        scaffoldPerWeek: null,
+        vatRegistered: true,
+      },
+    });
+    const covering = quote.lineItems.find((item) => item.unit === "m²");
+    // Their single rate becomes both ends of the covering line (the confidence
+    // band still spreads the final quote).
+    expect(covering?.unitRateMin).toBe(120);
+    expect(covering?.unitRateMax).toBe(120);
+    expect(covering?.min).toBeCloseTo(84.2 * 120, 8);
+  });
+
+  it("floors the low estimate at the roofer's minimum call-out", () => {
+    const quote = calculateReplacementEstimate({
+      ...baseInput,
+      areaM2: 2,
+      pricing: {
+        materials: [],
+        labourPerDay: null,
+        minimumCallout: 5000,
+        skipHire: null,
+        scaffoldPerWeek: null,
+        vatRegistered: true,
+      },
+    });
+    expect(quote.min).toBeGreaterThanOrEqual(5000);
+  });
+
   it("raises only the upper estimate for a flagged condition", () => {
     const normal = calculateReplacementEstimate(baseInput);
     const flagged = calculateReplacementEstimate({

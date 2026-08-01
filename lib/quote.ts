@@ -14,6 +14,7 @@ import type {
   RepairMaterial,
   ReplacementMaterial,
   RoofType,
+  RooferPricing,
 } from "@/lib/types";
 
 type LinearItemInput = {
@@ -36,6 +37,9 @@ type BaseEstimateInput = {
   accessMultiplier?: number;
   extraAssumptions?: string[];
   extraConfidence?: number;
+  /** The roofer's own saved rates. When present, their material £/m², scaffold,
+   *  skip and minimum call-out override the defaults. */
+  pricing?: RooferPricing | null;
 };
 
 export type ReplacementEstimateInput = BaseEstimateInput & {
@@ -59,6 +63,7 @@ export type RooflineEstimateInput = {
   accessMultiplier?: number;
   extraAssumptions?: string[];
   extraConfidence?: number;
+  pricing?: RooferPricing | null;
 };
 
 function clamp(value: number, min: number, max: number) {
@@ -121,6 +126,38 @@ function combineRates(rates: PriceRate[]) {
   };
 }
 
+/** The roofer's own £/m² for a material, if they've set one (>0). */
+function rooferMaterialRate(
+  pricing: RooferPricing | null | undefined,
+  material: Material,
+): number | null {
+  if (!pricing || material === "not_sure") return null;
+  const found = pricing.materials.find((m) => m.key === material);
+  return found && Number.isFinite(found.rate) && found.rate > 0
+    ? found.rate
+    : null;
+}
+
+/** Covering rate range, with the roofer's own £/m² substituted (as a point
+ *  value — the confidence band still spreads it into a min–max range) when they
+ *  have a rate for this material. Otherwise the default price-list range. */
+function resolveCoveringRates(
+  pricingMode: PricingMode,
+  material: Material,
+  roofType: RoofType | undefined,
+  pricing: RooferPricing | null | undefined,
+) {
+  const base = combineRates(coveringRates(pricingMode, material, roofType));
+  const rate = rooferMaterialRate(pricing, material);
+  if (rate == null) return base;
+  return { ...base, min: rate, max: rate, source: null };
+}
+
+/** Apply a roofer's flat override (>0) to a base rate's min/max. */
+function overrideRate(base: PriceRate, value: number | null | undefined): PriceRate {
+  return value != null && value > 0 ? { ...base, min: value, max: value } : base;
+}
+
 function rateLineItem(
   rate: PriceRate,
   quantity: number,
@@ -145,7 +182,10 @@ function accessAndRooflineItems(input: BaseEstimateInput): QuoteLineItem[] {
   const items: QuoteLineItem[] = [];
   const accessMultiplier = input.accessMultiplier ?? 1;
   if (input.scaffoldWeeks > 0) {
-    const scaffold = getRate("scaffold_week");
+    const scaffold = overrideRate(
+      getRate("scaffold_week"),
+      input.pricing?.scaffoldPerWeek,
+    );
     const item = rateLineItem(
       scaffold,
       input.scaffoldWeeks,
@@ -164,7 +204,8 @@ function accessAndRooflineItems(input: BaseEstimateInput): QuoteLineItem[] {
     items.push(item);
   }
   if (input.includeSkip) {
-    items.push(rateLineItem(getRate("skip_hire"), 1, "Selected as required"));
+    const skip = overrideRate(getRate("skip_hire"), input.pricing?.skipHire);
+    items.push(rateLineItem(skip, 1, "Selected as required"));
   }
   for (const item of input.linearItems ?? []) {
     if (item.quantityM <= 0) continue;
@@ -214,8 +255,11 @@ export function calculateReplacementEstimate(
   if (!Number.isFinite(input.scaffoldWeeks) || input.scaffoldWeeks < 0) {
     throw new Error("Replacement estimate requires a non-negative scaffold weeks.");
   }
-  const rates = combineRates(
-    coveringRates("replacement", input.material, input.roofType),
+  const rates = resolveCoveringRates(
+    "replacement",
+    input.material,
+    input.roofType,
+    input.pricing,
   );
   const coveringMin = input.areaM2 * rates.min;
   const coveringMax = input.areaM2 * rates.max;
@@ -272,7 +316,9 @@ export function calculateReplacementEstimate(
   if (input.polygonWasEdited) confidenceWidth += 0.08;
   if (input.material === "not_sure") confidenceWidth += 0.1;
 
-  const min = roundToNearestFifty(base.min * (1 - confidenceWidth));
+  let min = roundToNearestFifty(base.min * (1 - confidenceWidth));
+  const floor = input.pricing?.minimumCallout;
+  if (floor && floor > min) min = roundToNearestFifty(floor);
   const conditionMultiplier = input.conditionAnswer === "yes" ? 1.1 : 1;
   const max = roundToNearestFifty(
     Math.max(base.max * (1 + confidenceWidth) * conditionMultiplier, min + 100),
@@ -312,7 +358,12 @@ export function calculateRepairEstimate(
   if (!Number.isFinite(input.scaffoldWeeks) || input.scaffoldWeeks < 0) {
     throw new Error("Repair estimate requires a non-negative scaffold weeks.");
   }
-  const rates = combineRates(coveringRates("repair", input.material));
+  const rates = resolveCoveringRates(
+    "repair",
+    input.material,
+    undefined,
+    input.pricing,
+  );
   const size = repairSizeAdjustment(input.areaM2);
   const adjustedMinRate = rates.min * size.rateMultiplier;
   const adjustedMaxRate = rates.max * size.rateMultiplier;
@@ -338,7 +389,9 @@ export function calculateRepairEstimate(
   let confidenceWidth = 0.15 + (input.extraConfidence ?? 0);
   if (input.material === "not_sure") confidenceWidth += 0.15;
 
-  const min = roundToNearestFifty(base.min * (1 - confidenceWidth));
+  let min = roundToNearestFifty(base.min * (1 - confidenceWidth));
+  const floor = input.pricing?.minimumCallout;
+  if (floor && floor > min) min = roundToNearestFifty(floor);
   const conditionMultiplier = input.conditionAnswer === "yes" ? 1.1 : 1;
   const max = roundToNearestFifty(
     Math.max(base.max * (1 + confidenceWidth) * conditionMultiplier, min + 100),
@@ -407,12 +460,15 @@ export function calculateRooflineEstimate(
       includeSkip: false,
       conditionAnswer: "not_sure",
       accessMultiplier: input.accessMultiplier,
+      pricing: input.pricing,
     }),
   );
 
   const base = sumLineItems(lineItems);
   const confidenceWidth = 0.18 + (input.extraConfidence ?? 0);
-  const min = roundToNearestFifty(base.min * (1 - confidenceWidth));
+  let min = roundToNearestFifty(base.min * (1 - confidenceWidth));
+  const floor = input.pricing?.minimumCallout;
+  if (floor && floor > min) min = roundToNearestFifty(floor);
   const max = roundToNearestFifty(
     Math.max(base.max * (1 + confidenceWidth), min + 100),
   );

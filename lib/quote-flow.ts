@@ -32,6 +32,7 @@ import type {
   ReplacementMaterial,
   RoofMeasurement,
   RooflineScope,
+  RooferPricing,
   RoofType,
   SolarScan,
   StoreyBand,
@@ -488,6 +489,7 @@ function isValidMaterialForJob(
 export function computeFlowQuote(
   answers: QuoteFlowAnswers,
   measurement: CombinedMeasurement | null,
+  pricing: RooferPricing | null = null,
 ): QuoteResult | null {
   const path = flowPath(answers);
   const condition = answers.condition ?? "not_sure";
@@ -505,6 +507,7 @@ export function computeFlowQuote(
     if (!band || !isFinitePositive(band.representativeAreaM2)) return null;
     try {
       return calculateRepairEstimate({
+        pricing,
         areaM2: band.representativeAreaM2,
         material: answers.material as RepairMaterial,
         storeys,
@@ -530,6 +533,7 @@ export function computeFlowQuote(
     }
     try {
       return calculateRooflineEstimate({
+        pricing,
         gutterLengthM: measurement.gutterLengthM,
         includeFascias: answers.rooflineScope === "gutters_fascias",
         storeys,
@@ -568,6 +572,7 @@ export function computeFlowQuote(
 
   try {
     return calculateReplacementEstimate({
+      pricing,
       areaM2: measurement.surfaceAreaM2,
       roofType:
         answers.jobType === "flat_roof_replacement"
