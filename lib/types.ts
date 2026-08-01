@@ -60,21 +60,6 @@ export type RepairMaterial =
 export type Material = ReplacementMaterial | RepairMaterial;
 export type ConditionAnswer = "yes" | "no" | "not_sure";
 
-/**
- * A roofer's own saved pricing (from the dashboard, delivered by
- * quoter-api-backend `/api/roofer`). Null when the roofer hasn't set custom
- * rates — the widget then falls back to its default price model. Material keys
- * match the `Material` enum above so a rate can override the covering cost.
- */
-export type RooferPricing = {
-  materials: { key: string; rate: number }[];
-  labourPerDay: number | null;
-  minimumCallout: number | null;
-  skipHire: number | null;
-  scaffoldPerWeek: number | null;
-  vatRegistered: boolean;
-};
-
 export type LatLng = {
   lat: number;
   lng: number;

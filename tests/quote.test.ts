@@ -1,11 +1,36 @@
 import { describe, expect, it } from "vitest";
 
+import { MODEL_DEFAULTS, PRICE_LIST } from "@/config/rates";
 import {
   calculateRepairEstimate,
   calculateReplacementEstimate,
   quoteBaseSubtotal,
   repairSizeAdjustment,
+  type PricingContext,
 } from "@/lib/quote";
+
+function pricingWithSlateRate(rate: number): PricingContext {
+  const table = PRICE_LIST.map((r) => ({
+    ...r,
+    source: { ...r.source },
+    notes: [...r.notes],
+  }));
+  const slate = table.find((r) => r.id === "replacement_slate_m2");
+  if (slate) {
+    slate.min = rate;
+    slate.max = rate;
+  }
+  return {
+    table,
+    model: {
+      stripOffPerM2: MODEL_DEFAULTS.stripOffPerM2,
+      stripOffMin: MODEL_DEFAULTS.stripOffMin,
+      stripOffMax: MODEL_DEFAULTS.stripOffMax,
+      vatRate: MODEL_DEFAULTS.vatRate,
+      confidenceWidth: null,
+    },
+  };
+}
 
 describe("replacement estimate", () => {
   const baseInput = {
@@ -38,14 +63,7 @@ describe("replacement estimate", () => {
   it("uses the roofer's own £/m² when they've set a custom rate", () => {
     const quote = calculateReplacementEstimate({
       ...baseInput,
-      pricing: {
-        materials: [{ key: "natural_slate", rate: 120 }],
-        labourPerDay: null,
-        minimumCallout: null,
-        skipHire: null,
-        scaffoldPerWeek: null,
-        vatRegistered: true,
-      },
+      pricing: pricingWithSlateRate(120),
     });
     const covering = quote.lineItems.find((item) => item.unit === "m²");
     // Their single rate becomes both ends of the covering line (the confidence
@@ -55,20 +73,15 @@ describe("replacement estimate", () => {
     expect(covering?.min).toBeCloseTo(84.2 * 120, 8);
   });
 
-  it("floors the low estimate at the roofer's minimum call-out", () => {
+  it("uses a fixed access allowance instead of scaffold weeks", () => {
     const quote = calculateReplacementEstimate({
       ...baseInput,
-      areaM2: 2,
-      pricing: {
-        materials: [],
-        labourPerDay: null,
-        minimumCallout: 5000,
-        skipHire: null,
-        scaffoldPerWeek: null,
-        vatRegistered: true,
-      },
+      scaffoldWeeks: 0,
+      fixedAccessExVat: 450,
     });
-    expect(quote.min).toBeGreaterThanOrEqual(5000);
+    const access = quote.lineItems.find((item) => item.rateId === "fixed_access");
+    expect(access?.min).toBe(450);
+    expect(access?.max).toBe(450);
   });
 
   it("raises only the upper estimate for a flagged condition", () => {
