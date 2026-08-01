@@ -74,10 +74,22 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // Everything EXCEPT /embed and /l gets anti-clickjacking lockdown.
-        // Negative lookahead is essential: without it this catch-all also
-        // matches those routes and re-applies DENY.
-        source: "/((?!embed(?:/|$)|l(?:/|$)).*)",
+        // Inline widget — framable so roofer sites can embed the already-
+        // expanded flow (see public/widget.js).
+        source: "/w/:path*",
+        headers: [
+          ...securityHeaders,
+          {
+            key: "Content-Security-Policy",
+            value: `frame-ancestors ${embedFrameAncestors()}`,
+          },
+        ],
+      },
+      {
+        // Everything EXCEPT the framable routes (/embed, /l, /w) gets anti-
+        // clickjacking lockdown. Negative lookahead is essential: without it
+        // this catch-all also matches those routes and re-applies DENY.
+        source: "/((?!embed(?:/|$)|l(?:/|$)|w(?:/|$)).*)",
         headers: [
           ...securityHeaders,
           {

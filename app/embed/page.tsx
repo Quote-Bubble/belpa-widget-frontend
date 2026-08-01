@@ -19,10 +19,14 @@ function isValidRooferId(value: string | undefined): value is string {
 }
 
 /**
- * Chromeless embed target. Renders only the quote bubble on a transparent
- * background. Host pages iframe this and resize it via the postMessage
- * protocol in EmbedFrame. The `roofer` query param attributes leads; it
- * defaults to the landing-page demo instance.
+ * LANDING-ONLY. Chromeless embed target for the collapsed search-bar bubble.
+ * Only the marketing landing page frames this (its hero). Roofer sites use the
+ * two supported flows instead: /w/[slug] (inline, already expanded) or
+ * /l/[slug] (fullscreen). Kept so the landing hero is untouched.
+ *
+ * Renders only the quote bubble on a transparent background. Host pages iframe
+ * this and resize it via the postMessage protocol in EmbedFrame. The `roofer`
+ * query param attributes leads; it defaults to the landing-page demo instance.
  */
 export default async function EmbedPage({
   searchParams,

@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ridgeway Roofing — inline widget demo</title>
+    <style>
+      :root {
+        --ink: #142033;
+        --muted: #5a6678;
+        --paper: #f3f6fa;
+        --line: #d7e0ec;
+        --accent: #1f57f0;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        font-family: "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(120% 80% at 10% -10%, #dbe7ff 0%, transparent 55%),
+          var(--paper);
+      }
+      .wrap {
+        width: min(920px, calc(100% - 2rem));
+        margin: 0 auto;
+        padding: 2.5rem 0 4rem;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        margin: 0 0 1.25rem;
+        padding: 0.35rem 0.7rem;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.75);
+        color: var(--muted);
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+      .badge i {
+        width: 0.45rem;
+        height: 0.45rem;
+        border-radius: 50%;
+        background: #22c55e;
+      }
+      h1 {
+        margin: 0;
+        max-width: 16ch;
+        font-size: clamp(2.2rem, 6vw, 3.4rem);
+        font-weight: 700;
+        letter-spacing: -0.045em;
+        line-height: 1.05;
+      }
+      .lede {
+        margin: 1rem 0 0;
+        max-width: 42ch;
+        color: var(--muted);
+        font-size: 1.05rem;
+        line-height: 1.5;
+      }
+      .embed-slot {
+        margin-top: 2.25rem;
+      }
+      .after {
+        margin-top: 2.75rem;
+        padding-top: 1.5rem;
+        border-top: 1px dashed var(--line);
+        color: var(--muted);
+        font-size: 0.95rem;
+        line-height: 1.55;
+      }
+      .card {
+        margin-top: 1.5rem;
+        padding: 1.25rem 1.35rem;
+        border: 1px solid var(--line);
+        border-radius: 1rem;
+        background: rgba(255, 255, 255, 0.72);
+      }
+      .card h2 {
+        margin: 0 0 0.5rem;
+        font-size: 0.95rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+      .card p { margin: 0; color: var(--muted); font-size: 0.875rem; line-height: 1.5; }
+      .card code {
+        display: block;
+        margin-top: 0.85rem;
+        padding: 0.9rem 1rem;
+        border-radius: 0.75rem;
+        background: #0f172a;
+        color: #e2e8f0;
+        overflow-x: auto;
+        white-space: pre;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.78rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <p class="badge"><i></i> Quoter inline widget demo</p>
+      <h1>Ridgeway Roofing</h1>
+      <p class="lede">
+        Fake roofer homepage. The quote widget below is embedded straight into
+        the page, already expanded — it opens on the address step, no search
+        bar in front of it. Same pattern roofers drop on their own sites.
+      </p>
+
+      <!-- The inline widget mounts right here (where the script tag sits). -->
+      <div class="embed-slot">
+        <script src="/widget.js" data-roofer="quoter-landing-demo" async></script>
+      </div>
+
+      <p class="after">
+        ↑ This is real content below the widget. Because the widget lives at a
+        fixed height, nothing on this page jumps around as the customer moves
+        through the flow.
+      </p>
+
+      <section class="card">
+        <h2>Snippet for any site</h2>
+        <p>Drop the widget where you want it and load the script once.</p>
+        <code>&lt;script
+  src="https://quoter-widget-frontend.vercel.app/widget.js"
+  data-roofer="your-slug"
+  async&gt;&lt;/script&gt;</code>
+      </section>
+    </div>
+  </body>
+</html>

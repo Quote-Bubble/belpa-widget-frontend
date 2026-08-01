@@ -6,6 +6,10 @@ import { QuoteBubble } from "@/components/bubble/QuoteBubble";
 import { QUOTE_SIZES } from "@/lib/motion";
 
 /**
+ * LANDING-ONLY (collapsed search-bar bubble). The roofer product uses
+ * WidgetFrame (/w/[slug], already expanded) and the fullscreen /l/[slug]
+ * instead; this stays only for the marketing landing hero.
+ *
  * The embeddable surface: renders only the QuoteBubble and reports its
  * discrete state to the parent frame over postMessage. The widget has just
  * two on-screen sizes (a fixed collapsed bar and a fixed expanded panel), so

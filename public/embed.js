@@ -1,4 +1,10 @@
 /*!
+ * ⚠️ LEGACY / LANDING-ONLY. The collapsed search-bar → expand model. Roofer
+ * sites should use the two supported flows instead: widget.js (inline, already
+ * expanded → /w/<slug>) or quoter-launch.js (fullscreen button → /l/<slug>).
+ * This loader and its /embed target are kept only for the marketing landing
+ * page's hero (which frames /embed directly). Do not use for new embeds.
+ *
  * Quoter embed loader — drop the instant-roof-quote widget onto any site.
  *
  *   <script src="https://quoter-widget-frontend.vercel.app/embed.js"
