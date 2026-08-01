@@ -27,6 +27,8 @@ import {
 import { apiUrl } from "@/lib/api";
 import { addressEntryReady } from "@/components/quote/AddressEntry";
 import { materialLabel, materialOptionsFor } from "@/lib/materials";
+import type { QuoteConfig } from "@/lib/quote-config";
+import { defaultQuoteConfig } from "@/lib/quote-config";
 import {
   looksLikeUkPostcode,
   normalisePostcode,
@@ -43,7 +45,6 @@ import {
   createFlowAnswers,
   displayAddress,
   drawApproach,
-  emptyDrawnRoof,
   flowPath,
   measureRoofs,
   measureWholeRoof,
@@ -54,8 +55,7 @@ import {
   type FlowStepId,
   type QuoteFlowAnswers,
 } from "@/lib/quote-flow";
-import { pathFromBounds } from "@/lib/roof-geometry";
-import type { LatLng, RooferPricing, SolarScan } from "@/lib/types";
+import type { LatLng, SolarScan } from "@/lib/types";
 import { ADVANCE_DELAY_MS, STEP_TRANSITION } from "@/lib/motion";
 import { track } from "@/lib/analytics";
 import {
@@ -160,19 +160,6 @@ function reducer(state: FlowState, action: FlowAction): FlowState {
     case "SCAN_SUCCESS": {
       // Ignore late scan responses after the user has left the locate step.
       if (state.step !== "locate") return state;
-      // For the shared-building outline path (semi / terrace), seed the roof
-      // outline with the WHOLE detected building footprint so the box always
-      // covers the roof; the user just pulls the party-wall edge in to their
-      // side — instead of tracing from a blank map. Detached/bungalow
-      // auto-measure the whole roof and never hit this. Seed once; never clobber.
-      const seedApproach = drawApproach(
-        state.answers.jobType,
-        state.answers.propertyType,
-      );
-      let seededRoofs = state.answers.roofs;
-      if (seedApproach === "outline" && seededRoofs.length === 0) {
-        seededRoofs = [emptyDrawnRoof(pathFromBounds(action.scan.boundingBox))];
-      }
       const answers = {
         ...state.answers,
         coords: action.coords,
@@ -186,7 +173,6 @@ function reducer(state: FlowState, action: FlowAction): FlowState {
             : action.formatted ?? state.answers.address.formatted,
         },
         scan: action.scan,
-        roofs: seededRoofs,
       };
       return { ...state, answers, step: "draw_roof", direction: 1 };
     }
@@ -268,6 +254,7 @@ function reducer(state: FlowState, action: FlowAction): FlowState {
 export type QuoteFlowProps = {
   rooferId?: string;
   brandName?: string;
+  quoteConfig?: QuoteConfig | null;
   initialAddress?: { postcode: string; formatted?: string | null };
   onClose?: () => void;
   variant?: FlowVariant;
@@ -278,6 +265,7 @@ export type QuoteFlowProps = {
 export function QuoteFlowInner({
   rooferId = "demo-roofer",
   brandName = "Quoter",
+  quoteConfig = null,
   initialAddress,
   onClose,
   mapsEnabled,
@@ -289,6 +277,7 @@ export function QuoteFlowInner({
         <QuoteFlowBody
           rooferId={rooferId}
           brandName={brandName}
+          quoteConfig={quoteConfig}
           initialAddress={initialAddress}
           onClose={onClose}
           mapsEnabled={mapsEnabled}
@@ -301,10 +290,12 @@ export function QuoteFlowInner({
 function QuoteFlowBody({
   rooferId = "demo-roofer",
   brandName = "Quoter",
+  quoteConfig = null,
   initialAddress,
   onClose,
   mapsEnabled,
 }: QuoteFlowProps & { mapsEnabled: boolean }) {
+  const config = quoteConfig ?? defaultQuoteConfig();
   const variant = useFlowVariant();
   const [state, dispatch] = useReducer(
     reducer,
@@ -337,31 +328,6 @@ function QuoteFlowBody({
   const flowMountedAtRef = useRef<number>(Date.now());
   const [intentPromoted, setIntentPromoted] = useState(false);
 
-  // The roofer's own saved pricing (null until fetched, and null for roofers
-  // who never set custom rates — the quote model then uses its defaults). The
-  // estimate isn't shown until several steps in, so this always resolves in
-  // time; if it somehow doesn't, the quote just uses defaults.
-  const [pricing, setPricing] = useState<RooferPricing | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(
-          apiUrl(`/api/roofer?slug=${encodeURIComponent(rooferId)}`),
-          { cache: "no-store" },
-        );
-        if (!res.ok) return;
-        const body = (await res.json()) as { pricing?: RooferPricing | null };
-        if (!cancelled) setPricing(body.pricing ?? null);
-      } catch {
-        /* leave pricing null → default model */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [rooferId]);
-
   // Dev shortcut: ?preview=estimate seeds a finished repair estimate so the
   // estimate screen can be opened directly while designing it. Applied after
   // mount so SSR / first paint stay non-preview (avoids hydration mismatch).
@@ -373,32 +339,6 @@ function QuoteFlowBody({
       step: "estimate",
     });
   }, [rooferId]);
-
-  // Mobile: when a field is focused the on-screen keyboard covers the lower
-  // half of the viewport. Once it has settled, scroll the focused control to
-  // the centre of the (now shorter) body scroller so the user never types blind
-  // or loses the submit button behind the keyboard. Gate on viewport width, not
-  // variant — mobile now uses the card layout too.
-  useEffect(() => {
-    if (!window.matchMedia("(max-width: 639px)").matches) return;
-    const root = bodyRef.current;
-    if (!root) return;
-    let timer = 0;
-    const onFocusIn = (e: FocusEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (!target || !target.matches("input, textarea, select")) return;
-      window.clearTimeout(timer);
-      // Wait out the keyboard-open + visualViewport resize before scrolling.
-      timer = window.setTimeout(() => {
-        target.scrollIntoView({ block: "center", behavior: "smooth" });
-      }, 350);
-    };
-    root.addEventListener("focusin", onFocusIn);
-    return () => {
-      window.clearTimeout(timer);
-      root.removeEventListener("focusin", onFocusIn);
-    };
-  }, []);
 
   const { answers, step } = state;
 
@@ -479,8 +419,16 @@ function QuoteFlowBody({
     approach,
   ]);
   const quote = useMemo(
-    () => computeFlowQuote(answers, measurement, pricing),
-    [answers, measurement, pricing],
+    () => computeFlowQuote(answers, measurement, config),
+    [answers, measurement, config],
+  );
+
+  const jobTypeOptions = useMemo(
+    () =>
+      JOB_TYPE_OPTIONS.filter((o) =>
+        config.enabledServices.includes(o.value),
+      ),
+    [config.enabledServices],
   );
 
   // Funnel analytics: one event per step reached, so drop-off is visible.
@@ -616,9 +564,10 @@ function QuoteFlowBody({
     const payload = buildLeadPayload(
       merged,
       measurement,
-      computeFlowQuote(merged, measurement, pricing),
+      computeFlowQuote(merged, measurement, config),
       intent,
       mapView,
+      config,
     );
     // Anti-spam signals travel alongside the payload; the backend silently
     // drops obvious bots (honeypot filled, or submitted implausibly fast).
@@ -663,9 +612,10 @@ function QuoteFlowBody({
     const payload = buildLeadPayload(
       answers,
       measurement,
-      computeFlowQuote(answers, measurement, pricing),
+      computeFlowQuote(answers, measurement, config),
       "quote_requested",
       mapView,
+      config,
     );
     const body = {
       ...payload,
@@ -693,8 +643,11 @@ function QuoteFlowBody({
   const path = flowPath(answers);
 
   const jobLabel =
+    jobTypeOptions.find((option) => option.value === answers.jobType)
+      ?.label ??
     JOB_TYPE_OPTIONS.find((option) => option.value === answers.jobType)
-      ?.label ?? "Roof work";
+      ?.label ??
+    "Roof work";
   const roofPaths = answers.roofs.map((roof) => roof.path);
 
   function renderStep() {
@@ -713,7 +666,9 @@ function QuoteFlowBody({
         return (
           <OptionListStep
             heading="What does the roof need?"
-            options={JOB_TYPE_OPTIONS}
+            options={
+              jobTypeOptions.length > 0 ? jobTypeOptions : JOB_TYPE_OPTIONS
+            }
             selected={answers.jobType}
             onSelect={(jobType) => selectAndAdvance({ jobType })}
             callout="This decides how we price your job, replacements are measured from satellite, smaller jobs are priced by your roofer."
@@ -860,7 +815,7 @@ function QuoteFlowBody({
       case "material":
         return (
           <MaterialStep
-            options={materialOptionsFor(answers.jobType)}
+            options={materialOptionsFor(answers.jobType, config)}
             selected={answers.material}
             onSelect={(material) => selectAndAdvance({ material })}
           />

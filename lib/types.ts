@@ -243,6 +243,12 @@ export type LeadPayload = {
     minExVat: number;
     maxExVat: number;
   } | null;
+  /** Audit: which company config produced this quote (optional). */
+  pricingSnapshot?: {
+    version: 1;
+    fingerprint: string;
+    enabledServices: string[];
+  } | null;
   contact: ContactDetails;
   fallbackReason: string | null;
   timestamp: string;

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { EmbedFrame } from "@/components/embed/EmbedFrame";
+import { fetchRooferConfig } from "@/lib/roofer-config";
 
 export const metadata: Metadata = {
   title: "Quoter",
@@ -19,14 +20,9 @@ function isValidRooferId(value: string | undefined): value is string {
 }
 
 /**
- * LANDING-ONLY. Chromeless embed target for the collapsed search-bar bubble.
- * Only the marketing landing page frames this (its hero). Roofer sites use the
- * two supported flows instead: /w/[slug] (inline, already expanded) or
- * /l/[slug] (fullscreen). Kept so the landing hero is untouched.
- *
- * Renders only the quote bubble on a transparent background. Host pages iframe
- * this and resize it via the postMessage protocol in EmbedFrame. The `roofer`
- * query param attributes leads; it defaults to the landing-page demo instance.
+ * LANDING-ONLY. Chromeless embed for the collapsed search-bar bubble. Loads
+ * the roofer's quote config by slug so each bubble is unique (services + rates).
+ * Roofer sites use /w/[slug] (inline) or /l/[slug] (fullscreen) instead.
  */
 export default async function EmbedPage({
   searchParams,
@@ -37,9 +33,15 @@ export default async function EmbedPage({
   const rooferId = roofer ?? "quoter-landing-demo";
   if (!isValidRooferId(rooferId)) notFound();
 
+  const loaded = await fetchRooferConfig(rooferId);
+
   return (
     <div className="quoter-embed-page">
-      <EmbedFrame rooferId={rooferId} />
+      <EmbedFrame
+        rooferId={loaded?.slug ?? rooferId}
+        brandName={loaded?.name}
+        quoteConfig={loaded?.config ?? null}
+      />
     </div>
   );
 }

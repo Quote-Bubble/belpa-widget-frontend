@@ -9,8 +9,18 @@ import {
   calculateRepairEstimate,
   calculateReplacementEstimate,
   calculateRooflineEstimate,
+  type PricingContext,
 } from "@/lib/quote";
 import { materialOptionsFor } from "@/lib/materials";
+import {
+  configFingerprint,
+  type QuoteConfig,
+  type ServiceKey,
+} from "@/lib/quote-config";
+import {
+  buildRateTable,
+  resolveAccessForService,
+} from "@/lib/rate-table";
 import {
   isImageryOlderThanThreeYears,
   measureBoundary,
@@ -32,7 +42,6 @@ import type {
   ReplacementMaterial,
   RoofMeasurement,
   RooflineScope,
-  RooferPricing,
   RoofType,
   SolarScan,
   StoreyBand,
@@ -481,15 +490,18 @@ function isFinitePositive(value: number): boolean {
 function isValidMaterialForJob(
   jobType: JobType | null,
   material: Material | null,
+  config?: QuoteConfig | null,
 ): material is Material {
   if (material === null) return false;
-  return materialOptionsFor(jobType).some((option) => option.value === material);
+  return materialOptionsFor(jobType, config).some(
+    (option) => option.value === material,
+  );
 }
 
 export function computeFlowQuote(
   answers: QuoteFlowAnswers,
   measurement: CombinedMeasurement | null,
-  pricing: RooferPricing | null = null,
+  quoteConfig?: QuoteConfig | null,
 ): QuoteResult | null {
   const path = flowPath(answers);
   const condition = answers.condition ?? "not_sure";
@@ -500,23 +512,34 @@ export function computeFlowQuote(
     path,
   );
   const storeys = access.estimatedStoreys;
+  const { table, model, config } = buildRateTable(quoteConfig ?? null);
+  const pricing: PricingContext = { table, model };
+  const service = answers.jobType as ServiceKey | null;
+  const resolved = resolveAccessForService(
+    service,
+    config,
+    access.scaffoldWeeks,
+    access.accessMultiplier,
+  );
 
   if (path === "repair") {
-    if (!isValidMaterialForJob(answers.jobType, answers.material)) return null;
+    if (!isValidMaterialForJob(answers.jobType, answers.material, config))
+      return null;
     const band = repairBandById(answers.repairBandId);
     if (!band || !isFinitePositive(band.representativeAreaM2)) return null;
     try {
       return calculateRepairEstimate({
-        pricing,
         areaM2: band.representativeAreaM2,
         material: answers.material as RepairMaterial,
         storeys,
-        scaffoldWeeks: access.scaffoldWeeks,
+        scaffoldWeeks: resolved.scaffoldWeeks,
+        fixedAccessExVat: resolved.fixedAccessExVat,
         includeSkip: false,
         conditionAnswer: condition,
-        accessMultiplier: access.accessMultiplier,
+        accessMultiplier: resolved.accessMultiplier,
         extraAssumptions: access.notes,
         extraConfidence: access.extraConfidence,
+        pricing,
       });
     } catch {
       return null;
@@ -533,14 +556,15 @@ export function computeFlowQuote(
     }
     try {
       return calculateRooflineEstimate({
-        pricing,
         gutterLengthM: measurement.gutterLengthM,
         includeFascias: answers.rooflineScope === "gutters_fascias",
         storeys,
-        scaffoldWeeks: access.scaffoldWeeks,
-        accessMultiplier: access.accessMultiplier,
+        scaffoldWeeks: resolved.scaffoldWeeks,
+        fixedAccessExVat: resolved.fixedAccessExVat,
+        accessMultiplier: resolved.accessMultiplier,
         extraAssumptions: access.notes,
         extraConfidence: access.extraConfidence,
+        pricing,
       });
     } catch {
       return null;
@@ -548,7 +572,8 @@ export function computeFlowQuote(
   }
 
   if (path !== "measured" || !answers.scan || !measurement) return null;
-  if (!isValidMaterialForJob(answers.jobType, answers.material)) return null;
+  if (!isValidMaterialForJob(answers.jobType, answers.material, config))
+    return null;
   if (
     !Number.isFinite(measurement.surfaceAreaM2) ||
     measurement.surfaceAreaM2 <= 0
@@ -556,11 +581,20 @@ export function computeFlowQuote(
     return null;
   }
 
+  const svcCfg =
+    answers.jobType === "flat_roof_replacement"
+      ? config.services.flat_roof_replacement
+      : config.services.full_replacement;
+  const includeSkip = svcCfg?.includeSkip ?? true;
+  const includeGutters = svcCfg?.includeGutters ?? true;
+  const includeChimney = svcCfg?.includeChimneyAllowance ?? true;
+
   const linearItems: {
     rateId: "gutter_replace_m";
     quantityM: number;
   }[] = [];
   if (
+    includeGutters &&
     Number.isFinite(measurement.gutterLengthM) &&
     measurement.gutterLengthM > 0
   ) {
@@ -572,7 +606,6 @@ export function computeFlowQuote(
 
   try {
     return calculateReplacementEstimate({
-      pricing,
       areaM2: measurement.surfaceAreaM2,
       roofType:
         answers.jobType === "flat_roof_replacement"
@@ -580,8 +613,9 @@ export function computeFlowQuote(
           : measurement.roofType,
       material: answers.material as ReplacementMaterial,
       storeys,
-      scaffoldWeeks: access.scaffoldWeeks,
-      includeSkip: true,
+      scaffoldWeeks: resolved.scaffoldWeeks,
+      fixedAccessExVat: resolved.fixedAccessExVat,
+      includeSkip,
       imageryQuality: answers.scan.imageryQuality,
       imageryDateIsOld: isImageryOlderThanThreeYears(answers.scan.imageryDate),
       // Homeowner-drawn outlines keep the wider confidence band on purpose.
@@ -589,9 +623,11 @@ export function computeFlowQuote(
       conditionAnswer: condition,
       linearItems,
       chimneyCount: measurement.chimneyCount,
-      accessMultiplier: access.accessMultiplier,
+      includeChimneyAllowance: includeChimney,
+      accessMultiplier: resolved.accessMultiplier,
       extraAssumptions: access.notes,
       extraConfidence: access.extraConfidence,
+      pricing,
     });
   } catch {
     return null;
@@ -606,6 +642,7 @@ export function buildLeadPayload(
   /** Map framing at submit time. Optional so existing callers/tests that
    *  never showed a map keep working — it stores as null. */
   mapView: LeadPayload["mapView"] = null,
+  quoteConfig?: QuoteConfig | null,
 ): LeadPayload {
   const path = flowPath(answers);
   const primaryRoofPath =
@@ -615,6 +652,8 @@ export function buildLeadPayload(
       : answers.scan
         ? pathFromBounds(answers.scan.boundingBox)
         : null;
+
+  const cfg = quoteConfig ? buildRateTable(quoteConfig).config : null;
 
   return {
     rooferId: answers.rooferId,
@@ -672,6 +711,13 @@ export function buildLeadPayload(
       ? {
           chimneys: measurement.chimneyCount,
           rooflights: measurement.rooflightCount,
+        }
+      : null,
+    pricingSnapshot: cfg
+      ? {
+          version: 1 as const,
+          fingerprint: configFingerprint(cfg),
+          enabledServices: cfg.enabledServices,
         }
       : null,
   };

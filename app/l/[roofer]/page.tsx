@@ -2,29 +2,12 @@ import type { Metadata } from "next";
 
 import { QuoteLinkShell } from "@/components/quote-link/QuoteLinkShell";
 import { QuoteFlow } from "@/components/quote/QuoteFlow";
-import { apiUrl } from "@/lib/api";
+import { fetchRooferConfig } from "@/lib/roofer-config";
 
 /**
  * Hosted Quote Link — a roofer's own branded, standalone quote page at
- * `/l/[roofer]`. Calendly-style: the quote card is the page, open from the
- * first step. Shell chrome (sky, identity, footer) is separate from the widget.
+ * `/l/[roofer]`. Loads per-roofer quote config for unique pricing.
  */
-
-type RooferInfo = { slug: string; name: string };
-
-async function getRoofer(slug: string): Promise<RooferInfo | null> {
-  try {
-    const res = await fetch(
-      apiUrl(`/api/roofer?slug=${encodeURIComponent(slug)}`),
-      { next: { revalidate: 3600 } },
-    );
-    if (!res.ok) return null;
-    const body = (await res.json()) as { roofer?: RooferInfo };
-    return body.roofer ?? null;
-  } catch {
-    return null;
-  }
-}
 
 export async function generateMetadata({
   params,
@@ -32,7 +15,7 @@ export async function generateMetadata({
   params: Promise<{ roofer: string }>;
 }): Promise<Metadata> {
   const { roofer: slug } = await params;
-  const roofer = await getRoofer(slug);
+  const roofer = await fetchRooferConfig(slug);
   const name =
     roofer?.slug === "quoter-landing-demo"
       ? "Ridgeway Roofing"
@@ -50,7 +33,7 @@ export default async function RooferQuotePage({
   params: Promise<{ roofer: string }>;
 }) {
   const { roofer: slug } = await params;
-  const roofer = await getRoofer(slug);
+  const roofer = await fetchRooferConfig(slug);
 
   if (!roofer) {
     return (
@@ -72,7 +55,6 @@ export default async function RooferQuotePage({
       title={displayName}
       prompt="Answer the questions below for an estimate"
     >
-      {/* Expanded quote card, open at step one — widget chrome unchanged. */}
       <div
         className="q mx-auto"
         data-stage="flow"
@@ -82,6 +64,7 @@ export default async function RooferQuotePage({
           variant="card"
           rooferId={roofer.slug}
           brandName={displayName}
+          quoteConfig={roofer.config}
         />
       </div>
     </QuoteLinkShell>

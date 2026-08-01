@@ -16,15 +16,16 @@ import {
 import { initAnalytics, track } from "@/lib/analytics";
 import { flushPendingLead } from "@/lib/pending-lead";
 import { looksLikeUkPostcode, prettyPostcode } from "@/lib/postcode";
+import type { QuoteConfig } from "@/lib/quote-config";
 
 type QuoteBubbleProps = {
   rooferId?: string;
   brandName?: string;
+  quoteConfig?: QuoteConfig | null;
   /**
    * Open straight into the expanded flow on DESKTOP (skip the collapsed search
    * bar) — used by the inline roofer widget (/w). Ignored on mobile, which
-   * keeps the compact entry → fullscreen-overlay behaviour so it never hijacks
-   * the host page on load. The landing hero leaves this off.
+   * keeps the compact entry → fullscreen-overlay behaviour.
    */
   startExpanded?: boolean;
 };
@@ -53,6 +54,7 @@ function useIsDesktop(breakpoint = 640) {
 function QuoteBubbleShell({
   rooferId = "demo-roofer",
   brandName = "Quoter",
+  quoteConfig = null,
   startExpanded = false,
   mapsEnabled,
 }: QuoteBubbleProps & { mapsEnabled: boolean }) {
@@ -83,11 +85,6 @@ function QuoteBubbleShell({
     flushPendingLead();
   }, [rooferId]);
 
-  // Inline widget on desktop: open the flow immediately so it renders already
-  // expanded at the address step (no collapsed search bar). Mobile is left
-  // collapsed — its entry opens the fullscreen overlay on tap instead, so the
-  // widget never takes over the host page on load. Re-checks on breakpoint
-  // change; the `!flow` guard stops it re-opening.
   useEffect(() => {
     if (startExpanded && isDesktop && !flow) {
       openFlow("", null);
@@ -163,14 +160,9 @@ function QuoteBubbleShell({
       key={flow.key}
       rooferId={rooferId}
       brandName={brandName}
+      quoteConfig={quoteConfig}
       mapsEnabled={mapsEnabled}
-      // Mobile uses the SAME fixed-viewport "card" layout as the desktop panel
-      // (pinned header, pinned back + Continue, phone-sized type, own body
-      // scroller) — just rendered full-screen. The old "page" (standalone web
-      // page) layout was the source of the mobile flow's problems: oversized
-      // type, Continue lost below the fold, back button adrift, ugly reflow off
-      // the keyboard.
-      variant="card"
+      variant={isDesktop ? "card" : "page"}
       initialAddress={{
         postcode: flow.postcode,
         formatted: flow.formatted,
@@ -289,31 +281,22 @@ function QuoteBubbleShell({
               {flow ? (
                 <motion.div
                   key={flow.key}
-                  className="quote-surface fixed inset-0 z-[2147483000] flex flex-col overflow-hidden"
+                  className="quote-surface fixed inset-0 z-[2147483000] overflow-hidden overscroll-none"
                   style={{
                     // Solid white — glass lets the host landing page bleed
                     // through the transparent iframe on real iOS Safari.
                     background: "#ffffff",
-                    // The card layout owns its own scrolling (a pinned header +
-                    // pinned footer around a flex-1 body scroller), so the sheet
-                    // itself must NOT scroll — that keeps the header, back button
-                    // and Continue fixed while only the body moves.
-                    // Fill the visual viewport including notches once the host
-                    // iframe is fullscreen.
+                    // Fill the visual viewport including notches once the
+                    // host iframe is fullscreen.
                     paddingTop: "env(safe-area-inset-top, 0px)",
                     paddingBottom: "env(safe-area-inset-bottom, 0px)",
                   }}
-                  // Pure fade, no scale-pop. The host needs a frame or two to
-                  // resize the iframe to fullscreen; a fade keeps the overlay
-                  // near-invisible during that window so the brief clip to the
-                  // collapsed slot never shows, whereas a scaling box would.
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
+                  initial={{ opacity: 0, scale: 0.985 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.985 }}
+                  transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
                 >
-                  {/* Fills the padded sheet; the card shell inside is height:100%. */}
-                  <div className="relative min-h-0 flex-1">{flowContent}</div>
+                  {flowContent}
                 </motion.div>
               ) : null}
             </AnimatePresence>,

@@ -2,7 +2,6 @@ import {
   MODEL_DEFAULTS,
   PRICE_LIST,
   REPAIR_SIZE_BANDS,
-  getRate,
   type PriceRate,
 } from "@/config/rates";
 import type {
@@ -14,8 +13,17 @@ import type {
   RepairMaterial,
   ReplacementMaterial,
   RoofType,
-  RooferPricing,
 } from "@/lib/types";
+import {
+  getRateFromTable,
+  type QuoteModelOverrides,
+  type RateTable,
+} from "@/lib/rate-table";
+
+export type PricingContext = {
+  table: RateTable;
+  model: QuoteModelOverrides;
+};
 
 type LinearItemInput = {
   rateId:
@@ -35,11 +43,11 @@ type BaseEstimateInput = {
   conditionAnswer: ConditionAnswer;
   linearItems?: LinearItemInput[];
   accessMultiplier?: number;
+  /** Fixed access line (MEWP / tower / allowance) instead of scaffold weeks. */
+  fixedAccessExVat?: number;
   extraAssumptions?: string[];
   extraConfidence?: number;
-  /** The roofer's own saved rates. When present, their material £/m², scaffold,
-   *  skip and minimum call-out override the defaults. */
-  pricing?: RooferPricing | null;
+  pricing?: PricingContext;
 };
 
 export type ReplacementEstimateInput = BaseEstimateInput & {
@@ -49,6 +57,7 @@ export type ReplacementEstimateInput = BaseEstimateInput & {
   imageryDateIsOld: boolean;
   polygonWasEdited: boolean;
   chimneyCount?: number;
+  includeChimneyAllowance?: boolean;
 };
 
 export type RepairEstimateInput = BaseEstimateInput & {
@@ -61,9 +70,10 @@ export type RooflineEstimateInput = {
   storeys: number;
   scaffoldWeeks: number;
   accessMultiplier?: number;
+  fixedAccessExVat?: number;
   extraAssumptions?: string[];
   extraConfidence?: number;
-  pricing?: RooferPricing | null;
+  pricing?: PricingContext;
 };
 
 function clamp(value: number, min: number, max: number) {
@@ -74,16 +84,34 @@ function roundToNearestFifty(value: number) {
   return Math.max(50, Math.round(value / 50) * 50);
 }
 
+function ratesOf(ctx?: PricingContext): RateTable {
+  return ctx?.table ?? PRICE_LIST;
+}
+
+function modelOf(ctx?: PricingContext): QuoteModelOverrides {
+  return (
+    ctx?.model ?? {
+      stripOffPerM2: MODEL_DEFAULTS.stripOffPerM2,
+      stripOffMin: MODEL_DEFAULTS.stripOffMin,
+      stripOffMax: MODEL_DEFAULTS.stripOffMax,
+      vatRate: MODEL_DEFAULTS.vatRate,
+      confidenceWidth: null,
+    }
+  );
+}
+
 function coveringRates(
   pricingMode: PricingMode,
   material: Material,
   roofType?: RoofType,
+  table: RateTable = PRICE_LIST,
 ): PriceRate[] {
-  const candidates = PRICE_LIST.filter(
+  const candidates = table.filter(
     (rate) =>
       rate.category === "covering" &&
       rate.pricingMode === pricingMode &&
-      rate.unit === "m²",
+      rate.unit === "m²" &&
+      rate.min > 0,
   );
 
   if (material !== "not_sure") {
@@ -126,38 +154,6 @@ function combineRates(rates: PriceRate[]) {
   };
 }
 
-/** The roofer's own £/m² for a material, if they've set one (>0). */
-function rooferMaterialRate(
-  pricing: RooferPricing | null | undefined,
-  material: Material,
-): number | null {
-  if (!pricing || material === "not_sure") return null;
-  const found = pricing.materials.find((m) => m.key === material);
-  return found && Number.isFinite(found.rate) && found.rate > 0
-    ? found.rate
-    : null;
-}
-
-/** Covering rate range, with the roofer's own £/m² substituted (as a point
- *  value — the confidence band still spreads it into a min–max range) when they
- *  have a rate for this material. Otherwise the default price-list range. */
-function resolveCoveringRates(
-  pricingMode: PricingMode,
-  material: Material,
-  roofType: RoofType | undefined,
-  pricing: RooferPricing | null | undefined,
-) {
-  const base = combineRates(coveringRates(pricingMode, material, roofType));
-  const rate = rooferMaterialRate(pricing, material);
-  if (rate == null) return base;
-  return { ...base, min: rate, max: rate, source: null };
-}
-
-/** Apply a roofer's flat override (>0) to a base rate's min/max. */
-function overrideRate(base: PriceRate, value: number | null | undefined): PriceRate {
-  return value != null && value > 0 ? { ...base, min: value, max: value } : base;
-}
-
 function rateLineItem(
   rate: PriceRate,
   quantity: number,
@@ -180,12 +176,23 @@ function rateLineItem(
 
 function accessAndRooflineItems(input: BaseEstimateInput): QuoteLineItem[] {
   const items: QuoteLineItem[] = [];
+  const table = ratesOf(input.pricing);
   const accessMultiplier = input.accessMultiplier ?? 1;
-  if (input.scaffoldWeeks > 0) {
-    const scaffold = overrideRate(
-      getRate("scaffold_week"),
-      input.pricing?.scaffoldPerWeek,
-    );
+  const fixed = input.fixedAccessExVat ?? 0;
+  if (fixed > 0) {
+    items.push({
+      label: "Access equipment",
+      detail: "Fixed access allowance for this company",
+      min: fixed,
+      max: fixed,
+      rateId: "fixed_access",
+      unit: "fixed",
+      quantity: 1,
+      sourceTitle: "Roofer quote config",
+      sourceAsOf: "live",
+    });
+  } else if (input.scaffoldWeeks > 0) {
+    const scaffold = getRateFromTable(table, "scaffold_week");
     const item = rateLineItem(
       scaffold,
       input.scaffoldWeeks,
@@ -204,17 +211,22 @@ function accessAndRooflineItems(input: BaseEstimateInput): QuoteLineItem[] {
     items.push(item);
   }
   if (input.includeSkip) {
-    const skip = overrideRate(getRate("skip_hire"), input.pricing?.skipHire);
-    items.push(rateLineItem(skip, 1, "Selected as required"));
+    items.push(
+      rateLineItem(
+        getRateFromTable(table, "skip_hire"),
+        1,
+        "Selected as required",
+      ),
+    );
   }
   for (const item of input.linearItems ?? []) {
     if (item.quantityM <= 0) continue;
     items.push(
       rateLineItem(
-        getRate(item.rateId),
+        getRateFromTable(table, item.rateId),
         item.quantityM,
         item.rateId === "gutter_replace_m" || item.rateId === "fascia_soffit_m"
-          ? "Unverified placeholder rate, replace before production"
+          ? "Roofline rate from company config"
           : "Experimental Solar plane/bbox length estimate",
       ),
     );
@@ -255,18 +267,17 @@ export function calculateReplacementEstimate(
   if (!Number.isFinite(input.scaffoldWeeks) || input.scaffoldWeeks < 0) {
     throw new Error("Replacement estimate requires a non-negative scaffold weeks.");
   }
-  const rates = resolveCoveringRates(
-    "replacement",
-    input.material,
-    input.roofType,
-    input.pricing,
+  const table = ratesOf(input.pricing);
+  const model = modelOf(input.pricing);
+  const rates = combineRates(
+    coveringRates("replacement", input.material, input.roofType, table),
   );
   const coveringMin = input.areaM2 * rates.min;
   const coveringMax = input.areaM2 * rates.max;
   const stripOff = clamp(
-    input.areaM2 * MODEL_DEFAULTS.stripOffPerM2,
-    MODEL_DEFAULTS.stripOffMin,
-    MODEL_DEFAULTS.stripOffMax,
+    input.areaM2 * model.stripOffPerM2,
+    model.stripOffMin,
+    model.stripOffMax,
   );
 
   const lineItems: QuoteLineItem[] = [
@@ -286,7 +297,7 @@ export function calculateReplacementEstimate(
     },
     {
       label: "Strip-off and preparation",
-      detail: `£${MODEL_DEFAULTS.stripOffPerM2}/m², capped £${MODEL_DEFAULTS.stripOffMin}–£${MODEL_DEFAULTS.stripOffMax}`,
+      detail: `£${model.stripOffPerM2}/m², capped £${model.stripOffMin}–£${model.stripOffMax}`,
       min: stripOff,
       max: stripOff,
       rateId: "model_strip_off",
@@ -299,26 +310,25 @@ export function calculateReplacementEstimate(
   ];
 
   const chimneyCount = input.chimneyCount ?? 0;
-  if (chimneyCount > 0) {
+  if (chimneyCount > 0 && input.includeChimneyAllowance !== false) {
     lineItems.push(
       rateLineItem(
-        getRate("chimney_flashing_allowance"),
+        getRateFromTable(table, "chimney_flashing_allowance"),
         chimneyCount,
-        `${chimneyCount} chimney(s), unverified flashing allowance`,
+        `${chimneyCount} chimney(s), flashing allowance`,
       ),
     );
   }
 
   const base = sumLineItems(lineItems);
-  let confidenceWidth = 0.12 + (input.extraConfidence ?? 0);
+  let confidenceWidth =
+    (model.confidenceWidth ?? 0.12) + (input.extraConfidence ?? 0);
   if (input.imageryQuality.toUpperCase() !== "HIGH") confidenceWidth += 0.08;
   if (input.imageryDateIsOld) confidenceWidth += 0.05;
   if (input.polygonWasEdited) confidenceWidth += 0.08;
   if (input.material === "not_sure") confidenceWidth += 0.1;
 
-  let min = roundToNearestFifty(base.min * (1 - confidenceWidth));
-  const floor = input.pricing?.minimumCallout;
-  if (floor && floor > min) min = roundToNearestFifty(floor);
+  const min = roundToNearestFifty(base.min * (1 - confidenceWidth));
   const conditionMultiplier = input.conditionAnswer === "yes" ? 1.1 : 1;
   const max = roundToNearestFifty(
     Math.max(base.max * (1 + confidenceWidth) * conditionMultiplier, min + 100),
@@ -358,11 +368,10 @@ export function calculateRepairEstimate(
   if (!Number.isFinite(input.scaffoldWeeks) || input.scaffoldWeeks < 0) {
     throw new Error("Repair estimate requires a non-negative scaffold weeks.");
   }
-  const rates = resolveCoveringRates(
-    "repair",
-    input.material,
-    undefined,
-    input.pricing,
+  const table = ratesOf(input.pricing);
+  const model = modelOf(input.pricing);
+  const rates = combineRates(
+    coveringRates("repair", input.material, undefined, table),
   );
   const size = repairSizeAdjustment(input.areaM2);
   const adjustedMinRate = rates.min * size.rateMultiplier;
@@ -386,12 +395,11 @@ export function calculateRepairEstimate(
     ...accessAndRooflineItems(input),
   ];
   const base = sumLineItems(lineItems);
-  let confidenceWidth = 0.15 + (input.extraConfidence ?? 0);
+  let confidenceWidth =
+    (model.confidenceWidth ?? 0.15) + (input.extraConfidence ?? 0);
   if (input.material === "not_sure") confidenceWidth += 0.15;
 
-  let min = roundToNearestFifty(base.min * (1 - confidenceWidth));
-  const floor = input.pricing?.minimumCallout;
-  if (floor && floor > min) min = roundToNearestFifty(floor);
+  const min = roundToNearestFifty(base.min * (1 - confidenceWidth));
   const conditionMultiplier = input.conditionAnswer === "yes" ? 1.1 : 1;
   const max = roundToNearestFifty(
     Math.max(base.max * (1 + confidenceWidth) * conditionMultiplier, min + 100),
@@ -430,23 +438,25 @@ export function calculateRooflineEstimate(
   if (!Number.isFinite(input.scaffoldWeeks) || input.scaffoldWeeks < 0) {
     throw new Error("Roofline estimate requires a non-negative scaffold weeks.");
   }
+  const table = ratesOf(input.pricing);
+  const model = modelOf(input.pricing);
   const length = Math.max(0, input.gutterLengthM);
   const lineItems: QuoteLineItem[] = [];
 
   if (length > 0) {
     lineItems.push(
       rateLineItem(
-        getRate("gutter_replace_m"),
+        getRateFromTable(table, "gutter_replace_m"),
         length,
-        "Unverified placeholder rate, replace before production",
+        "Roofline rate from company config",
       ),
     );
     if (input.includeFascias) {
       lineItems.push(
         rateLineItem(
-          getRate("fascia_soffit_m"),
+          getRateFromTable(table, "fascia_soffit_m"),
           length,
-          "Unverified placeholder rate, replace before production",
+          "Roofline rate from company config",
         ),
       );
     }
@@ -460,15 +470,15 @@ export function calculateRooflineEstimate(
       includeSkip: false,
       conditionAnswer: "not_sure",
       accessMultiplier: input.accessMultiplier,
+      fixedAccessExVat: input.fixedAccessExVat,
       pricing: input.pricing,
     }),
   );
 
   const base = sumLineItems(lineItems);
-  const confidenceWidth = 0.18 + (input.extraConfidence ?? 0);
-  let min = roundToNearestFifty(base.min * (1 - confidenceWidth));
-  const floor = input.pricing?.minimumCallout;
-  if (floor && floor > min) min = roundToNearestFifty(floor);
+  const confidenceWidth =
+    (model.confidenceWidth ?? 0.18) + (input.extraConfidence ?? 0);
+  const min = roundToNearestFifty(base.min * (1 - confidenceWidth));
   const max = roundToNearestFifty(
     Math.max(base.max * (1 + confidenceWidth), min + 100),
   );

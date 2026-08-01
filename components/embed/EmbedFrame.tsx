@@ -4,16 +4,11 @@ import { useEffect, useRef } from "react";
 
 import { QuoteBubble } from "@/components/bubble/QuoteBubble";
 import { QUOTE_SIZES } from "@/lib/motion";
+import type { QuoteConfig } from "@/lib/quote-config";
 
 /**
- * SHARED embed surface for the collapsed→expand bubble. Two consumers:
- *   - the marketing landing hero (frames /embed, no startExpanded), and
- *   - the inline roofer widget (/w/[slug], startExpanded so DESKTOP opens
- *     already expanded; mobile keeps the compact entry → fullscreen overlay).
- * The mobile behaviour is identical for both — that's the whole point.
- *
- * Renders only the QuoteBubble and reports its discrete state to the parent
- * frame over postMessage. The widget has just
+ * The embeddable surface: renders only the QuoteBubble and reports its
+ * discrete state to the parent frame over postMessage. The widget has just
  * two on-screen sizes (a fixed collapsed bar and a fixed expanded panel), so
  * the host never has to track per-pixel content changes - it snaps the iframe
  * to one of two known heights, and the transient suggestions dropdown floats
@@ -50,10 +45,12 @@ function resolveHostOrigin(): string | null {
 
 export function EmbedFrame({
   rooferId,
+  quoteConfig = null,
   brandName,
   startExpanded = false,
 }: {
   rooferId: string;
+  quoteConfig?: QuoteConfig | null;
   brandName?: string;
   startExpanded?: boolean;
 }) {
@@ -156,19 +153,9 @@ export function EmbedFrame({
       postSoonTimers.clear();
     };
 
-    // data-stage flips (collapsed <-> expanded / overlay). Post SYNCHRONOUSLY
-    // here rather than via rAF: on mobile the host must resize the iframe to
-    // fullscreen the instant the flow opens, or the widget's own overlay paints
-    // first and is briefly clipped to the little collapsed slot (the two-stage
-    // "flash"). The other triggers (typing, resize) can stay rAF-batched.
+    // data-stage flips (collapsed <-> expanded / overlay).
     const widget = document.getElementById("quoter-widget");
-    const stageMo = new MutationObserver(() => {
-      if (rafId) {
-        window.cancelAnimationFrame(rafId);
-        rafId = 0;
-      }
-      post();
-    });
+    const stageMo = new MutationObserver(schedulePost);
     if (widget) {
       stageMo.observe(widget, {
         attributes: true,
@@ -258,6 +245,7 @@ export function EmbedFrame({
       <QuoteBubble
         rooferId={rooferId}
         brandName={brandName}
+        quoteConfig={quoteConfig}
         startExpanded={startExpanded}
       />
     </div>

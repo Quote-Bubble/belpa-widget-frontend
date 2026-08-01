@@ -1,4 +1,6 @@
 import type { JobType, Material } from "@/lib/types";
+import type { QuoteConfig, ServiceKey } from "@/lib/quote-config";
+import { enabledMaterialsFor } from "@/lib/rate-table";
 
 export type MaterialSwatchId =
   | "concrete"
@@ -41,17 +43,31 @@ export const REPAIR_MATERIALS: MaterialOption[] = [
   { value: "not_sure", label: "Not sure", swatch: "unknown" },
 ];
 
-export function materialOptionsFor(jobType: JobType | null): MaterialOption[] {
+export function materialOptionsFor(
+  jobType: JobType | null,
+  config?: QuoteConfig | null,
+): MaterialOption[] {
+  let base: MaterialOption[];
   switch (jobType) {
     case "full_replacement":
-      return PITCHED_REPLACEMENT_MATERIALS;
+      base = PITCHED_REPLACEMENT_MATERIALS;
+      break;
     case "flat_roof_replacement":
-      return FLAT_REPLACEMENT_MATERIALS;
+      base = FLAT_REPLACEMENT_MATERIALS;
+      break;
     case "tile_or_slate_repair":
-      return REPAIR_MATERIALS;
+      base = REPAIR_MATERIALS;
+      break;
     default:
       return [];
   }
+
+  if (!config || !jobType) return base;
+  const enabled = enabledMaterialsFor(config, jobType as ServiceKey);
+  if (!enabled) return base;
+  return base.filter(
+    (o) => o.value === "not_sure" || enabled.includes(o.value),
+  );
 }
 
 export function materialLabel(value: Material | null): string {
