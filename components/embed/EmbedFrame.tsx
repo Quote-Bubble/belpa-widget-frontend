@@ -6,12 +6,14 @@ import { QuoteBubble } from "@/components/bubble/QuoteBubble";
 import { QUOTE_SIZES } from "@/lib/motion";
 
 /**
- * LANDING-ONLY (collapsed search-bar bubble). The roofer product uses
- * WidgetFrame (/w/[slug], already expanded) and the fullscreen /l/[slug]
- * instead; this stays only for the marketing landing hero.
+ * SHARED embed surface for the collapsed→expand bubble. Two consumers:
+ *   - the marketing landing hero (frames /embed, no startExpanded), and
+ *   - the inline roofer widget (/w/[slug], startExpanded so DESKTOP opens
+ *     already expanded; mobile keeps the compact entry → fullscreen overlay).
+ * The mobile behaviour is identical for both — that's the whole point.
  *
- * The embeddable surface: renders only the QuoteBubble and reports its
- * discrete state to the parent frame over postMessage. The widget has just
+ * Renders only the QuoteBubble and reports its discrete state to the parent
+ * frame over postMessage. The widget has just
  * two on-screen sizes (a fixed collapsed bar and a fixed expanded panel), so
  * the host never has to track per-pixel content changes - it snaps the iframe
  * to one of two known heights, and the transient suggestions dropdown floats
@@ -46,7 +48,15 @@ function resolveHostOrigin(): string | null {
   return null;
 }
 
-export function EmbedFrame({ rooferId }: { rooferId: string }) {
+export function EmbedFrame({
+  rooferId,
+  brandName,
+  startExpanded = false,
+}: {
+  rooferId: string;
+  brandName?: string;
+  startExpanded?: boolean;
+}) {
   const hostRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -245,7 +255,11 @@ export function EmbedFrame({ rooferId }: { rooferId: string }) {
 
   return (
     <div ref={hostRef} className="quoter-bubble-host mx-auto w-full text-left">
-      <QuoteBubble rooferId={rooferId} />
+      <QuoteBubble
+        rooferId={rooferId}
+        brandName={brandName}
+        startExpanded={startExpanded}
+      />
     </div>
   );
 }

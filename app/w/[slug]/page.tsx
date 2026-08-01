@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { WidgetFrame } from "@/components/widget/WidgetFrame";
+import { EmbedFrame } from "@/components/embed/EmbedFrame";
 import { apiUrl } from "@/lib/api";
 
 export const metadata: Metadata = {
@@ -31,9 +31,13 @@ async function getRoofer(slug: string): Promise<RooferInfo | null> {
 
 /**
  * Inline roofer widget — one of the two roofer flows (the other is the
- * fullscreen /l/[slug]). Dropped onto a roofer's site by public/widget.js, it
- * renders the quote flow already expanded at the address step. Bare (no shell)
- * and transparent so it blends into the host page.
+ * fullscreen /l/[slug]). Dropped onto a roofer's site by public/widget.js.
+ *
+ * Reuses the shared EmbedFrame with startExpanded, so DESKTOP opens already
+ * expanded at the address step (no collapsed search bar), while MOBILE keeps
+ * the landing's optimised behaviour: a compact entry that opens the flow
+ * fullscreen and never hijacks the host page on load. Transparent so it blends
+ * into the host page.
  */
 export default async function WidgetPage({
   params,
@@ -59,7 +63,7 @@ export default async function WidgetPage({
 
   return (
     <div className="quoter-embed-page">
-      <WidgetFrame rooferId={roofer.slug} brandName={displayName} />
+      <EmbedFrame rooferId={roofer.slug} brandName={displayName} startExpanded />
     </div>
   );
 }

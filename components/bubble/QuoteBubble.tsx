@@ -20,6 +20,13 @@ import { looksLikeUkPostcode, prettyPostcode } from "@/lib/postcode";
 type QuoteBubbleProps = {
   rooferId?: string;
   brandName?: string;
+  /**
+   * Open straight into the expanded flow on DESKTOP (skip the collapsed search
+   * bar) — used by the inline roofer widget (/w). Ignored on mobile, which
+   * keeps the compact entry → fullscreen-overlay behaviour so it never hijacks
+   * the host page on load. The landing hero leaves this off.
+   */
+  startExpanded?: boolean;
 };
 
 type OpenFlow = {
@@ -46,6 +53,7 @@ function useIsDesktop(breakpoint = 640) {
 function QuoteBubbleShell({
   rooferId = "demo-roofer",
   brandName = "Quoter",
+  startExpanded = false,
   mapsEnabled,
 }: QuoteBubbleProps & { mapsEnabled: boolean }) {
   const [postcode, setPostcode] = useState("");
@@ -74,6 +82,18 @@ function QuoteBubbleShell({
     initAnalytics(rooferId);
     flushPendingLead();
   }, [rooferId]);
+
+  // Inline widget on desktop: open the flow immediately so it renders already
+  // expanded at the address step (no collapsed search bar). Mobile is left
+  // collapsed — its entry opens the fullscreen overlay on tap instead, so the
+  // widget never takes over the host page on load. Re-checks on breakpoint
+  // change; the `!flow` guard stops it re-opening.
+  useEffect(() => {
+    if (startExpanded && isDesktop && !flow) {
+      openFlow("", null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startExpanded, isDesktop]);
 
   useEffect(() => {
     let previewTimer: number | null = null;
