@@ -3,7 +3,7 @@
  *
  * Drop-in:
  *   <button data-quoter-launch data-roofer="your-slug">Get a free quote</button>
- *   <script src="https://quoter-widget-frontend.vercel.app/quoter-launch.js" async></script>
+ *   <script src="https://quoter-widget-frontend.vercel.app/launch.js" async></script>
  *
  * Or call from your own JS:
  *   QuoterLaunch.open({ roofer: "your-slug" })
@@ -22,7 +22,7 @@
   function scriptEl() {
     return (
       document.currentScript ||
-      document.querySelector('script[src*="quoter-launch.js"]')
+      document.querySelector('script[src*="launch.js"]')
     );
   }
 

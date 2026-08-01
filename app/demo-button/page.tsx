@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * Fake roofer homepage for testing quoter-launch.js.
+ * Fake roofer homepage for testing launch.js.
  * Live at /demo-button
  */
 export default function DemoButtonPage() {
@@ -52,12 +52,12 @@ export default function DemoButtonPage() {
   Get a free quote
 </button>
 <script
-  src="https://quoter-widget-frontend.vercel.app/quoter-launch.js"
+  src="https://quoter-widget-frontend.vercel.app/launch.js"
   async></script>`}</pre>
         </section>
       </div>
 
-      <Script src="/quoter-launch.js" strategy="afterInteractive" />
+      <Script src="/launch.js" strategy="afterInteractive" />
       <Script id="demo-launch-bind" strategy="afterInteractive">
         {`
           document.getElementById("demo-launch-api")?.addEventListener("click", function () {

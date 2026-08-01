@@ -196,7 +196,7 @@
   }
 
   // Initialise every widget.js embed on the page. Scoped by src so it never
-  // grabs the quoter-launch.js script (which may also carry a data-roofer).
+  // grabs the launch.js script (which may also carry a data-roofer).
   function initAll() {
     var scripts = document.querySelectorAll(
       'script[src*="widget.js"][data-roofer]',

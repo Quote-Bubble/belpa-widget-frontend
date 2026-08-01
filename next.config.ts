@@ -1,12 +1,13 @@
 import type { NextConfig } from "next";
 
 /**
- * CSP frame-ancestors for /embed. The embed is a PUBLICLY embeddable widget —
- * it's dropped onto arbitrary roofer websites (unknown domains) via embed.js,
- * and onto our own landing page (a different origin). So it must be frameable
- * by any parent by default; `frame-ancestors 'self'` or DENY breaks the entire
- * product. Set EMBED_FRAME_ANCESTORS (space/comma-separated origins) to lock
- * it down to a specific allowlist later (per-roofer domain restriction).
+ * CSP frame-ancestors for the framable routes (/embed, /l, /w). These are
+ * PUBLICLY embeddable — dropped onto arbitrary roofer websites (unknown
+ * domains) via widget.js / launch.js, and onto our own landing page (a
+ * different origin). So they must be frameable by any parent by default;
+ * `frame-ancestors 'self'` or DENY breaks the entire product. Set
+ * EMBED_FRAME_ANCESTORS (space/comma-separated origins) to lock it down to a
+ * specific allowlist later (per-roofer domain restriction).
  */
 function embedFrameAncestors(): string {
   const raw = (process.env.EMBED_FRAME_ANCESTORS ?? "").trim();
@@ -29,6 +30,17 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      // Back-compat: the fullscreen loader was renamed quoter-launch.js →
+      // launch.js. Keep the old path working for any snippet already deployed.
+      {
+        source: "/quoter-launch.js",
+        destination: "/launch.js",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {
@@ -53,7 +65,7 @@ const nextConfig: NextConfig = {
       },
       {
         // Quote Link — framable so host-site “Get a quote” buttons can open
-        // it in a fullscreen modal iframe (see public/quoter-launch.js).
+        // it in a fullscreen modal iframe (see public/launch.js).
         source: "/l",
         headers: [
           ...securityHeaders,
