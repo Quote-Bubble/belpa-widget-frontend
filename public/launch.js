@@ -3,7 +3,7 @@
  *
  * Drop-in:
  *   <button data-quoter-launch data-roofer="your-slug">Get a free quote</button>
- *   <script src="https://quoter-widget-frontend.vercel.app/launch.js" async></script>
+ *   <script src="https://quoter-widget-frontend.vercel.app/v1/launch.js" async></script>
  *
  * Or call from your own JS:
  *   QuoterLaunch.open({ roofer: "your-slug" })
@@ -96,7 +96,11 @@
     ].join(";");
 
     var frame = document.createElement("iframe");
-    frame.src = origin + "/l/" + encodeURIComponent(roofer);
+    var hostQs =
+      typeof location !== "undefined" && location.origin
+        ? "?host=" + encodeURIComponent(location.origin)
+        : "";
+    frame.src = origin + "/l/" + encodeURIComponent(roofer) + hostQs;
     frame.title = "Get a free roof quote";
     frame.setAttribute(
       "sandbox",

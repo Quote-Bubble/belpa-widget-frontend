@@ -39,10 +39,49 @@ const nextConfig: NextConfig = {
         destination: "/launch.js",
         permanent: true,
       },
+      // Versioned loader aliases — bump to /v2 when the postMessage protocol
+      // or iframe contract breaks. Snippets can pin to /v1/* for stability.
+      {
+        source: "/v1/widget.js",
+        destination: "/widget.js",
+        permanent: false,
+      },
+      {
+        source: "/v1/launch.js",
+        destination: "/launch.js",
+        permanent: false,
+      },
     ];
   },
   async headers() {
     return [
+      {
+        source: "/widget.js",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400",
+          },
+        ],
+      },
+      {
+        source: "/launch.js",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400",
+          },
+        ],
+      },
+      {
+        source: "/v1/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400",
+          },
+        ],
+      },
       {
         source: "/embed",
         headers: [

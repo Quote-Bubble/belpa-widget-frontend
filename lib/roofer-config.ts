@@ -15,12 +15,16 @@ export type RooferPublic = {
 export async function fetchRooferConfig(
   slug: string,
   init?: RequestInit,
+  /** Parent site origin from widget.js / launch.js (`?host=`). */
+  host?: string | null,
 ): Promise<RooferPublic | null> {
   try {
-    const res = await fetch(
-      apiUrl(`/api/roofer?slug=${encodeURIComponent(slug)}`),
-      { next: { revalidate: 120 }, ...init },
-    );
+    const params = new URLSearchParams({ slug });
+    if (host) params.set("host", host);
+    const res = await fetch(apiUrl(`/api/roofer?${params}`), {
+      next: { revalidate: 120 },
+      ...init,
+    });
     if (!res.ok) return null;
     const body = (await res.json()) as {
       roofer?: { slug: string; name: string };

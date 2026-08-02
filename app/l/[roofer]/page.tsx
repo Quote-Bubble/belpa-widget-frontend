@@ -11,11 +11,14 @@ import { fetchRooferConfig } from "@/lib/roofer-config";
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ roofer: string }>;
+  searchParams: Promise<{ host?: string }>;
 }): Promise<Metadata> {
   const { roofer: slug } = await params;
-  const roofer = await fetchRooferConfig(slug);
+  const { host } = await searchParams;
+  const roofer = await fetchRooferConfig(slug, undefined, host);
   const name =
     roofer?.slug === "quoter-landing-demo"
       ? "Ridgeway Roofing"
@@ -29,11 +32,14 @@ export async function generateMetadata({
 
 export default async function RooferQuotePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ roofer: string }>;
+  searchParams: Promise<{ host?: string }>;
 }) {
   const { roofer: slug } = await params;
-  const roofer = await fetchRooferConfig(slug);
+  const { host } = await searchParams;
+  const roofer = await fetchRooferConfig(slug, undefined, host);
 
   if (!roofer) {
     return (

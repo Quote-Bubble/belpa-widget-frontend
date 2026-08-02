@@ -24,10 +24,13 @@ const ROOFER_SLUG = /^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/;
  */
 export default async function WidgetPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ host?: string }>;
 }) {
   const { slug } = await params;
+  const { host } = await searchParams;
   if (!ROOFER_SLUG.test(slug)) {
     return (
       <div
@@ -39,7 +42,7 @@ export default async function WidgetPage({
     );
   }
 
-  const roofer = await fetchRooferConfig(slug);
+  const roofer = await fetchRooferConfig(slug, undefined, host);
 
   if (!roofer) {
     return (

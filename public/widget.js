@@ -1,7 +1,7 @@
 /*!
  * Quoter widget — drop the instant-roof-quote flow onto any site.
  *
- *   <script src="https://quoter-widget-frontend.vercel.app/widget.js"
+ *   <script src="https://quoter-widget-frontend.vercel.app/v1/widget.js"
  *           data-roofer="your-slug" async></script>
  *
  * Frames /w/<slug>, which opens ALREADY EXPANDED at the address step on
@@ -61,7 +61,13 @@
     holder.style.margin = "0 auto";
 
     var frame = document.createElement("iframe");
-    frame.src = origin + "/w/" + encodeURIComponent(roofer);
+    // Pass the parent site so per-roofer allowed_origins can lock embeds.
+    // Hosted /l links omit host and stay open when an allowlist is set.
+    var hostQs =
+      typeof location !== "undefined" && location.origin
+        ? "?host=" + encodeURIComponent(location.origin)
+        : "";
+    frame.src = origin + "/w/" + encodeURIComponent(roofer) + hostQs;
     frame.title = "Get an instant, free roof quote";
     frame.loading = "eager";
     frame.setAttribute("scrolling", "no");
