@@ -2,8 +2,11 @@ export type JobType =
   | "full_replacement"
   | "tile_or_slate_repair"
   | "flat_roof_replacement"
-  | "leak_investigation"
   | "gutters_fascias_soffits"
+  | "roof_soft_wash"
+  | "roof_biocide_treatment"
+  | "gutter_clearing"
+  | "leak_investigation"
   | "other";
 
 export type MeasuredJobType =
@@ -11,7 +14,7 @@ export type MeasuredJobType =
   | "flat_roof_replacement";
 
 export type RoofType = "gable" | "hip" | "flat";
-export type PricingMode = "replacement" | "repair" | "roofline";
+export type PricingMode = "replacement" | "repair" | "roofline" | "cleaning";
 export type PropertyType =
   | "detached"
   | "semi_detached"

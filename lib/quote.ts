@@ -499,6 +499,84 @@ export function calculateRooflineEstimate(
   };
 }
 
+/**
+ * Roof cleaning priced per m² of measured roof area, floored at a call-out
+ * minimum. Returns ex-VAT min/max like the roofing estimates (VAT is applied
+ * at display time from the roofer's registration flag).
+ */
+export function calculateCleaningEstimate(input: {
+  areaM2: number;
+  ratePerM2ExVat: number;
+  minCalloutExVat: number;
+  label: string;
+  extraAssumptions?: string[];
+}): QuoteResult {
+  if (!Number.isFinite(input.areaM2) || input.areaM2 <= 0) {
+    throw new Error("Cleaning estimate requires a valid roof area.");
+  }
+  const rate = Math.max(0, input.ratePerM2ExVat);
+  const floored = Math.max(input.areaM2 * rate, Math.max(0, input.minCalloutExVat));
+  const lineItems: QuoteLineItem[] = [
+    {
+      label: input.label,
+      detail: `${input.areaM2.toFixed(2)}m² × £${rate}/m²`,
+      min: floored,
+      max: floored,
+      unit: "m²",
+      quantity: input.areaM2,
+      quantityM2: input.areaM2,
+      unitRateMin: rate,
+      unitRateMax: rate,
+    },
+  ];
+  const confidenceWidth = 0.15;
+  const min = roundToNearestFifty(floored * (1 - confidenceWidth));
+  const max = roundToNearestFifty(
+    Math.max(floored * (1 + confidenceWidth), min + 50),
+  );
+  return {
+    estimateType: "indicative_estimate",
+    pricingMode: "cleaning",
+    min,
+    max,
+    pricingAreaM2: input.areaM2,
+    confidenceWidth,
+    modelAssumptions: [
+      "Cleaning rates are this company's own pricing.",
+      "Area is taken from the roof outline you drew on the satellite imagery.",
+      ...(input.extraAssumptions ?? []),
+    ],
+    lineItems,
+  };
+}
+
+/** A flat-price service (e.g. a gutter clear-out) with a tight band. */
+export function calculateFlatEstimate(input: {
+  amountExVat: number;
+  label: string;
+  extraAssumptions?: string[];
+}): QuoteResult {
+  const amount = Math.max(0, input.amountExVat);
+  const lineItems: QuoteLineItem[] = [
+    { label: input.label, min: amount, max: amount, unit: "fixed", quantity: 1 },
+  ];
+  const min = roundToNearestFifty(amount * 0.9);
+  const max = roundToNearestFifty(Math.max(amount * 1.15, min + 50));
+  return {
+    estimateType: "indicative_estimate",
+    pricingMode: "cleaning",
+    min,
+    max,
+    pricingAreaM2: null,
+    confidenceWidth: 0.12,
+    modelAssumptions: [
+      "Flat price from this company's own pricing.",
+      ...(input.extraAssumptions ?? []),
+    ],
+    lineItems,
+  };
+}
+
 export function displayQuoteAmount(amount: number, includesVat: boolean) {
   const value = includesVat
     ? amount * (1 + MODEL_DEFAULTS.vatRate)

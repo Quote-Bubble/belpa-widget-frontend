@@ -122,7 +122,12 @@ export function assessAccess(
   scan: SolarScan | null,
   storeysAnswer: StoreyBand | null,
   propertyType: PropertyType | null,
-  path: "measured" | "repair" | "roofline" | "consultation" = "measured",
+  path:
+    | "measured"
+    | "repair"
+    | "roofline"
+    | "flat"
+    | "consultation" = "measured",
 ): AccessAssessment {
   const notes: string[] = [];
   let extraConfidence = 0;

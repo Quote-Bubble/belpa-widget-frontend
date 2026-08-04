@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { MODEL_DEFAULTS, PRICE_LIST } from "@/config/rates";
 import {
+  calculateCleaningEstimate,
+  calculateFlatEstimate,
   calculateRepairEstimate,
   calculateReplacementEstimate,
   quoteBaseSubtotal,
@@ -110,6 +112,45 @@ describe("replacement estimate", () => {
 
     expect(confident.confidenceWidth).toBe(0.12);
     expect(uncertain.confidenceWidth).toBeCloseTo(0.43, 8);
+  });
+});
+
+describe("cleaning estimate", () => {
+  it("prices soft wash from area × rate, ex-VAT", () => {
+    const quote = calculateCleaningEstimate({
+      areaM2: 100,
+      ratePerM2ExVat: 14,
+      minCalloutExVat: 150,
+      label: "Roof soft wash",
+    });
+    expect(quote.pricingMode).toBe("cleaning");
+    expect(quote.pricingAreaM2).toBe(100);
+    // 100 × £14 = £1,400 base; band ±15% then rounded to nearest £50.
+    expect(quote.min).toBeGreaterThan(1000);
+    expect(quote.max).toBeGreaterThan(quote.min);
+    expect(quote.lineItems[0].unitRateMin).toBe(14);
+  });
+
+  it("floors a tiny job at the minimum call-out", () => {
+    const quote = calculateCleaningEstimate({
+      areaM2: 2,
+      ratePerM2ExVat: 14,
+      minCalloutExVat: 150,
+      label: "Roof soft wash",
+    });
+    // 2 × £14 = £28, floored to £150 before the band.
+    expect(quote.max).toBeGreaterThanOrEqual(150);
+  });
+
+  it("prices a flat service as a tight band around the fixed amount", () => {
+    const quote = calculateFlatEstimate({
+      amountExVat: 120,
+      label: "Gutter clearing",
+    });
+    expect(quote.pricingMode).toBe("cleaning");
+    expect(quote.pricingAreaM2).toBeNull();
+    expect(quote.min).toBeLessThanOrEqual(120);
+    expect(quote.max).toBeGreaterThanOrEqual(120);
   });
 });
 

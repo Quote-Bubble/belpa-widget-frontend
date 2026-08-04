@@ -6,6 +6,8 @@ import {
   polygonPerimeterM,
 } from "@/lib/geo";
 import {
+  calculateCleaningEstimate,
+  calculateFlatEstimate,
   calculateRepairEstimate,
   calculateReplacementEstimate,
   calculateRooflineEstimate,
@@ -64,7 +66,12 @@ export type FlowStepId =
   | "quote_next"
   | "consultation";
 
-export type FlowPath = "measured" | "repair" | "roofline" | "consultation";
+export type FlowPath =
+  | "measured"
+  | "repair"
+  | "roofline"
+  | "flat"
+  | "consultation";
 
 export type QuoteFlowAnswers = {
   rooferId: string;
@@ -159,6 +166,10 @@ export function drawApproach(
   propertyType: PropertyType | null,
 ): DrawApproach {
   if (jobType === "gutters_fascias_soffits") return "gutter_lines";
+  // Cleaning is priced off roof area — always trace the outline.
+  if (jobType === "roof_soft_wash" || jobType === "roof_biocide_treatment") {
+    return "outline";
+  }
   if (propertyType === "detached" || propertyType === "bungalow") {
     return "gutter_lines";
   }
@@ -181,7 +192,16 @@ export const JOB_TYPE_OPTIONS: FlowOption<JobType>[] = [
   { value: "flat_roof_replacement", label: "New flat roof" },
   { value: "leak_investigation", label: "Leak investigation" },
   { value: "gutters_fascias_soffits", label: "Gutters, fascias & soffits" },
+  { value: "roof_soft_wash", label: "Roof soft wash / moss removal" },
+  { value: "roof_biocide_treatment", label: "Biocide treatment" },
+  { value: "gutter_clearing", label: "Gutter clearing" },
   { value: "other", label: "Something else" },
+];
+
+/** Cleaning jobs priced per m² of measured roof (draw the roof, no material). */
+export const CLEANING_MEASURED_JOB_TYPES: JobType[] = [
+  "roof_soft_wash",
+  "roof_biocide_treatment",
 ];
 
 export const PROPERTY_TYPE_OPTIONS: FlowOption<PropertyType>[] = [
@@ -262,6 +282,10 @@ export function flowPath(answers: QuoteFlowAnswers): FlowPath {
   if (MEASURED_JOB_TYPES.includes(jobType)) {
     return answers.fallbackReason ? "consultation" : "measured";
   }
+  if (CLEANING_MEASURED_JOB_TYPES.includes(jobType)) {
+    return answers.fallbackReason ? "consultation" : "measured";
+  }
+  if (jobType === "gutter_clearing") return "flat";
   if (jobType === "tile_or_slate_repair") return "repair";
   if (jobType === "gutters_fascias_soffits") {
     return answers.fallbackReason ? "consultation" : "roofline";
@@ -272,8 +296,8 @@ export function flowPath(answers: QuoteFlowAnswers): FlowPath {
 export function stepSequence(answers: QuoteFlowAnswers): FlowStepId[] {
   const steps = ((): FlowStepId[] => {
     switch (flowPath(answers)) {
-      case "measured":
-        return [
+      case "measured": {
+        const measured: FlowStepId[] = [
           "address",
           "job_type",
           "property_type",
@@ -285,6 +309,14 @@ export function stepSequence(answers: QuoteFlowAnswers): FlowStepId[] {
           "estimate",
           "quote_next",
         ];
+        // Cleaning is measured by area but has no material choice.
+        const isCleaning =
+          answers.jobType === "roof_soft_wash" ||
+          answers.jobType === "roof_biocide_treatment";
+        return isCleaning
+          ? measured.filter((step) => step !== "material")
+          : measured;
+      }
       case "repair":
         return [
           "address",
@@ -310,6 +342,8 @@ export function stepSequence(answers: QuoteFlowAnswers): FlowStepId[] {
           "estimate",
           "quote_next",
         ];
+      case "flat":
+        return ["address", "job_type", "contact", "estimate", "quote_next"];
       case "consultation":
         return ["address", "job_type", "contact", "consultation"];
     }
@@ -521,6 +555,42 @@ export function computeFlowQuote(
     access.scaffoldWeeks,
     access.accessMultiplier,
   );
+
+  // Roof cleaning — priced per m² of measured roof area, no material step.
+  if (service === "roof_soft_wash" || service === "roof_biocide_treatment") {
+    if (!measurement || !isFinitePositive(measurement.surfaceAreaM2)) {
+      return null;
+    }
+    const clean =
+      service === "roof_soft_wash"
+        ? config.services.roof_soft_wash
+        : config.services.roof_biocide_treatment;
+    if (!clean) return null;
+    try {
+      return calculateCleaningEstimate({
+        areaM2: measurement.surfaceAreaM2,
+        ratePerM2ExVat: clean.ratePerM2ExVat,
+        minCalloutExVat: clean.minCalloutExVat,
+        label:
+          service === "roof_soft_wash"
+            ? "Roof soft wash / moss removal"
+            : "Biocide treatment",
+        extraAssumptions: access.notes,
+      });
+    } catch {
+      return null;
+    }
+  }
+
+  // Flat-price services (e.g. gutter clearing) — no measurement needed.
+  if (service === "gutter_clearing") {
+    const flat = config.services.gutter_clearing;
+    if (!flat) return null;
+    return calculateFlatEstimate({
+      amountExVat: flat.fixedExVat,
+      label: "Gutter clearing",
+    });
+  }
 
   if (path === "repair") {
     if (!isValidMaterialForJob(answers.jobType, answers.material, config))
