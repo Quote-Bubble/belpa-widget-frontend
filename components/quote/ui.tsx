@@ -425,7 +425,7 @@ export function ProgressHeader({
         } ${variant === "card" ? "py-2.5" : "py-3"}`}
       >
         <a
-          href="https://quoter-landing.vercel.app"
+          href="https://belpa.co.uk"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-baseline gap-1.5"

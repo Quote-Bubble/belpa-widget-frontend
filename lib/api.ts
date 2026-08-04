@@ -15,7 +15,7 @@ const configured = (process.env.NEXT_PUBLIC_QUOTER_API_URL ?? "")
   .replace(/\/+$/, "");
 
 /** Known production API — used when the build env is missing or not a URL. */
-const PRODUCTION_API = "https://quoter-api-backend.vercel.app";
+const PRODUCTION_API = "https://api.belpa.co.uk";
 
 function resolveApiBase(): string {
   if (/^https?:\/\//i.test(configured)) return configured;
