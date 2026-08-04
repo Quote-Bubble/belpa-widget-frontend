@@ -214,9 +214,7 @@ export function OptionPill({
       onClick={onClick}
       aria-pressed={selected}
       className={`group flex w-full items-center text-left transition-colors duration-150 ${
-        compact
-          ? "gap-3.5 rounded-2xl px-4 py-4 sm:py-[1.15rem]"
-          : "gap-4 rounded-full px-4 py-4"
+        compact ? "gap-3.5 rounded-2xl px-4 py-3.5" : "gap-4 rounded-full px-4 py-4"
       } ${
         selected
           ? "bg-brand-500 text-white shadow-[0_10px_24px_-8px_rgba(31,87,240,0.55)]"
