@@ -425,7 +425,7 @@ export function ProgressHeader({
         } ${variant === "card" ? "py-2.5" : "py-3"}`}
       >
         <a
-          href="https://quoter-web-six.vercel.app"
+          href="https://quoter-landing.vercel.app"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-baseline gap-1.5"

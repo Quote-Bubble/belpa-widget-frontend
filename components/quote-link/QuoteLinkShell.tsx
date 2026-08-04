@@ -61,7 +61,7 @@ export function QuoteLinkShell({
         {footer ? (
           <footer className="quote-link__footer">
             <Link
-              href="https://quoter-web-six.vercel.app"
+              href="https://quoter-landing.vercel.app"
               className="quote-link__powered"
             >
               Powered by Quoter
