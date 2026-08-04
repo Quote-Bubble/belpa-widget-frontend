@@ -47,33 +47,45 @@ export function OptionListStep<Value extends string | number>({
   const variant = useFlowVariant();
   // Desktop tile arrangement adapts to how many options there are; mobile is
   // always a single downward list. 2 or 4 → two across; 3/5/6+ → three across.
+  // The group is width-capped and centred so tiles stay comfortably
+  // proportioned instead of stretching thin across a wide panel.
   const count = options.length;
-  const colClass = !twoCol
-    ? "grid-cols-1"
-    : count <= 1
+  const desktopCols = !twoCol || count <= 1 ? 1 : count === 2 || count === 4 ? 2 : 3;
+  const colClass =
+    desktopCols === 1
       ? "grid-cols-1"
-      : count === 2 || count === 4
+      : desktopCols === 2
         ? "grid-cols-1 sm:grid-cols-2"
         : "grid-cols-1 sm:grid-cols-3";
+  const maxWClass =
+    desktopCols === 1
+      ? "sm:max-w-sm"
+      : desktopCols === 2
+        ? "sm:max-w-2xl"
+        : "sm:max-w-3xl";
   return (
     <StepShell>
       <StepHeading sub={sub} info={callout}>
         {heading}
       </StepHeading>
       <div
-        className={`grid ${variant === "card" ? "gap-3.5" : "gap-3"} ${colClass} ${
-          variant === "card" ? "flex-1 content-center" : ""
-        }`}
+        className={`${variant === "card" ? "flex flex-1 flex-col justify-center" : ""}`}
       >
-        {options.map((option) => (
-          <OptionPill
-            key={String(option.value)}
-            label={option.label}
-            hint={option.hint}
-            selected={selected === option.value}
-            onClick={() => onSelect(option.value)}
-          />
-        ))}
+        <div
+          className={`mx-auto grid w-full ${maxWClass} ${
+            variant === "card" ? "gap-3.5" : "gap-3"
+          } ${colClass}`}
+        >
+          {options.map((option) => (
+            <OptionPill
+              key={String(option.value)}
+              label={option.label}
+              hint={option.hint}
+              selected={selected === option.value}
+              onClick={() => onSelect(option.value)}
+            />
+          ))}
+        </div>
       </div>
     </StepShell>
   );
