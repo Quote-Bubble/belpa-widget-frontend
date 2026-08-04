@@ -69,7 +69,7 @@ export function OptionListStep<Value extends string | number>({
         {heading}
       </StepHeading>
       <div
-        className={`${variant === "card" ? "flex flex-1 flex-col justify-center" : ""}`}
+        className={`${variant === "card" ? "flex flex-1 flex-col justify-start pt-2 sm:pt-6" : ""}`}
       >
         <div
           className={`mx-auto grid w-full ${maxWClass} ${
