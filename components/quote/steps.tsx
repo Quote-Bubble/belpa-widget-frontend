@@ -45,15 +45,25 @@ export function OptionListStep<Value extends string | number>({
   twoCol?: boolean;
 }) {
   const variant = useFlowVariant();
+  // Desktop tile arrangement adapts to how many options there are; mobile is
+  // always a single downward list. 2 or 4 → two across; 3/5/6+ → three across.
+  const count = options.length;
+  const colClass = !twoCol
+    ? "grid-cols-1"
+    : count <= 1
+      ? "grid-cols-1"
+      : count === 2 || count === 4
+        ? "grid-cols-1 sm:grid-cols-2"
+        : "grid-cols-1 sm:grid-cols-3";
   return (
     <StepShell>
       <StepHeading sub={sub} info={callout}>
         {heading}
       </StepHeading>
       <div
-        className={`grid ${variant === "card" ? "gap-3.5" : "gap-3"} ${
-          twoCol ? "sm:grid-cols-2" : "grid-cols-1"
-        } ${variant === "card" ? "flex-1 content-center" : ""}`}
+        className={`grid ${variant === "card" ? "gap-3.5" : "gap-3"} ${colClass} ${
+          variant === "card" ? "flex-1 content-center" : ""
+        }`}
       >
         {options.map((option) => (
           <OptionPill
