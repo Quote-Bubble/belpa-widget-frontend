@@ -35,7 +35,6 @@ export function OptionListStep<Value extends string | number>({
   onSelect,
   callout,
   twoCol = false,
-  adaptive = false,
 }: {
   heading: string;
   sub?: string;
@@ -44,59 +43,8 @@ export function OptionListStep<Value extends string | number>({
   onSelect: (value: Value) => void;
   callout?: string;
   twoCol?: boolean;
-  /** First step only: the option count varies by niche (roofer vs cleaner),
-   *  so the desktop grid adapts to it (2/4 → two across, 3/5/6+ → three) and
-   *  the group is width-capped + top-aligned. Other steps keep the plain
-   *  two-column layout. */
-  adaptive?: boolean;
 }) {
   const variant = useFlowVariant();
-
-  const pills = options.map((option) => (
-    <OptionPill
-      key={String(option.value)}
-      label={option.label}
-      hint={option.hint}
-      selected={selected === option.value}
-      onClick={() => onSelect(option.value)}
-    />
-  ));
-
-  if (adaptive) {
-    const count = options.length;
-    const cols = count <= 1 ? 1 : count === 2 || count === 4 ? 2 : 3;
-    const colClass =
-      cols === 1
-        ? "grid-cols-1"
-        : cols === 2
-          ? "grid-cols-1 sm:grid-cols-2"
-          : "grid-cols-1 sm:grid-cols-3";
-    const maxWClass =
-      cols === 1 ? "sm:max-w-sm" : cols === 2 ? "sm:max-w-2xl" : "sm:max-w-3xl";
-    return (
-      <StepShell>
-        <StepHeading sub={sub} info={callout}>
-          {heading}
-        </StepHeading>
-        <div
-          className={
-            variant === "card"
-              ? "flex flex-1 flex-col justify-start pt-2 sm:pt-6"
-              : ""
-          }
-        >
-          <div
-            className={`mx-auto grid w-full ${maxWClass} ${
-              variant === "card" ? "gap-3.5" : "gap-3"
-            } ${colClass}`}
-          >
-            {pills}
-          </div>
-        </div>
-      </StepShell>
-    );
-  }
-
   return (
     <StepShell>
       <StepHeading sub={sub} info={callout}>
@@ -107,7 +55,15 @@ export function OptionListStep<Value extends string | number>({
           twoCol ? "sm:grid-cols-2" : "grid-cols-1"
         } ${variant === "card" ? "flex-1 content-center" : ""}`}
       >
-        {pills}
+        {options.map((option) => (
+          <OptionPill
+            key={String(option.value)}
+            label={option.label}
+            hint={option.hint}
+            selected={selected === option.value}
+            onClick={() => onSelect(option.value)}
+          />
+        ))}
       </div>
     </StepShell>
   );
