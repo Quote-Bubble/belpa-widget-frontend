@@ -64,7 +64,7 @@ export function QuoteLinkShell({
               href="https://belpa.co.uk"
               className="quote-link__powered"
             >
-              Powered by Quoter
+              Powered by Belpa
             </Link>
           </footer>
         ) : null}

@@ -4,7 +4,7 @@ import { apiUrl } from "@/lib/api";
  * Fire-and-forget funnel analytics for the embedded widget.
  *
  * There is no third-party tracker — events go to our own backend (/api/event)
- * so nothing leaves the Quoter stack. Every call is best-effort and MUST NEVER
+ * so nothing leaves the Belpa stack. Every call is best-effort and MUST NEVER
  * throw or block the UI: analytics failing should be invisible to the user.
  *
  * A session id is minted per page load so a single homeowner's journey (bar ->

@@ -264,7 +264,7 @@ export type QuoteFlowProps = {
  *  mount an APIProvider of their own. */
 export function QuoteFlowInner({
   rooferId = "demo-roofer",
-  brandName = "Quoter",
+  brandName = "Belpa",
   quoteConfig = null,
   initialAddress,
   onClose,
@@ -289,7 +289,7 @@ export function QuoteFlowInner({
 
 function QuoteFlowBody({
   rooferId = "demo-roofer",
-  brandName = "Quoter",
+  brandName = "Belpa",
   quoteConfig = null,
   initialAddress,
   onClose,

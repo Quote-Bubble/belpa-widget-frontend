@@ -403,7 +403,7 @@ export function ProgressHeader({
   onClose,
 }: {
   percent: number;
-  /** Unused for display — Quoter's own brand is the permanent header
+  /** Unused for display — Belpa's own brand is the permanent header
    * treatment on every embed (the growth mechanic for a widely-embedded,
    * free widget). Kept in the signature in case a caller still passes it. */
   brandName?: string;
@@ -434,7 +434,7 @@ export function ProgressHeader({
             Powered by
           </span>
           <span className="font-[family-name:var(--font-poppins)] text-xl font-bold tracking-tight text-ink">
-            Quoter
+            Belpa
           </span>
         </a>
         <span className="flex items-center gap-2.5">

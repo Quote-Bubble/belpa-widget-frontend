@@ -4,9 +4,9 @@ import Link from "next/link";
 import { QuoteBubble } from "@/components/bubble/QuoteBubble";
 
 export const metadata: Metadata = {
-  title: "Quoter — instant roof quotes from satellite",
+  title: "Belpa — instant roof quotes from satellite",
   description:
-    "Development host for the Quoter bubble: the embeddable instant-quote widget for roofing websites.",
+    "Development host for the Belpa bubble: the embeddable instant-quote widget for roofing websites.",
 };
 
 /* Dev-time stand-in for the real landing page (quoter-web). Hosts the bubble
@@ -35,7 +35,7 @@ export default function Home() {
 
       <nav className="relative z-10 mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-[clamp(0.5rem,2.5svh,1rem)] sm:px-6 sm:py-[clamp(0.5rem,2.5svh,1.25rem)]">
         <span className="font-[family-name:var(--font-poppins)] text-[19px] font-semibold tracking-tight text-ink">
-          Quoter
+          Belpa
         </span>
         <div className="flex items-center gap-5 text-[13.5px] font-medium text-ink-soft">
           <Link href="/quote" className="transition-colors hover:text-ink">

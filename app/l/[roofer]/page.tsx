@@ -22,7 +22,7 @@ export async function generateMetadata({
   const name =
     roofer?.slug === "quoter-landing-demo"
       ? "Ridgeway Roofing"
-      : (roofer?.name ?? "Quoter");
+      : (roofer?.name ?? "Belpa");
   return {
     title: `Free roof quote — ${name}`,
     description: `Get a free roof quote from ${name}. Takes a couple of minutes.`,
@@ -45,7 +45,7 @@ export default async function RooferQuotePage({
     return (
       <QuoteLinkShell
         title="This link isn’t active"
-        subtitle="It may be mistyped, or this roofer isn’t set up on Quoter yet."
+        subtitle="It may be mistyped, or this roofer isn’t set up on Belpa yet."
         footer={false}
       >
         <div className="quote-link__empty" />

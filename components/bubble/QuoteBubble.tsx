@@ -53,7 +53,7 @@ function useIsDesktop(breakpoint = 640) {
 
 function QuoteBubbleShell({
   rooferId = "demo-roofer",
-  brandName = "Quoter",
+  brandName = "Belpa",
   quoteConfig = null,
   startExpanded = false,
   mapsEnabled,

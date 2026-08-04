@@ -29,7 +29,7 @@ import type { QuoteConfig } from "@/lib/quote-config";
  *                reserved slot (again, nothing around it moves).
  *   overlay    — mobile: the flow takes the whole viewport.
  *
- * This is the same mechanism a roofer's site will use to embed Quoter, so it
+ * This is the same mechanism a roofer's site will use to embed Belpa, so it
  * is the first real piece of the production embed, not landing-only glue.
  */
 type EmbedMode = "collapsed" | "suggesting" | "expanded" | "overlay";

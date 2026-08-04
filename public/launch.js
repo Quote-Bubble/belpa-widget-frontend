@@ -1,5 +1,5 @@
 /*!
- * Quoter launch — open the Quote Link in a fullscreen modal from any button.
+ * Belpa launch — open the Quote Link in a fullscreen modal from any button.
  *
  * Drop-in:
  *   <button data-quoter-launch data-roofer="your-slug">Get a free quote</button>
@@ -67,13 +67,13 @@
     opts = opts || {};
     var roofer = opts.roofer || defaultRoofer();
     if (!roofer) {
-      console.error("[Quoter] launch needs a data-roofer / opts.roofer.");
+      console.error("[Belpa] launch needs a data-roofer / opts.roofer.");
       return;
     }
 
     origin = origin || resolveOrigin();
     if (!origin) {
-      console.error("[Quoter] could not resolve the widget origin.");
+      console.error("[Belpa] could not resolve the widget origin.");
       return;
     }
 

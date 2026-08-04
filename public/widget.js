@@ -1,5 +1,5 @@
 /*!
- * Quoter widget — drop the instant-roof-quote flow onto any site.
+ * Belpa widget — drop the instant-roof-quote flow onto any site.
  *
  *   <script src="https://quoter-widget-frontend.vercel.app/v1/widget.js"
  *           data-roofer="your-slug" async></script>
@@ -14,7 +14,7 @@
  * page's layout.
  *
  * Optional attributes:
- *   data-roofer     (required) the roofer's Quoter slug — routes leads to them.
+ *   data-roofer     (required) the roofer's Belpa slug — routes leads to them.
  *   data-target     CSS selector to mount into; defaults to where the script sits.
  *   data-max-width  px cap on the widget width; default 700.
  */
@@ -38,7 +38,7 @@
 
     var roofer = script.getAttribute("data-roofer");
     if (!roofer) {
-      console.error("[Quoter] widget.js is missing data-roofer.");
+      console.error("[Belpa] widget.js is missing data-roofer.");
       return;
     }
 
@@ -47,7 +47,7 @@
     try {
       origin = new URL(script.src).origin;
     } catch (e) {
-      console.error("[Quoter] could not resolve the widget origin.");
+      console.error("[Belpa] could not resolve the widget origin.");
       return;
     }
 

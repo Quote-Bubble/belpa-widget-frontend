@@ -22,7 +22,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
 
-  /* Quoter brand tokens — kept in sync with quoter-web/src/styles/global.css */
+  /* Belpa brand tokens — kept in sync with quoter-web/src/styles/global.css */
   --color-canvas: #ffffff;
   --color-ink: #0a0b0d;
   --color-ink-soft: #3d4148;

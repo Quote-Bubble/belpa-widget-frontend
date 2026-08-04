@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 
 export const metadata: Metadata = {
-  title: "Button launch demo — Quoter",
+  title: "Button launch demo — Belpa",
   description: "Test page: open the Quote Link fullscreen from a host-site button.",
   robots: { index: false, follow: false },
 };
@@ -16,7 +16,7 @@ export default function DemoButtonPage() {
     <main className="demo-launch">
       <div className="demo-launch__wrap">
         <p className="demo-launch__badge">
-          <i aria-hidden /> Quoter launch demo
+          <i aria-hidden /> Belpa launch demo
         </p>
         <h1 className="demo-launch__title">Ridgeway Roofing</h1>
         <p className="demo-launch__lede">

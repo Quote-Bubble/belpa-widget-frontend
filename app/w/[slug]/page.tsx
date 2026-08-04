@@ -4,7 +4,7 @@ import { EmbedFrame } from "@/components/embed/EmbedFrame";
 import { fetchRooferConfig } from "@/lib/roofer-config";
 
 export const metadata: Metadata = {
-  title: "Quoter",
+  title: "Belpa",
   // Embedded on host pages; never indexed on its own.
   robots: { index: false, follow: false },
 };

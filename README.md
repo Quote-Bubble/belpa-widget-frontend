@@ -1,6 +1,6 @@
 # quoter-widget-frontend
 
-The frontend of Quoter: an embeddable, address-first roof-quote flow for UK
+The frontend of Belpa: an embeddable, address-first roof-quote flow for UK
 roofing websites. A homeowner types an address, traces their roof on satellite
 imagery, and gets an indicative price range. Completed leads are submitted to
 the backend for webhook delivery.

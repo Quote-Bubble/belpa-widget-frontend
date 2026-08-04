@@ -19,7 +19,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Quoter",
+  title: "Belpa",
   description: "Instant roof quotes measured from satellite imagery.",
 };
 
