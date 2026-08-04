@@ -22,7 +22,7 @@ export async function fetchRooferConfig(
     const params = new URLSearchParams({ slug });
     if (host) params.set("host", host);
     const res = await fetch(apiUrl(`/api/roofer?${params}`), {
-      next: { revalidate: 120 },
+      next: { revalidate: 20 },
       ...init,
     });
     if (!res.ok) return null;
