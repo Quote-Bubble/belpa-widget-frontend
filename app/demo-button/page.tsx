@@ -52,7 +52,7 @@ export default function DemoButtonPage() {
   Get a free quote
 </button>
 <script
-  src="https://belpa-widget-frontend.vercel.app/launch.js"
+  src="https://widget.belpa.co.uk/launch.js"
   async></script>`}</pre>
         </section>
       </div>
