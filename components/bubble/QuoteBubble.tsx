@@ -175,7 +175,7 @@ function QuoteBubbleShell({
     <MotionConfig reducedMotion="user">
       <motion.div
         className="q"
-        id="quoter-widget"
+        id="belpa-widget"
         data-stage={flow ? "flow" : "input"}
         data-settled={shellSettled ? "true" : "false"}
         data-suggesting="false"
@@ -315,7 +315,7 @@ export function QuoteBubble(props: QuoteBubbleProps) {
       apiKey={apiKey}
       region="GB"
       language="en-GB"
-      solutionChannel="quoter-bubble"
+      solutionChannel="belpa-bubble"
     >
       <QuoteBubbleShell {...props} mapsEnabled />
     </APIProvider>

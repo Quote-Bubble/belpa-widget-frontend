@@ -9,15 +9,15 @@ export const metadata: Metadata = {
     "Development host for the Belpa bubble: the embeddable instant-quote widget for roofing websites.",
 };
 
-/* Dev-time stand-in for the real landing page (quoter-web). Hosts the bubble
+/* Dev-time stand-in for the real landing page (belpa-web). Hosts the bubble
    the same way the production hero will, so the flow is exercised in situ.
-   Hero spacing/position mirrors quoter-web's Hero.astro + global.css — kept
-   in sync by hand since this repo and quoter-web don't share a package. */
+   Hero spacing/position mirrors belpa-web's Hero.astro + global.css — kept
+   in sync by hand since this repo and belpa-web don't share a package. */
 export default function Home() {
   return (
     <main className="quote-surface relative min-h-dvh overflow-x-hidden bg-white">
       {/* Blob wallpaper behind the hero core — same bleed/mask geometry as
-          quoter-web's .site-bg, built from gradients only (no image asset)
+          belpa-web's .site-bg, built from gradients only (no image asset)
           so this dev host stays a single lightweight page. */}
       <div
         aria-hidden
@@ -51,7 +51,7 @@ export default function Home() {
       </nav>
 
       {/* One-viewport hero: headline → search stays composed in the first
-          screen, spacing/sizing driven by clamp() the same way quoter-web's
+          screen, spacing/sizing driven by clamp() the same way belpa-web's
           .hero-stage / .hero-title / .hero-sub / .hero-widget are. */}
       <section className="relative flex min-h-[100svh] flex-col">
         <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col items-center justify-center px-5 pb-[clamp(1rem,4svh,2.75rem)] pt-[clamp(1.25rem,7svh,5.75rem)] text-center sm:px-6">
@@ -69,7 +69,7 @@ export default function Home() {
           </h1>
 
           <p
-            data-quoter-expand-top
+            data-belpa-expand-top
             className="mx-auto mt-[clamp(1rem,2.2svh,1.5rem)] max-w-xl text-[clamp(15px,1.35vw,17px)] leading-relaxed text-muted"
           >
             Type your address, answer a few questions, trace your roof on
@@ -80,7 +80,7 @@ export default function Home() {
             from your local roofer. No ladders, no appointments.
           </p>
 
-          <div className="quoter-bubble-host mx-auto mt-[clamp(1.5rem,3.8svh,2.75rem)] w-full text-left">
+          <div className="belpa-bubble-host mx-auto mt-[clamp(1.5rem,3.8svh,2.75rem)] w-full text-left">
             <QuoteBubble />
           </div>
         </div>

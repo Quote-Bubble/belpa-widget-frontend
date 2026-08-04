@@ -151,7 +151,7 @@ export function LocateStep({
         setPhase("confirm");
       } catch (error) {
         if (abort.signal.aborted || cancelledRef.current) return;
-        console.error("[quoter] geocode failed", error);
+        console.error("[belpa] geocode failed", error);
         await holdMinimum();
         if (cancelledRef.current) return;
         setError(

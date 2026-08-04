@@ -30,13 +30,13 @@ export default async function EmbedPage({
   searchParams: Promise<{ roofer?: string }>;
 }) {
   const { roofer } = await searchParams;
-  const rooferId = roofer ?? "quoter-landing-demo";
+  const rooferId = roofer ?? "belpa-landing-demo";
   if (!isValidRooferId(rooferId)) notFound();
 
   const loaded = await fetchRooferConfig(rooferId);
 
   return (
-    <div className="quoter-embed-page">
+    <div className="belpa-embed-page">
       <EmbedFrame
         rooferId={loaded?.slug ?? rooferId}
         brandName={loaded?.name}

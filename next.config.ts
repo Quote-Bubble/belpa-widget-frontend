@@ -32,10 +32,10 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   async redirects() {
     return [
-      // Back-compat: the fullscreen loader was renamed quoter-launch.js →
+      // Back-compat: the fullscreen loader was renamed belpa-launch.js →
       // launch.js. Keep the old path working for any snippet already deployed.
       {
-        source: "/quoter-launch.js",
+        source: "/belpa-launch.js",
         destination: "/launch.js",
         permanent: true,
       },

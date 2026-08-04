@@ -956,7 +956,7 @@ export function QuoteFlow(props: QuoteFlowProps) {
       apiKey={apiKey}
       region="GB"
       language="en-GB"
-      solutionChannel="quoter-flow"
+      solutionChannel="belpa-flow"
     >
       <QuoteFlowInner {...props} mapsEnabled />
     </APIProvider>

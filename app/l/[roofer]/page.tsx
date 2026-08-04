@@ -20,7 +20,7 @@ export async function generateMetadata({
   const { host } = await searchParams;
   const roofer = await fetchRooferConfig(slug, undefined, host);
   const name =
-    roofer?.slug === "quoter-landing-demo"
+    roofer?.slug === "belpa-landing-demo"
       ? "Ridgeway Roofing"
       : (roofer?.name ?? "Belpa");
   return {
@@ -54,7 +54,7 @@ export default async function RooferQuotePage({
   }
 
   const displayName =
-    roofer.slug === "quoter-landing-demo" ? "Ridgeway Roofing" : roofer.name;
+    roofer.slug === "belpa-landing-demo" ? "Ridgeway Roofing" : roofer.name;
 
   return (
     <QuoteLinkShell

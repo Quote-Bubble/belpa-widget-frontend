@@ -16,7 +16,7 @@ import { apiUrl } from "@/lib/api";
  * multiplying it in the roofer's inbox.
  */
 
-const KEY = "quoter_pending_lead";
+const KEY = "belpa_pending_lead";
 const MAX_AGE_MS = 60 * 60 * 1000; // 1 hour — don't resurrect ancient drafts
 
 export { MAX_AGE_MS };

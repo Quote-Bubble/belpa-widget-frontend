@@ -57,11 +57,11 @@ describe("pending-lead", () => {
       vi.fn(async () => new Response(JSON.stringify({ ok: true }), { status: 200 })),
     );
     savePendingLead({ name: "Ada", _submissionId: "abc" });
-    expect(store.has("quoter_pending_lead")).toBe(true);
+    expect(store.has("belpa_pending_lead")).toBe(true);
 
     const result = await postLeadWithRetry({ name: "Ada" });
     expect(result.ok).toBe(true);
-    expect(store.has("quoter_pending_lead")).toBe(false);
+    expect(store.has("belpa_pending_lead")).toBe(false);
   });
 
   it("clears the stash on permanent 4xx failure", async () => {
@@ -77,7 +77,7 @@ describe("pending-lead", () => {
     const result = await postLeadWithRetry({ name: "Ada" });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.retriable).toBe(false);
-    expect(store.has("quoter_pending_lead")).toBe(false);
+    expect(store.has("belpa_pending_lead")).toBe(false);
   });
 
   it("keeps the stash on transient failure", async () => {
@@ -90,19 +90,19 @@ describe("pending-lead", () => {
     const result = await postLeadWithRetry({ name: "Ada" }, 1);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.retriable).toBe(true);
-    expect(store.has("quoter_pending_lead")).toBe(true);
+    expect(store.has("belpa_pending_lead")).toBe(true);
   });
 
   it("drops aged pending leads on flush", () => {
     store.set(
-      "quoter_pending_lead",
+      "belpa_pending_lead",
       JSON.stringify({
         body: { name: "Ada" },
         savedAt: Date.now() - MAX_AGE_MS - 1,
       }),
     );
     flushPendingLead();
-    expect(store.has("quoter_pending_lead")).toBe(false);
+    expect(store.has("belpa_pending_lead")).toBe(false);
   });
 });
 
@@ -110,6 +110,6 @@ describe("clearPendingLead", () => {
   it("removes the key", () => {
     savePendingLead({ name: "Ada" });
     clearPendingLead();
-    expect(store.has("quoter_pending_lead")).toBe(false);
+    expect(store.has("belpa_pending_lead")).toBe(false);
   });
 });

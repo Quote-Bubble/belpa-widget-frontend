@@ -28,8 +28,8 @@ export default function DemoButtonPage() {
           <button
             className="demo-launch__btn demo-launch__btn--primary"
             type="button"
-            data-quoter-launch
-            data-roofer="quoter-landing-demo"
+            data-belpa-launch
+            data-roofer="belpa-landing-demo"
           >
             Get a free quote
           </button>
@@ -38,21 +38,21 @@ export default function DemoButtonPage() {
             type="button"
             id="demo-launch-api"
           >
-            Open via QuoterLaunch.open()
+            Open via BelpaLaunch.open()
           </button>
         </div>
 
         <section className="demo-launch__card">
           <h2>Snippet for any site</h2>
           <p>
-            Put a button with <code>data-quoter-launch</code> and load the script
+            Put a button with <code>data-belpa-launch</code> and load the script
             once.
           </p>
-          <pre className="demo-launch__code">{`<button data-quoter-launch data-roofer="your-slug">
+          <pre className="demo-launch__code">{`<button data-belpa-launch data-roofer="your-slug">
   Get a free quote
 </button>
 <script
-  src="https://quoter-widget-frontend.vercel.app/launch.js"
+  src="https://belpa-widget-frontend.vercel.app/launch.js"
   async></script>`}</pre>
         </section>
       </div>
@@ -61,8 +61,8 @@ export default function DemoButtonPage() {
       <Script id="demo-launch-bind" strategy="afterInteractive">
         {`
           document.getElementById("demo-launch-api")?.addEventListener("click", function () {
-            if (!window.QuoterLaunch) return;
-            window.QuoterLaunch.open({ roofer: "quoter-landing-demo" });
+            if (!window.BelpaLaunch) return;
+            window.BelpaLaunch.open({ roofer: "belpa-landing-demo" });
           });
         `}
       </Script>

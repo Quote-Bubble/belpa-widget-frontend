@@ -14,7 +14,7 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("[quoter] route error", error);
+    console.error("[belpa] route error", error);
   }, [error]);
 
   return (
@@ -28,7 +28,7 @@ export default function Error({
       </p>
       <div className="mt-8 flex w-full flex-col gap-3 sm:flex-row sm:justify-center">
         <a
-          href="mailto:hello@getquoter.io?subject=Roof%20consultation%20request"
+          href="mailto:hello@getbelpa.io?subject=Roof%20consultation%20request"
           className="inline-flex items-center justify-center rounded-full bg-brand-500 px-5 py-3 text-[15px] font-semibold text-white shadow-[0_8px_18px_-6px_rgba(31,87,240,0.55)] transition-colors hover:brightness-105"
         >
           Request a consultation call

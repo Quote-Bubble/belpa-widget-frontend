@@ -22,7 +22,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
 
-  /* Belpa brand tokens — kept in sync with quoter-web/src/styles/global.css */
+  /* Belpa brand tokens — kept in sync with belpa-web/src/styles/global.css */
   --color-canvas: #ffffff;
   --color-ink: #0a0b0d;
   --color-ink-soft: #3d4148;
@@ -93,7 +93,7 @@ select {
 }
 
 /* Embed page chrome — horizontal shadow room; tighter on phones. */
-.quoter-embed-page {
+.belpa-embed-page {
   min-height: 100dvh;
   display: flex;
   align-items: flex-start;
@@ -102,13 +102,13 @@ select {
   background: transparent;
 }
 @media (max-width: 640px) {
-  .quoter-embed-page {
+  .belpa-embed-page {
     padding: 0 12px;
   }
 }
 
 /* ---------------------------------------------------------------
-   Quote bubble — ported from quoter-web LiveWidget.astro (.q-*).
+   Quote bubble — ported from belpa-web LiveWidget.astro (.q-*).
    Keep class names stable: the landing site swaps its mock for this.
 ---------------------------------------------------------------- */
 .q {
@@ -135,11 +135,11 @@ select {
 /* Collapsed search bar's own size; the opened flow overrides this below
    (kept as two explicit rules, not one shared value, on purpose - they
    are allowed to differ). */
-.quoter-bubble-host {
+.belpa-bubble-host {
   max-width: var(--quote-collapsed-width);
   transition: max-width var(--quote-motion-shell) var(--ease-out-soft);
 }
-body:has(#quoter-widget[data-stage="flow"]) .quoter-bubble-host {
+body:has(#belpa-widget[data-stage="flow"]) .belpa-bubble-host {
   max-width: var(--quote-shell-width);
 }
 
@@ -383,12 +383,12 @@ body:has(#quoter-widget[data-stage="flow"]) .quoter-bubble-host {
 }
 
 /* Landing sub-copy fades out while the bubble is expanded */
-[data-quoter-expand-top] {
+[data-belpa-expand-top] {
   transition:
     opacity var(--quote-motion-shell) var(--ease-out-soft),
     transform var(--quote-motion-shell) var(--ease-out-soft);
 }
-body:has(#quoter-widget[data-stage="flow"]) [data-quoter-expand-top] {
+body:has(#belpa-widget[data-stage="flow"]) [data-belpa-expand-top] {
   opacity: 0;
   transform: translateY(-8px);
   pointer-events: none;

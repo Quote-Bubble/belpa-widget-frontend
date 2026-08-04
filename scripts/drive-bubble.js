@@ -10,10 +10,10 @@ const OUT = path.join(__dirname, "..", "tmp", "playwright");
 
 async function assertStableShell(page, label) {
   await page.waitForFunction(
-    () => Math.round(document.querySelector("#quoter-widget")?.getBoundingClientRect().height ?? 0) === 544,
+    () => Math.round(document.querySelector("#belpa-widget")?.getBoundingClientRect().height ?? 0) === 544,
     { timeout: 5000 },
   );
-  const dimensions = await page.locator("#quoter-widget").evaluate((node) => {
+  const dimensions = await page.locator("#belpa-widget").evaluate((node) => {
     const scroller = node.querySelector(".quote-flow-scroller");
     return {
       width: Math.round(node.getBoundingClientRect().width),
@@ -41,16 +41,16 @@ async function main() {
   await page.waitForTimeout(800);
   await page.screenshot({ path: path.join(OUT, "bubble-collapsed.png") });
 
-  const input = page.locator("#quoter-widget input").first();
+  const input = page.locator("#belpa-widget input").first();
   await input.fill("SW1A 2AA");
   // Submit a real UK postcode so the shell expands into the flow stage.
   await page.locator(".q-go").click();
 
   await page.waitForFunction(
-    () => document.querySelector("#quoter-widget")?.getAttribute("data-stage") === "flow",
+    () => document.querySelector("#belpa-widget")?.getAttribute("data-stage") === "flow",
     { timeout: 8000 },
   );
-  const stage = await page.locator("#quoter-widget").getAttribute("data-stage");
+  const stage = await page.locator("#belpa-widget").getAttribute("data-stage");
   await page.screenshot({ path: path.join(OUT, "bubble-expanded.png") });
 
   if (stage !== "flow") {

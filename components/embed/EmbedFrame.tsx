@@ -14,7 +14,7 @@ import type { QuoteConfig } from "@/lib/quote-config";
  * to one of two known heights, and the transient suggestions dropdown floats
  * as an overlay. Nothing the widget does moves the host page's layout.
  *
- * Protocol — messages are { source: "quoter-embed", ... }:
+ * Protocol — messages are { source: "belpa-embed", ... }:
  *   - mode:   "collapsed" | "suggesting" | "expanded" | "overlay"
  *   - height: the iframe height (px) for this mode
  *   - stage:  "input" | "flow" (mirrored for host-side selectors)
@@ -93,7 +93,7 @@ export function EmbedFrame({
 
     const post = () => {
       if (!hostOrigin) return;
-      const widget = document.getElementById("quoter-widget");
+      const widget = document.getElementById("belpa-widget");
       const stage = widget?.getAttribute("data-stage") ?? "input";
 
       let mode: EmbedMode;
@@ -122,7 +122,7 @@ export function EmbedFrame({
       lastKey = key;
 
       const payload: Record<string, unknown> = {
-        source: "quoter-embed",
+        source: "belpa-embed",
         mode,
         height,
         stage,
@@ -154,7 +154,7 @@ export function EmbedFrame({
     };
 
     // data-stage flips (collapsed <-> expanded / overlay).
-    const widget = document.getElementById("quoter-widget");
+    const widget = document.getElementById("belpa-widget");
     const stageMo = new MutationObserver(schedulePost);
     if (widget) {
       stageMo.observe(widget, {
@@ -168,11 +168,11 @@ export function EmbedFrame({
     const onHostMessage = (e: MessageEvent) => {
       if (!hostOrigin || e.origin !== hostOrigin) return;
       const d = e.data;
-      if (!d || d.source !== "quoter-host") return;
+      if (!d || d.source !== "belpa-host") return;
       if (typeof d.action !== "string") return;
       if (d.action === "focus") {
         const input = document
-          .getElementById("quoter-widget")
+          .getElementById("belpa-widget")
           ?.querySelector<HTMLInputElement>("input");
         input?.focus();
       }
@@ -241,7 +241,7 @@ export function EmbedFrame({
   }, []);
 
   return (
-    <div ref={hostRef} className="quoter-bubble-host mx-auto w-full text-left">
+    <div ref={hostRef} className="belpa-bubble-host mx-auto w-full text-left">
       <QuoteBubble
         rooferId={rooferId}
         brandName={brandName}

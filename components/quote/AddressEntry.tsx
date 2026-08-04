@@ -128,7 +128,7 @@ export function AddressEntry({
     return (
       <div className="q-bare-field">
         <input
-          id="quoter-postcode"
+          id="belpa-postcode"
           type="text"
           value={postcode}
           onChange={(event) =>

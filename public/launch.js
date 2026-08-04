@@ -2,12 +2,12 @@
  * Belpa launch — open the Quote Link in a fullscreen modal from any button.
  *
  * Drop-in:
- *   <button data-quoter-launch data-roofer="your-slug">Get a free quote</button>
- *   <script src="https://quoter-widget-frontend.vercel.app/v1/launch.js" async></script>
+ *   <button data-belpa-launch data-roofer="your-slug">Get a free quote</button>
+ *   <script src="https://belpa-widget-frontend.vercel.app/v1/launch.js" async></script>
  *
  * Or call from your own JS:
- *   QuoterLaunch.open({ roofer: "your-slug" })
- *   QuoterLaunch.close()
+ *   BelpaLaunch.open({ roofer: "your-slug" })
+ *   BelpaLaunch.close()
  *
  * Optional on the script tag:
  *   data-roofer   default slug for buttons that omit their own
@@ -15,7 +15,7 @@
 (function (global) {
   "use strict";
 
-  var OVERLAY_ID = "quoter-launch-overlay";
+  var OVERLAY_ID = "belpa-launch-overlay";
   var EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
   var origin = "";
 
@@ -52,7 +52,7 @@
     var overlay = document.getElementById(OVERLAY_ID);
     if (!overlay) return;
     document.removeEventListener("keydown", onKeydown, true);
-    document.documentElement.style.overflow = overlay.__quoterPrevOverflow || "";
+    document.documentElement.style.overflow = overlay.__belpaPrevOverflow || "";
     overlay.remove();
   }
 
@@ -136,7 +136,7 @@
     ].join(";");
     closeBtn.addEventListener("click", close);
 
-    overlay.__quoterPrevOverflow = document.documentElement.style.overflow;
+    overlay.__belpaPrevOverflow = document.documentElement.style.overflow;
     document.documentElement.style.overflow = "hidden";
     overlay.appendChild(frame);
     overlay.appendChild(closeBtn);
@@ -156,11 +156,11 @@
 
   function bindButtons() {
     var nodes = document.querySelectorAll(
-      "[data-quoter-launch]:not([data-quoter-launch-bound])",
+      "[data-belpa-launch]:not([data-belpa-launch-bound])",
     );
     for (var i = 0; i < nodes.length; i++) {
       (function (btn) {
-        btn.setAttribute("data-quoter-launch-bound", "1");
+        btn.setAttribute("data-belpa-launch-bound", "1");
         btn.addEventListener("click", function (e) {
           e.preventDefault();
           open({
@@ -172,7 +172,7 @@
   }
 
   var api = { open: open, close: close, bind: bindButtons };
-  global.QuoterLaunch = api;
+  global.BelpaLaunch = api;
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", bindButtons);

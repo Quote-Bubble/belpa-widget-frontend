@@ -1,16 +1,16 @@
 /**
- * Base URL for the quoter-api backend.
+ * Base URL for the belpa-api backend.
  *
  * The frontend and backend live in separate repositories and deployments, so
  * every request to /api/... goes through this helper. Locally, run
- * quoter-api on port 3001 and set NEXT_PUBLIC_QUOTER_API_URL accordingly
+ * belpa-api on port 3001 and set NEXT_PUBLIC_BELPA_API_URL accordingly
  * (see .env.example).
  *
  * NEXT_PUBLIC_* is baked at build time on Vercel. A missing/invalid value
  * makes fetch("/api/geocode") hit the widget host (404/SSO) and LocateStep
  * shows a fake "check your connection" error.
  */
-const configured = (process.env.NEXT_PUBLIC_QUOTER_API_URL ?? "")
+const configured = (process.env.NEXT_PUBLIC_BELPA_API_URL ?? "")
   .trim()
   .replace(/\/+$/, "");
 
@@ -33,7 +33,7 @@ if (
   !/^https?:\/\//i.test(configured)
 ) {
   console.warn(
-    "[quoter] NEXT_PUBLIC_QUOTER_API_URL missing or invalid in this build; using",
+    "[belpa] NEXT_PUBLIC_BELPA_API_URL missing or invalid in this build; using",
     PRODUCTION_API,
   );
 }

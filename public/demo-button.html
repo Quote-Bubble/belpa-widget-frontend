@@ -97,7 +97,7 @@
           <a href="#why">Why us</a>
           <a href="#contact">Contact</a>
         </nav>
-        <button class="btn btn-primary btn-sm" data-quoter-launch>Free quote</button>
+        <button class="btn btn-primary btn-sm" data-belpa-launch>Free quote</button>
       </div>
     </header>
 
@@ -110,7 +110,7 @@
           work, and a written guarantee on every job.
         </p>
         <div class="hero-actions">
-          <button class="btn btn-primary" data-quoter-launch>
+          <button class="btn btn-primary" data-belpa-launch>
             Get your free quote →
           </button>
           <span class="hero-note">Takes 2 minutes · no obligation</span>
@@ -141,7 +141,7 @@
         <div class="cta" id="contact">
           <h2>Wondering what your roof will cost?</h2>
           <p>Get an instant ballpark online — trace your roof on the map and see a price in seconds. No waiting for a callback.</p>
-          <button class="btn btn-primary" data-quoter-launch>Get your free quote →</button>
+          <button class="btn btn-primary" data-belpa-launch>Get your free quote →</button>
         </div>
       </div>
     </section>
@@ -159,9 +159,9 @@
       (function () {
         var slug =
           new URLSearchParams(location.search).get("roofer") ||
-          "quoter-landing-demo";
+          "belpa-landing-demo";
         document
-          .querySelectorAll("[data-quoter-launch]")
+          .querySelectorAll("[data-belpa-launch]")
           .forEach(function (b) { b.setAttribute("data-roofer", slug); });
         var s = document.createElement("script");
         s.src = "/launch.js";

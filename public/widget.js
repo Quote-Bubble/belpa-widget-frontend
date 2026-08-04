@@ -1,7 +1,7 @@
 /*!
  * Belpa widget — drop the instant-roof-quote flow onto any site.
  *
- *   <script src="https://quoter-widget-frontend.vercel.app/v1/widget.js"
+ *   <script src="https://belpa-widget-frontend.vercel.app/v1/widget.js"
  *           data-roofer="your-slug" async></script>
  *
  * Frames /w/<slug>, which opens ALREADY EXPANDED at the address step on
@@ -33,8 +33,8 @@
   }
 
   function initOne(script) {
-    if (script.__quoterWidgetInit) return;
-    script.__quoterWidgetInit = true;
+    if (script.__belpaWidgetInit) return;
+    script.__belpaWidgetInit = true;
 
     var roofer = script.getAttribute("data-roofer");
     if (!roofer) {
@@ -54,7 +54,7 @@
     var maxWidth = parseInt(script.getAttribute("data-max-width"), 10) || 700;
 
     var holder = document.createElement("div");
-    holder.setAttribute("data-quoter-widget", roofer);
+    holder.setAttribute("data-belpa-widget", roofer);
     holder.style.position = "relative";
     holder.style.width = "100%";
     holder.style.maxWidth = maxWidth + "px";
@@ -156,7 +156,7 @@
       // Only trust messages from the widget's own origin.
       if (event.origin !== origin) return;
       var d = event.data;
-      if (!d || d.source !== "quoter-embed") return;
+      if (!d || d.source !== "belpa-embed") return;
 
       // Prefer live sizes from the widget so hosts don't copy constants.
       if (d.sizes && typeof d.sizes === "object") {

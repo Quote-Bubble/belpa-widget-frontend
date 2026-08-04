@@ -12,7 +12,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { PROGRESS_TRANSITION } from "@/lib/motion";
 
 /* Shared UI primitives for the quote flow — heatable-style visual language
-   on the quoter-web brand tokens (see app/globals.css). */
+   on the belpa-web brand tokens (see app/globals.css). */
 
 export type FlowVariant = "page" | "card";
 

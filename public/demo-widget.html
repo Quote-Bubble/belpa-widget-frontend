@@ -85,7 +85,7 @@
         </p>
 
         <!-- The Belpa widget mounts right here, inline and already expanded. -->
-        <div class="quote-slot" id="quoter-slot"></div>
+        <div class="quote-slot" id="belpa-slot"></div>
         <p class="quote-caption">Free · no obligation · takes about 2 minutes</p>
       </div>
     </section>
@@ -126,12 +126,12 @@
       (function () {
         var slug =
           new URLSearchParams(location.search).get("roofer") ||
-          "quoter-landing-demo";
+          "belpa-landing-demo";
         var s = document.createElement("script");
         s.src = "/widget.js";
         s.async = true;
         s.setAttribute("data-roofer", slug);
-        s.setAttribute("data-target", "#quoter-slot");
+        s.setAttribute("data-target", "#belpa-slot");
         document.body.appendChild(s);
       })();
     </script>

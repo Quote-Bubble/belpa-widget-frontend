@@ -34,7 +34,7 @@ export default async function WidgetPage({
   if (!ROOFER_SLUG.test(slug)) {
     return (
       <div
-        className="quoter-embed-page"
+        className="belpa-embed-page"
         style={{ alignItems: "center", color: "#5a6678", fontSize: 14 }}
       >
         This quote widget isn’t active yet.
@@ -47,7 +47,7 @@ export default async function WidgetPage({
   if (!roofer) {
     return (
       <div
-        className="quoter-embed-page"
+        className="belpa-embed-page"
         style={{ alignItems: "center", color: "#5a6678", fontSize: 14 }}
       >
         This quote widget isn’t active yet.
@@ -56,10 +56,10 @@ export default async function WidgetPage({
   }
 
   const displayName =
-    roofer.slug === "quoter-landing-demo" ? "Ridgeway Roofing" : roofer.name;
+    roofer.slug === "belpa-landing-demo" ? "Ridgeway Roofing" : roofer.name;
 
   return (
-    <div className="quoter-embed-page">
+    <div className="belpa-embed-page">
       <EmbedFrame
         rooferId={roofer.slug}
         brandName={displayName}
