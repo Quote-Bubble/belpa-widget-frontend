@@ -428,14 +428,13 @@ export function ProgressHeader({
           href="https://belpa.co.uk"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-baseline gap-1.5"
+          className="flex items-center gap-1.5"
         >
           <span className="text-[12px] font-semibold text-brand-600">
             Powered by
           </span>
-          <span className="font-[family-name:var(--font-poppins)] text-xl font-bold tracking-tight text-ink">
-            Belpa
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/belpa-wordmark.png" alt="Belpa" className="h-5 w-auto" />
         </a>
         <span className="flex items-center gap-2.5">
           {onClose ? (
