@@ -176,6 +176,16 @@ export function EmbedFrame({
           ?.querySelector<HTMLInputElement>("input");
         input?.focus();
       }
+      // Lets a host dismiss an open flow from its own chrome — the landing
+      // presents the desktop flow as a centred modal and owns the close
+      // control, which lives outside this document.
+      //
+      // Purely additive: no existing host sends it, so the roofer embeds
+      // served from /w/[slug] behave exactly as before. QuoteBubble owns the
+      // flow state, hence the event rather than a direct call.
+      if (d.action === "close") {
+        window.dispatchEvent(new CustomEvent("belpa:close-flow"));
+      }
     };
     window.addEventListener("message", onHostMessage);
 

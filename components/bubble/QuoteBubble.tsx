@@ -155,6 +155,18 @@ function QuoteBubbleShell({
     track("widget_closed");
   }
 
+  // A host can ask us to dismiss the flow (EmbedFrame relays `action: "close"`
+  // as this event). Used by the landing, whose desktop modal draws its own
+  // close control outside this document and so can't reach closeFlow directly.
+  useEffect(() => {
+    const onHostClose = () => {
+      setFlow(null);
+      track("widget_closed");
+    };
+    window.addEventListener("belpa:close-flow", onHostClose);
+    return () => window.removeEventListener("belpa:close-flow", onHostClose);
+  }, []);
+
   const flowContent = flow ? (
     <QuoteFlowInner
       key={flow.key}
