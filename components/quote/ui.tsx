@@ -434,7 +434,7 @@ export function ProgressHeader({
             Powered by
           </span>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/belpa-wordmark.png" alt="Belpa" className="h-5 w-auto" />
+          <img src="/belpa-wordmark.png" alt="Belpa" className="h-6 w-auto" />
         </a>
         <span className="flex items-center gap-2.5">
           {onClose ? (
