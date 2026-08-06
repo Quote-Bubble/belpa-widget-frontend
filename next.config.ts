@@ -6,8 +6,11 @@ import type { NextConfig } from "next";
  * domains) via widget.js / launch.js, and onto our own landing page (a
  * different origin). So they must be frameable by any parent by default;
  * `frame-ancestors 'self'` or DENY breaks the entire product. Set
- * EMBED_FRAME_ANCESTORS (space/comma-separated origins) to lock it down to a
- * specific allowlist later (per-roofer domain restriction).
+ * EMBED_FRAME_ANCESTORS (space/comma-separated origins) locks /embed down to
+ * a global allowlist. Per-roofer locking for /w and /l is NOT here — it can't
+ * be, since these headers are static and the allowlist is per-slug. That lives
+ * in middleware.ts, which reads each roofer's allowlist and sets the header
+ * itself.
  */
 function embedFrameAncestors(): string {
   const raw = (process.env.EMBED_FRAME_ANCESTORS ?? "").trim();
@@ -106,35 +109,29 @@ const nextConfig: NextConfig = {
         // Quote Link — framable so host-site “Get a quote” buttons can open
         // it in a fullscreen modal iframe (see public/launch.js).
         source: "/l",
-        headers: [
-          ...securityHeaders,
-          {
-            key: "Content-Security-Policy",
-            value: `frame-ancestors ${embedFrameAncestors()}`,
-          },
-        ],
+        // No frame-ancestors here: middleware.ts sets it PER ROOFER from
+        // their allowlist. Two CSP headers would intersect rather than
+        // override, so leaving the static one would still work but makes the
+        // effective policy the product of two places. One owner is clearer.
+        headers: [...securityHeaders],
       },
       {
         source: "/l/:path*",
-        headers: [
-          ...securityHeaders,
-          {
-            key: "Content-Security-Policy",
-            value: `frame-ancestors ${embedFrameAncestors()}`,
-          },
-        ],
+        // No frame-ancestors here: middleware.ts sets it PER ROOFER from
+        // their allowlist. Two CSP headers would intersect rather than
+        // override, so leaving the static one would still work but makes the
+        // effective policy the product of two places. One owner is clearer.
+        headers: [...securityHeaders],
       },
       {
         // Inline widget — framable so roofer sites can embed the already-
         // expanded flow (see public/widget.js).
         source: "/w/:path*",
-        headers: [
-          ...securityHeaders,
-          {
-            key: "Content-Security-Policy",
-            value: `frame-ancestors ${embedFrameAncestors()}`,
-          },
-        ],
+        // No frame-ancestors here: middleware.ts sets it PER ROOFER from
+        // their allowlist. Two CSP headers would intersect rather than
+        // override, so leaving the static one would still work but makes the
+        // effective policy the product of two places. One owner is clearer.
+        headers: [...securityHeaders],
       },
       {
         // Everything EXCEPT the framable routes (/embed, /l, /w) gets anti-
