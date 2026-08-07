@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowLeft, ArrowRight, Check, Info, X } from "lucide-react";
 import {
   createContext,
   useContext,
@@ -164,18 +165,7 @@ export function InfoTip({ children }: { children: ReactNode }) {
             : "bg-brand-50 text-brand-600 hover:bg-brand-100"
         }`}
       >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.4"
-          className="size-3"
-          aria-hidden="true"
-        >
-          <circle cx="12" cy="12" r="9" />
-          <path d="M12 11v5" strokeLinecap="round" />
-          <circle cx="12" cy="7.5" r="0.5" fill="currentColor" />
-        </svg>
+        <Info strokeWidth={2} className="size-3" aria-hidden="true" />
       </button>
       <AnimatePresence>
         {open ? (
@@ -226,20 +216,9 @@ export function OptionPill({
           compact ? "size-8" : "size-10"
         } ${selected ? "bg-white/95" : "bg-white/70 group-hover:bg-white"}`}
       >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={`text-brand-600 transition-opacity ${
+        <Check strokeWidth={2} className={`text-brand-600 transition-opacity ${
             compact ? "size-4" : "size-4.5"
-          } ${selected ? "opacity-100" : "opacity-0"}`}
-          aria-hidden="true"
-        >
-          <path d="M4 12.5 9.5 18 20 6.5" />
-        </svg>
+          } ${selected ? "opacity-100" : "opacity-0"}`} aria-hidden="true" />
       </span>
       <span className={`min-w-0 ${compact ? "py-0.5" : "py-1"}`}>
         <span
@@ -271,18 +250,7 @@ export function InfoCallout({ children }: { children: ReactNode }) {
         variant === "card" ? "mt-5 p-4 text-[14.5px]" : "mt-7"
       }`}
     >
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        className="mt-0.5 size-5 flex-none text-brand-600"
-        aria-hidden="true"
-      >
-        <circle cx="12" cy="12" r="9" />
-        <path d="M12 11v5" strokeLinecap="round" />
-        <circle cx="12" cy="7.5" r="0.5" fill="currentColor" />
-      </svg>
+      <Info strokeWidth={2} className="mt-0.5 size-5 flex-none text-brand-600" aria-hidden="true" />
       <p>{children}</p>
     </div>
   );
@@ -344,18 +312,7 @@ export function TickButton({
       {busy ? (
         <span className="size-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
       ) : (
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="size-5"
-          aria-hidden="true"
-        >
-          <path d="M4 12.5 9.5 18 20 6.5" />
-        </svg>
+        <Check strokeWidth={2} className="size-5" aria-hidden="true" />
       )}
     </button>
   );
@@ -381,18 +338,7 @@ export function ContinueBubble({
       className="inline-flex h-9 items-center gap-1.5 rounded-full bg-brand-500 px-3.5 text-[12px] font-semibold text-white shadow-[0_8px_18px_-8px_rgba(31,87,240,0.6)] transition-all duration-150 hover:brightness-105 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
     >
       {label}
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="size-3.5"
-        aria-hidden="true"
-      >
-        <path d="M5 12h14m-6-6 6 6-6 6" />
-      </svg>
+      <ArrowRight strokeWidth={2} className="size-3.5" aria-hidden="true" />
     </button>
   );
 }
@@ -444,17 +390,7 @@ export function ProgressHeader({
               aria-label="Close quote"
               className="grid size-8 place-items-center rounded-full bg-[#f1f2f5] text-ink-soft transition-colors hover:bg-[#e6e8ed]"
             >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                className="size-4"
-                aria-hidden="true"
-              >
-                <path d="m6 6 12 12M18 6 6 18" />
-              </svg>
+              <X strokeWidth={2} className="size-4" aria-hidden="true" />
             </button>
           ) : null}
         </span>
@@ -484,18 +420,7 @@ export function BackButton({ onClick }: { onClick: () => void }) {
           : "fixed bottom-6 left-5 sm:absolute sm:bottom-8 sm:left-8"
       }`}
     >
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="size-5"
-        aria-hidden="true"
-      >
-        <path d="M19 12H5m6-7-7 7 7 7" />
-      </svg>
+      <ArrowLeft strokeWidth={2} className="size-5" aria-hidden="true" />
     </button>
   );
 }

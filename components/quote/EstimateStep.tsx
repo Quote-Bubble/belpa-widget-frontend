@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronRight, FileText, MapPin } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { InfoTip, StepShell, useFlowVariant } from "@/components/quote/ui";
@@ -141,17 +142,7 @@ export function EstimateStep({
             variant === "card" ? "mt-1.5 text-[13px]" : "mt-2 text-[14px]"
           }`}
         >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            className="size-4 flex-none"
-            aria-hidden="true"
-          >
-            <path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z" />
-            <circle cx="12" cy="10" r="2.5" />
-          </svg>
+          <MapPin strokeWidth={2} className="size-4 flex-none" aria-hidden="true" />
           <span className="truncate">{address}</span>
         </p>
       </div>
@@ -254,32 +245,9 @@ export function EstimateStep({
               variant === "card" ? "py-3 text-[14px]" : "py-4 text-[15px]"
             }`}
           >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.9"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="size-5 flex-none"
-                aria-hidden="true"
-              >
-                <rect x="4" y="3" width="16" height="18" rx="2.5" />
-                <path d="M8 8h5M8 12h8M8 16h8" />
-              </svg>
+              <FileText strokeWidth={2} className="size-5 flex-none" aria-hidden="true" />
               <span className="flex-1">See what&apos;s included</span>
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="size-4 flex-none text-brand-500"
-                aria-hidden="true"
-              >
-                <path d="m9 6 6 6-6 6" />
-              </svg>
+              <ChevronRight strokeWidth={2} className="size-4 flex-none text-brand-500" aria-hidden="true" />
             </button>
         )}
       </div>

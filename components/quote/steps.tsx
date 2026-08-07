@@ -1,5 +1,6 @@
 "use client";
 
+import { Check } from "lucide-react";
 import { useRef, useState } from "react";
 
 import {
@@ -212,18 +213,7 @@ export function MaterialStep({
                 <MaterialSwatch id={option.swatch} />
                 {isSelected ? (
                   <span className="absolute right-1.5 top-1.5 grid size-6 place-items-center rounded-full bg-brand-500 text-white shadow">
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="size-3.5"
-                      aria-hidden="true"
-                    >
-                      <path d="M4 12.5 9.5 18 20 6.5" />
-                    </svg>
+                    <Check strokeWidth={2} className="size-3.5" aria-hidden="true" />
                   </span>
                 ) : null}
               </span>
@@ -443,18 +433,7 @@ export function ConsultationStep({
     <StepShell>
       <div className="mt-6 grid place-items-center">
         <span className="grid size-16 place-items-center rounded-full bg-brand-50">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="size-8 text-brand-600"
-            aria-hidden="true"
-          >
-            <path d="M4 12.5 9.5 18 20 6.5" />
-          </svg>
+          <Check strokeWidth={2} className="size-8 text-brand-600" aria-hidden="true" />
         </span>
       </div>
       <StepHeading

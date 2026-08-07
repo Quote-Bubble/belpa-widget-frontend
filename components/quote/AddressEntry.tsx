@@ -7,6 +7,7 @@
  * No Google Places Autocomplete — geocode stays on /api/geocode (postcodes.io).
  */
 
+import { Check, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { flowInputClass, flowLabelClass } from "@/components/quote/ui";
@@ -78,24 +79,9 @@ export function FieldFeedbackIcon({ status }: { status: FieldFeedback }) {
       aria-hidden="true"
     >
       {ok ? (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-          <path
-            d="M5 12.5 9.5 17 19 7.5"
-            stroke="currentColor"
-            strokeWidth="2.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        <Check size={16} strokeWidth={2} aria-hidden="true" />
       ) : (
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-          <path
-            d="M6 6l12 12M18 6 6 18"
-            stroke="currentColor"
-            strokeWidth="2.4"
-            strokeLinecap="round"
-          />
-        </svg>
+        <X size={16} strokeWidth={2} aria-hidden="true" />
       )}
     </span>
   );
