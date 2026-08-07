@@ -156,6 +156,33 @@ function QuoteBubbleShell({
     track("widget_closed");
   }
 
+  /*
+   * Lock the page behind the mobile overlay.
+   *
+   * The overlay is `fixed inset-0`, so whatever is behind it must not scroll.
+   * Until now that was left to the host — widget.js pins body, launch.js and
+   * the landing set overflow: hidden — which works when we're in an iframe
+   * because the host owns the scrolling document.
+   *
+   * The hosted Quote Link has no host: this component IS the page. Without
+   * this, the branded shell scrolled around underneath the fullscreen flow.
+   * Locking the document the overlay actually lives in is correct in both
+   * cases; inside an iframe it just locks a document that is already
+   * fullscreen, which costs nothing.
+   */
+  useEffect(() => {
+    if (isDesktop || !flow) return;
+    const el = document.documentElement;
+    const prevOverflow = el.style.overflow;
+    const prevOverscroll = el.style.overscrollBehavior;
+    el.style.overflow = "hidden";
+    el.style.overscrollBehavior = "none";
+    return () => {
+      el.style.overflow = prevOverflow;
+      el.style.overscrollBehavior = prevOverscroll;
+    };
+  }, [isDesktop, flow]);
+
   // A host can ask us to dismiss the flow (EmbedFrame relays `action: "close"`
   // as this event). Used by the landing, whose desktop modal draws its own
   // close control outside this document and so can't reach closeFlow directly.

@@ -59,7 +59,7 @@ export default async function RooferQuotePage({
   return (
     <QuoteLinkShell
       title={displayName}
-      prompt="Answer the questions below for an estimate"
+      prompt="Answer a few questions for a free estimate"
     >
       <QuoteLinkFlow
         rooferId={roofer.slug}
