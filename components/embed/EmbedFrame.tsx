@@ -56,13 +56,11 @@ export function EmbedFrame({
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
 
+  // NOTE: the embed document's transparency is CSS (globals.css, keyed off
+  // .belpa-embed-page). It used to be set here in this effect, which meant it
+  // only landed after hydration — so every embed painted the dark
+  // --background first and visibly flashed a black box for a few hundred ms.
   useEffect(() => {
-    // Make the embed document itself transparent so the host page's
-    // background (the blue blob) shows through around the card.
-    document.documentElement.style.background = "transparent";
-    document.body.style.background = "transparent";
-    document.body.style.margin = "0";
-
     const hostOrigin = resolveHostOrigin();
     const desktopQuery = window.matchMedia("(min-width: 640px)");
     let lastKey = "";

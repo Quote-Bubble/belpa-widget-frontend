@@ -93,6 +93,23 @@ select {
 }
 
 /* Embed page chrome — horizontal shadow room; tighter on phones. */
+/* The framed routes (/embed, /w) must never paint a background of their own —
+   the host page shows through around the card.
+
+   This has to be CSS, and at parse time. It used to be done in an effect in
+   EmbedFrame, which meant html/body painted --background (#070b12, near black)
+   from first paint until React hydrated and cleared it — a black box around
+   every embed for a few hundred milliseconds, on every site, everywhere.
+   :has() rather than a body class because the wrapper is what both routes
+   already share; /l is a standalone page and keeps its own background. */
+html:has(.belpa-embed-page),
+html:has(.belpa-embed-page) body {
+  background: transparent;
+  /* Without this, a visitor in dark mode gets the browser's dark canvas behind
+     a transparent document — the same black box by a different route. */
+  color-scheme: light;
+}
+
 .belpa-embed-page {
   min-height: 100dvh;
   display: flex;

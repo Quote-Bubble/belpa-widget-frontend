@@ -82,7 +82,10 @@
     frame.style.height = (isDesktop() ? EXPANDED_H : COLLAPSED_H) + "px";
     frame.style.border = "0";
     frame.style.background = "transparent";
-    frame.style.colorScheme = "normal"; // don't inherit the host's dark mode
+    // "light", not "normal": normal defers to the OS, so a visitor in dark
+    // mode still gets the browser's dark canvas painted behind a transparent
+    // embed before its document loads — the black box on first paint.
+    frame.style.colorScheme = "light";
     frame.style.transition = "height 320ms " + EASE;
     holder.appendChild(frame);
 

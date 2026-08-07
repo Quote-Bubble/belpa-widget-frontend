@@ -181,6 +181,10 @@
 
     if (desktop) {
       frame.style.cssText = [
+        // Inside cssText, not set separately: assigning cssText replaces the
+        // whole inline style and would drop it. Stops the browser painting its
+        // dark canvas behind the frame before the embed's document loads.
+        "color-scheme:light",
         "width:100%",
         // 640 floor: below it the embed flips to its mobile layout.
         "max-width:700px",
@@ -195,6 +199,7 @@
       ].join(";");
     } else {
       frame.style.cssText = [
+        "color-scheme:light",
         "flex:1",
         "width:100%",
         "height:100%",
