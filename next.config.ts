@@ -1,3 +1,4 @@
+import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
 /**
@@ -109,7 +110,7 @@ const nextConfig: NextConfig = {
         // Quote Link — framable so host-site “Get a quote” buttons can open
         // it in a fullscreen modal iframe (see public/launch.js).
         source: "/l",
-        // No frame-ancestors here: middleware.ts sets it PER ROOFER from
+        // No frame-ancestors here: proxy.ts sets it PER ROOFER from
         // their allowlist. Two CSP headers would intersect rather than
         // override, so leaving the static one would still work but makes the
         // effective policy the product of two places. One owner is clearer.
@@ -117,7 +118,7 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/l/:path*",
-        // No frame-ancestors here: middleware.ts sets it PER ROOFER from
+        // No frame-ancestors here: proxy.ts sets it PER ROOFER from
         // their allowlist. Two CSP headers would intersect rather than
         // override, so leaving the static one would still work but makes the
         // effective policy the product of two places. One owner is clearer.
@@ -127,7 +128,7 @@ const nextConfig: NextConfig = {
         // Inline widget — framable so roofer sites can embed the already-
         // expanded flow (see public/widget.js).
         source: "/w/:path*",
-        // No frame-ancestors here: middleware.ts sets it PER ROOFER from
+        // No frame-ancestors here: proxy.ts sets it PER ROOFER from
         // their allowlist. Two CSP headers would intersect rather than
         // override, so leaving the static one would still work but makes the
         // effective policy the product of two places. One owner is clearer.
@@ -151,4 +152,12 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Source maps upload only when SENTRY_AUTH_TOKEN is set, so local and CI builds
+// are unaffected. Without maps a minified stack trace is nearly useless.
+export default withSentryConfig(nextConfig, {
+  silent: true,
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  sourcemaps: { deleteSourcemapsAfterUpload: true },
+});
