@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { QuoteLinkShell } from "@/components/quote-link/QuoteLinkShell";
-import { QuoteFlow } from "@/components/quote/QuoteFlow";
+import { QuoteLinkFlow } from "@/components/quote-link/QuoteLinkFlow";
 import { fetchRooferConfig } from "@/lib/roofer-config";
 
 /**
@@ -61,18 +61,11 @@ export default async function RooferQuotePage({
       title={displayName}
       prompt="Answer the questions below for an estimate"
     >
-      <div
-        className="q mx-auto"
-        data-stage="flow"
-        style={{ height: 544, maxWidth: 700 }}
-      >
-        <QuoteFlow
-          variant="card"
-          rooferId={roofer.slug}
-          brandName={displayName}
-          quoteConfig={roofer.config}
-        />
-      </div>
+      <QuoteLinkFlow
+        rooferId={roofer.slug}
+        brandName={displayName}
+        quoteConfig={roofer.config}
+      />
     </QuoteLinkShell>
   );
 }

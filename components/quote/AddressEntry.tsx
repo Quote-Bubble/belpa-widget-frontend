@@ -133,6 +133,11 @@ export function AddressEntry({
           }}
           placeholder="Enter your postcode"
           autoComplete="postal-code"
+          // The value is upper-cased on change, so match the keyboard to it
+          // and stop iOS "correcting" SW1A into a word.
+          autoCapitalize="characters"
+          autoCorrect="off"
+          enterKeyHint="go"
           autoFocus={autoFocus}
           spellCheck={false}
           className="q-bare-input"
@@ -170,6 +175,11 @@ export function AddressEntry({
           }}
           placeholder="e.g. SW1A 2AA"
           autoComplete="postal-code"
+          // The value is upper-cased on change, so match the keyboard to it
+          // and stop iOS "correcting" SW1A into a word.
+          autoCapitalize="characters"
+          autoCorrect="off"
+          enterKeyHint="go"
           autoFocus={autoFocus}
           spellCheck={false}
           aria-invalid={postcodeFeedback === "invalid"}

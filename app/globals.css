@@ -553,7 +553,11 @@ body:has(#belpa-widget[data-stage="flow"]) [data-belpa-expand-top] {
   position: relative;
   isolation: isolate;
   min-height: 100dvh;
-  overflow: hidden;
+  /* overflow-x only. This was `overflow: hidden`, which on a phone clipped
+     anything taller than the viewport with no way to scroll to it — the flow's
+     buttons included. The decorative glow is what needed containing, and that
+     only ever overflows sideways. */
+  overflow-x: hidden;
   color: var(--ql-ink);
   /* Soft stage: mostly white around the card, blue reserved for the floor */
   background:
@@ -727,6 +731,20 @@ body:has(#belpa-widget[data-stage="flow"]) [data-belpa-expand-top] {
   margin-top: auto;
   margin-bottom: auto;
   animation: quote-link-rise 640ms var(--ease-out-soft) 120ms both;
+}
+
+/* Phones: don't vertically centre. With the keyboard up the viewport shrinks,
+   the auto margins recompute, and the card slides under the caret while
+   someone is mid-postcode. Top-aligned, it stays where they left it. */
+@media (max-width: 639px) {
+  .quote-link__widget {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+  .quote-link__content {
+    justify-content: flex-start;
+    padding-bottom: 2rem;
+  }
 }
 
 .quote-link__widget::after {

@@ -18,6 +18,17 @@ const poppins = Poppins({
   subsets: ["latin"],
 });
 
+export const viewport = {
+  // The Quote Link is opened from a QR code, so the browser chrome is
+  // right next to the page. Left unset it defaults to white/grey and
+  // reads as a stray tab rather than the roofer's page.
+  themeColor: "#f4f7fb",
+  width: "device-width",
+  initialScale: 1,
+  // Deliberately NOT maximumScale/userScalable — capping zoom on a form
+  // people fill in on a phone is an accessibility failure.
+};
+
 export const metadata: Metadata = {
   title: "Belpa",
   description: "Instant roof quotes measured from satellite imagery.",
