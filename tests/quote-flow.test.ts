@@ -153,13 +153,27 @@ describe("step sequencing", () => {
   });
 
   it("walks forward and backward through the sequence, skipping locate on back", () => {
+    // Detached: nothing to draw, so locate leads straight to material.
     const answers = measuredAnswers();
+    expect(answers.propertyType).toBe("detached");
+    expect(stepSequence(answers)).not.toContain("draw_roof");
     expect(nextStep(answers, "storeys")).toBe("locate");
-    expect(nextStep(answers, "locate")).toBe("draw_roof");
-    expect(previousStep(answers, "draw_roof")).toBe("storeys");
+    expect(nextStep(answers, "locate")).toBe("material");
+    // Back over the transient scan screen, not into it.
+    expect(previousStep(answers, "material")).toBe("storeys");
     expect(previousStep(answers, "address")).toBeNull();
     expect(nextStep(answers, "estimate")).toBe("quote_next");
     expect(nextStep(answers, "quote_next")).toBeNull();
+  });
+
+  it("keeps the draw step where the roof outline is genuinely ambiguous", () => {
+    // Semi-detached shares a roof structure with next door, so the scan cannot
+    // tell whose half is whose and the outline still has to be traced.
+    const answers = measuredAnswers();
+    answers.propertyType = "semi_detached";
+    expect(stepSequence(answers)).toContain("draw_roof");
+    expect(nextStep(answers, "locate")).toBe("draw_roof");
+    expect(previousStep(answers, "draw_roof")).toBe("storeys");
   });
 
   it("reports monotonically increasing progress along the sequence", () => {
@@ -257,10 +271,13 @@ describe("measureRoofs", () => {
 });
 
 describe("drawApproach", () => {
-  it("skips manual area marking for detached and bungalow full replacements", () => {
-    expect(drawApproach("full_replacement", "detached")).toBe("gutter_lines");
-    expect(drawApproach("full_replacement", "bungalow")).toBe("gutter_lines");
-    expect(drawApproach("flat_roof_replacement", "detached")).toBe("gutter_lines");
+  it("draws nothing at all for detached and bungalow replacements", () => {
+    // The scan gives the whole roof area, and area is what a replacement is
+    // priced on — so there is nothing left to collect. Gutter length used to be
+    // gathered here and is now left to the survey.
+    expect(drawApproach("full_replacement", "detached")).toBe("scan_only");
+    expect(drawApproach("full_replacement", "bungalow")).toBe("scan_only");
+    expect(drawApproach("flat_roof_replacement", "detached")).toBe("scan_only");
   });
 
   it("still requires a manual outline for shared/ambiguous roof structures", () => {
@@ -333,7 +350,7 @@ describe("computeFlowQuote", () => {
     ];
     answers.chimneyCount = 1;
     expect(drawApproach(answers.jobType, answers.propertyType)).toBe(
-      "gutter_lines",
+      "scan_only",
     );
     const measurement = measureWholeRoof(
       answers.scan!,

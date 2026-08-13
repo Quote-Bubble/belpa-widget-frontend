@@ -399,10 +399,15 @@ function QuoteFlowBody({
   const approach = drawApproach(answers.jobType, answers.propertyType);
   const measurement = useMemo(() => {
     if (!answers.scan) return null;
-    if (approach === "gutter_lines") {
+    if (approach === "gutter_lines" || approach === "scan_only") {
+      // scan_only passes no gutter runs because none were collected — the
+      // whole-roof area still comes from the scan exactly as before, and
+      // gutterLengthM lands at 0 so the gutter line simply drops out of the
+      // estimate. Under-stating a survey-confirmed guide is the safe direction;
+      // the roofer adds gutters on the visit.
       return measureWholeRoof(
         answers.scan,
-        answers.gutterRuns,
+        approach === "scan_only" ? [] : answers.gutterRuns,
         answers.chimneyCount,
         answers.rooflightCount,
       );

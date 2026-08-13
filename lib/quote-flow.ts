@@ -159,7 +159,7 @@ export function emptyDrawnRoof(path: LatLng[] = []): DrawnRoof {
  *   roof structure with next door, so the scan can't tell whose portion is
  *   whose; those still need a manual outline.
  */
-export type DrawApproach = "outline" | "gutter_lines";
+export type DrawApproach = "outline" | "gutter_lines" | "scan_only";
 
 export function drawApproach(
   jobType: JobType | null,
@@ -171,7 +171,16 @@ export function drawApproach(
     return "outline";
   }
   if (propertyType === "detached" || propertyType === "bungalow") {
-    return "gutter_lines";
+    // Nothing to draw. The scan already gives the whole roof area, and area is
+    // what a replacement is priced on — so the drawing step existed only to
+    // collect gutter length.
+    //
+    // That is a bad trade. Tracing gutter runs on a satellite image is the
+    // hardest thing we ask of a homeowner, it sits right before the price they
+    // came for, and it buys one minor line item on a figure the roofer confirms
+    // at survey anyway. Gutters move to the visit; the estimate goes straight
+    // through.
+    return "scan_only";
   }
   return "outline";
 }
@@ -313,9 +322,15 @@ export function stepSequence(answers: QuoteFlowAnswers): FlowStepId[] {
         const isCleaning =
           answers.jobType === "roof_soft_wash" ||
           answers.jobType === "roof_biocide_treatment";
-        return isCleaning
+        const withoutMaterial = isCleaning
           ? measured.filter((step) => step !== "material")
           : measured;
+        // Detached and bungalow take their area from the scan, so there is
+        // nothing left for the draw step to collect (see drawApproach).
+        return drawApproach(answers.jobType, answers.propertyType) ===
+          "scan_only"
+          ? withoutMaterial.filter((step) => step !== "draw_roof")
+          : withoutMaterial;
       }
       case "repair":
         return [
