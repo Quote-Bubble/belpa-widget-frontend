@@ -6,6 +6,7 @@ import {
   calculateFlatEstimate,
   calculateRepairEstimate,
   calculateReplacementEstimate,
+  quoteBandedLineItems,
   quoteBaseSubtotal,
   repairSizeAdjustment,
   type PricingContext,
@@ -229,5 +230,52 @@ describe("estimate breakdown reconciliation", () => {
     // the raw line-item sum — so the UI labels the subtotal explicitly.
     expect(quote.min).toBeLessThanOrEqual(base.min);
     expect(quote.max).toBeGreaterThanOrEqual(base.max);
+  });
+
+  it("spreads the headline range across the lines so the parts sum to the whole", () => {
+    const quote = calculateReplacementEstimate({
+      areaM2: 84.2,
+      roofType: "gable",
+      material: "natural_slate",
+      storeys: 2,
+      scaffoldWeeks: 1,
+      includeSkip: true,
+      imageryQuality: "HIGH",
+      imageryDateIsOld: false,
+      polygonWasEdited: false,
+      // "yes" applies a condition multiplier to the max only, which a per-line
+      // confidence band would not reproduce. This is precisely the case the
+      // ratio approach exists to survive.
+      conditionAnswer: "yes",
+    });
+
+    const banded = quoteBandedLineItems(quote);
+    const summedMin = banded.reduce((sum, item) => sum + item.min, 0);
+    const summedMax = banded.reduce((sum, item) => sum + item.max, 0);
+
+    expect(summedMin).toBeCloseTo(quote.min, 6);
+    expect(summedMax).toBeCloseTo(quote.max, 6);
+  });
+
+  it("gives every line a real interval rather than a repeated number", () => {
+    const quote = calculateReplacementEstimate({
+      areaM2: 84.2,
+      roofType: "gable",
+      material: "natural_slate",
+      storeys: 2,
+      scaffoldWeeks: 1,
+      includeSkip: true,
+      imageryQuality: "HIGH",
+      imageryDateIsOld: false,
+      polygonWasEdited: false,
+      conditionAnswer: "no",
+    });
+
+    // The reported bug: fixed rates give min === max, so the breakdown printed
+    // "£1,800 – £1,800" on row after row.
+    expect(quote.lineItems.some((item) => item.min === item.max)).toBe(true);
+    for (const item of quoteBandedLineItems(quote)) {
+      expect(item.max).toBeGreaterThan(item.min);
+    }
   });
 });

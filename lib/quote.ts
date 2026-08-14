@@ -601,3 +601,36 @@ export function quoteBaseSubtotal(quote: QuoteResult): {
     { min: 0, max: 0 },
   );
 }
+
+/**
+ * Line items with the headline's uncertainty spread across them.
+ *
+ * The breakdown used to print raw line values, which for most rates means min
+ * and max are the same number — so every row read "£1,800 – £1,800". A range
+ * whose ends are equal is worse than no range: it looks like a bug, and it
+ * claims a precision the headline immediately contradicts.
+ *
+ * Scaled by the RATIO between the headline and the raw subtotal rather than by
+ * re-applying confidenceWidth. Both would look similar, but only this one is
+ * exact: the headline also carries a condition multiplier, a `min + 100` floor,
+ * and its own rounding, none of which a per-line band would reproduce. Because
+ * every line is scaled by the same factor, the parts sum to the whole by
+ * construction — Σ(minᵢ × r) = subtotal.min × r = quote.min — whatever the
+ * headline did to get there.
+ *
+ * Falls back to the raw lines if the subtotal is zero, which would otherwise
+ * divide by it.
+ */
+export function quoteBandedLineItems(quote: QuoteResult): QuoteResult["lineItems"] {
+  const subtotal = quoteBaseSubtotal(quote);
+  if (subtotal.min <= 0 || subtotal.max <= 0) return quote.lineItems;
+
+  const minRatio = quote.min / subtotal.min;
+  const maxRatio = quote.max / subtotal.max;
+
+  return quote.lineItems.map((item) => ({
+    ...item,
+    min: item.min * minRatio,
+    max: item.max * maxRatio,
+  }));
+}

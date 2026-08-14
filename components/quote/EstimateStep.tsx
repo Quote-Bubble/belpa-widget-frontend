@@ -5,7 +5,7 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import { InfoTip, StepShell, useFlowVariant } from "@/components/quote/ui";
 import type { CombinedMeasurement } from "@/lib/quote-flow";
-import { displayQuoteAmount, quoteBaseSubtotal } from "@/lib/quote";
+import { displayQuoteAmount, quoteBandedLineItems } from "@/lib/quote";
 import type { LatLng, QuoteResult } from "@/lib/types";
 
 function useCountUp(target: number, durationMs = 1100, delayMs = 250) {
@@ -107,7 +107,7 @@ export function EstimateStep({
       : null;
   const firstName = contactName.trim().split(" ")[0] ?? "";
   const showArea = quote.pricingMode !== "roofline" && area !== null;
-  const baseSubtotal = quoteBaseSubtotal(quote);
+  const bandedLineItems = quoteBandedLineItems(quote);
 
   const chips: Chip[] = [
     showArea && area !== null
@@ -197,7 +197,7 @@ export function EstimateStep({
         {showBreakdown ? (
           <div className="border-t border-line px-5 py-4 text-left">
             <ul className="flex flex-col gap-1.5">
-              {quote.lineItems.map((item) => (
+              {bandedLineItems.map((item) => (
                 <li
                   key={`${item.label}-${item.rateId ?? ""}`}
                   className="flex items-baseline justify-between gap-4 text-[13px]"
@@ -210,19 +210,19 @@ export function EstimateStep({
                 </li>
               ))}
             </ul>
+            {/* The total, not a subtotal. Every line now carries the same
+                uncertainty, so they add up to the headline — printing the
+                unbanded sum here would contradict the rows directly above it. */}
             <div className="mt-3 flex items-baseline justify-between gap-4 border-t border-line pt-2.5 text-[13px]">
-              <span className="font-medium text-ink-soft">
-                Subtotal before our confidence range
-              </span>
+              <span className="font-medium text-ink-soft">Total</span>
               <span className="flex-none font-semibold text-ink">
-                {displayQuoteAmount(baseSubtotal.min, false)} –{" "}
-                {displayQuoteAmount(baseSubtotal.max, false)}
+                {displayQuoteAmount(quote.min, false)} –{" "}
+                {displayQuoteAmount(quote.max, false)}
               </span>
             </div>
             <p className="mt-2 text-[11.5px] leading-relaxed text-muted">
-              The headline range applies our confidence band to this subtotal
-              ({displayQuoteAmount(quote.min, false)} –{" "}
-              {displayQuoteAmount(quote.max, false)}).
+              Each line is a range because this is measured from satellite
+              imagery, not a survey — the exact price is confirmed on the visit.
             </p>
             {quote.modelAssumptions.length > 0 ? (
               <p className="mt-3 border-t border-line pt-2.5 text-[11.5px] leading-relaxed text-muted">
