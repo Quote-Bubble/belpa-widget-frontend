@@ -5,6 +5,7 @@ import {
   REPAIR_BANDS,
   buildLeadPayload,
   computeFlowQuote,
+  JOB_TYPE_OPTIONS,
   createFlowAnswers,
   displayAddress,
   drawApproach,
@@ -207,8 +208,12 @@ describe("address display", () => {
 
 describe("repair bands", () => {
   it("maps every band to a representative area inside its label range", () => {
-    expect(repairBandById("patch")?.representativeAreaM2).toBeLessThanOrEqual(3);
-    expect(repairBandById("half_roof")?.representativeAreaM2).toBeGreaterThan(25);
+    expect(repairBandById("patch")?.representativeAreaM2).toBeLessThanOrEqual(
+      3,
+    );
+    expect(repairBandById("half_roof")?.representativeAreaM2).toBeGreaterThan(
+      25,
+    );
     expect(repairBandById("missing")).toBeNull();
     expect(REPAIR_BANDS.length).toBeGreaterThanOrEqual(3);
   });
@@ -257,7 +262,9 @@ describe("measureRoofs", () => {
 
   it("ignores degenerate outlines and returns null when nothing measures", () => {
     const scan = flatScan();
-    expect(measureRoofs(scan, [emptyDrawnRoof([{ lat: 52, lng: 0 }])])).toBeNull();
+    expect(
+      measureRoofs(scan, [emptyDrawnRoof([{ lat: 52, lng: 0 }])]),
+    ).toBeNull();
   });
 
   it("rejects roofs that overlap each other by more than 10%", () => {
@@ -303,7 +310,10 @@ describe("measureWholeRoof", () => {
   it("takes area straight from the scan's whole-roof stats, not a drawn polygon", () => {
     const scan = flatScan();
     const measurement = measureWholeRoof(scan, [], 0, 0);
-    expect(measurement.surfaceAreaM2).toBeCloseTo(scan.wholeRoofStats.areaMeters2, 5);
+    expect(measurement.surfaceAreaM2).toBeCloseTo(
+      scan.wholeRoofStats.areaMeters2,
+      5,
+    );
     expect(measurement.method).toBe("solar_whole_roof");
     expect(measurement.gutterLengthM).toBe(0);
   });
@@ -361,9 +371,14 @@ describe("computeFlowQuote", () => {
     const quote = computeFlowQuote(answers, measurement);
     expect(quote).not.toBeNull();
     expect(quote!.pricingMode).toBe("replacement");
-    expect(quote!.pricingAreaM2).toBeCloseTo(answers.scan!.wholeRoofStats.areaMeters2, 1);
+    expect(quote!.pricingAreaM2).toBeCloseTo(
+      answers.scan!.wholeRoofStats.areaMeters2,
+      1,
+    );
     expect(
-      quote!.lineItems.some((item) => item.rateId === "chimney_flashing_allowance"),
+      quote!.lineItems.some(
+        (item) => item.rateId === "chimney_flashing_allowance",
+      ),
     ).toBe(true);
   });
 
@@ -377,9 +392,9 @@ describe("computeFlowQuote", () => {
     ];
     const measurement = measureRoofs(answers.scan!, answers.roofs);
     const quote = computeFlowQuote(answers, measurement);
-    expect(quote!.lineItems.some((item) => item.rateId === "gutter_replace_m")).toBe(
-      true,
-    );
+    expect(
+      quote!.lineItems.some((item) => item.rateId === "gutter_replace_m"),
+    ).toBe(true);
   });
 
   it("prices a roofline job from marked gutter length", () => {
@@ -399,12 +414,12 @@ describe("computeFlowQuote", () => {
     const quote = computeFlowQuote(answers, measurement);
     expect(quote).not.toBeNull();
     expect(quote!.pricingMode).toBe("roofline");
-    expect(quote!.lineItems.some((item) => item.rateId === "gutter_replace_m")).toBe(
-      true,
-    );
-    expect(quote!.lineItems.some((item) => item.rateId === "fascia_soffit_m")).toBe(
-      true,
-    );
+    expect(
+      quote!.lineItems.some((item) => item.rateId === "gutter_replace_m"),
+    ).toBe(true);
+    expect(
+      quote!.lineItems.some((item) => item.rateId === "fascia_soffit_m"),
+    ).toBe(true);
   });
 
   it("prices a repair from the selected size band without a scan", () => {
@@ -505,5 +520,40 @@ describe("buildLeadPayload", () => {
     expect(payload.solar.areaM2).toBeNull();
     expect(payload.roofline).toBeNull();
     expect(payload.otherJobDescription).toBeNull();
+  });
+});
+
+describe("unpriced job types are signposted", () => {
+  it("hints every option that cannot end in a price", () => {
+    // A tester chose Leak investigation, reached "your roofer will call you
+    // back", and could not tell how to get a quote. Nothing before that point
+    // said the branch had no price at the end of it.
+    //
+    // This is the guard, not the two assertions below it: if a new service
+    // routes to consultation and nobody adds a hint, this fails.
+    for (const option of JOB_TYPE_OPTIONS) {
+      const answers = createFlowAnswers("roofer-123", {
+        line: "1 Test St",
+        postcode: "SW1A 1AA",
+        formatted: "1 Test St, SW1A 1AA",
+      });
+      answers.jobType = option.value;
+      if (flowPath(answers) === "consultation") {
+        expect(
+          option.hint,
+          `"${option.label}" ends in a callback with no hint saying so`,
+        ).toBeTruthy();
+      }
+    }
+  });
+
+  it("leaves priced options unhinted so the two stand out", () => {
+    const byValue = Object.fromEntries(
+      JOB_TYPE_OPTIONS.map((o) => [o.value, o]),
+    );
+    expect(byValue.leak_investigation.hint).toBeTruthy();
+    expect(byValue.other.hint).toBeTruthy();
+    expect(byValue.full_replacement.hint).toBeUndefined();
+    expect(byValue.tile_or_slate_repair.hint).toBeUndefined();
   });
 });

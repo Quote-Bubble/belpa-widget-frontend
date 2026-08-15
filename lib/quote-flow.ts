@@ -15,14 +15,12 @@ import {
 } from "@/lib/quote";
 import { materialOptionsFor } from "@/lib/materials";
 import {
+  SERVICE_CATALOG,
   configFingerprint,
   type QuoteConfig,
   type ServiceKey,
 } from "@/lib/quote-config";
-import {
-  buildRateTable,
-  resolveAccessForService,
-} from "@/lib/rate-table";
+import { buildRateTable, resolveAccessForService } from "@/lib/rate-table";
 import {
   isImageryOlderThanThreeYears,
   measureBoundary,
@@ -67,11 +65,7 @@ export type FlowStepId =
   | "consultation";
 
 export type FlowPath =
-  | "measured"
-  | "repair"
-  | "roofline"
-  | "flat"
-  | "consultation";
+  "measured" | "repair" | "roofline" | "flat" | "consultation";
 
 export type QuoteFlowAnswers = {
   rooferId: string;
@@ -127,9 +121,7 @@ export function createFlowAnswers(
 }
 
 /** Human-readable location for quote screens when no pin-derived address exists. */
-export function displayAddress(
-  address: QuoteFlowAnswers["address"],
-): string {
+export function displayAddress(address: QuoteFlowAnswers["address"]): string {
   return address.formatted?.trim() || address.line.trim() || address.postcode;
 }
 
@@ -195,17 +187,46 @@ export type FlowOption<Value extends string | number> = {
   hint?: string;
 };
 
-export const JOB_TYPE_OPTIONS: FlowOption<JobType>[] = [
-  { value: "full_replacement", label: "Full roof replacement" },
-  { value: "tile_or_slate_repair", label: "Tile or slate repair" },
-  { value: "flat_roof_replacement", label: "New flat roof" },
-  { value: "leak_investigation", label: "Leak investigation" },
-  { value: "gutters_fascias_soffits", label: "Gutters, fascias & soffits" },
-  { value: "roof_soft_wash", label: "Roof soft wash / moss removal" },
-  { value: "roof_biocide_treatment", label: "Biocide treatment" },
-  { value: "gutter_clearing", label: "Gutter clearing" },
-  { value: "other", label: "Something else" },
-];
+/**
+ * Hints for the choices that cannot end in a price.
+ *
+ * Two of the nine job types route to "consultation": there is no pricing model
+ * for a leak investigation or for "something else", so the flow collects a
+ * phone number and stops. A tester picked one, reached "Your local roofer will
+ * call you back", and reported he could not work out how to get a quote — a
+ * fair reading, since nothing up to that point suggested this branch had no
+ * price at the end of it.
+ *
+ * The system already knew. SERVICE_CATALOG carries `priced: false` on exactly
+ * these two, and it was surfaced to the roofer in the dashboard editor and to
+ * nobody in the flow. Deriving the hint from that flag rather than repeating
+ * the list here means adding a service cannot silently create a third
+ * unsignposted dead end.
+ */
+const UNPRICED_HINTS: Partial<Record<JobType, string>> = {
+  leak_investigation: "No instant price — a roofer calls you back",
+  other: "No instant price — tell us what you need",
+};
+
+function jobTypeHint(value: JobType): string | undefined {
+  const meta = SERVICE_CATALOG.find((service) => service.key === value);
+  if (!meta || meta.priced) return undefined;
+  return UNPRICED_HINTS[value] ?? "No instant price — a roofer calls you back";
+}
+
+export const JOB_TYPE_OPTIONS: FlowOption<JobType>[] = (
+  [
+    { value: "full_replacement", label: "Full roof replacement" },
+    { value: "tile_or_slate_repair", label: "Tile or slate repair" },
+    { value: "flat_roof_replacement", label: "New flat roof" },
+    { value: "leak_investigation", label: "Leak investigation" },
+    { value: "gutters_fascias_soffits", label: "Gutters, fascias & soffits" },
+    { value: "roof_soft_wash", label: "Roof soft wash / moss removal" },
+    { value: "roof_biocide_treatment", label: "Biocide treatment" },
+    { value: "gutter_clearing", label: "Gutter clearing" },
+    { value: "other", label: "Something else" },
+  ] as FlowOption<JobType>[]
+).map((option) => ({ ...option, hint: jobTypeHint(option.value) }));
 
 /** Cleaning jobs priced per m² of measured roof (draw the roof, no material). */
 export const CLEANING_MEASURED_JOB_TYPES: JobType[] = [
@@ -230,7 +251,11 @@ export const STOREY_OPTIONS: FlowOption<StoreyBand>[] = [
 ];
 
 export const ROOFLINE_SCOPE_OPTIONS: FlowOption<RooflineScope>[] = [
-  { value: "gutters_only", label: "Just gutters", hint: "Replace the gutter runs you marked" },
+  {
+    value: "gutters_only",
+    label: "Just gutters",
+    hint: "Replace the gutter runs you marked",
+  },
   {
     value: "gutters_fascias",
     label: "Gutters + fascias & soffits",
@@ -388,7 +413,7 @@ export function previousStep(
   if (index <= 0) return null;
   const previous = sequence[index - 1];
   // Never step "back" into the transient locate/scan screen; skip over it.
-  return previous === "locate" ? sequence[index - 2] ?? null : previous;
+  return previous === "locate" ? (sequence[index - 2] ?? null) : previous;
 }
 
 export function progressPercent(
@@ -761,9 +786,8 @@ export function buildLeadPayload(
       pitchDegrees: measurement?.averagePitchDegrees ?? null,
       roofType: measurement?.roofType ?? null,
       measurementMethod: measurement?.method ?? null,
-      segmentContributions: measurement?.perRoof.flatMap(
-        (roof) => roof.contributions,
-      ) ?? [],
+      segmentContributions:
+        measurement?.perRoof.flatMap((roof) => roof.contributions) ?? [],
       segments: answers.scan?.roofSegmentStats ?? [],
       wholeRoofStats: answers.scan?.wholeRoofStats ?? null,
       imageryQuality: answers.scan?.imageryQuality ?? null,
