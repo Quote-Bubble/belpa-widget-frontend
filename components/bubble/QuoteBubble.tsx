@@ -3,11 +3,11 @@
 import { ArrowRight, MapPin } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { APIProvider } from "@vis.gl/react-google-maps";
+import dynamic from "next/dynamic";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
 
 import { AddressEntry } from "@/components/quote/AddressEntry";
-import { QuoteFlowInner } from "@/components/quote/QuoteFlow";
+
 import {
   MOTION_DURATION,
   QUOTE_SIZES,
@@ -22,6 +22,40 @@ import {
   prettyPostcode,
 } from "@/lib/postcode";
 import type { QuoteConfig } from "@/lib/quote-config";
+
+/**
+ * The flow loads on demand.
+ *
+ * Importing it directly put the whole quote journey — QuoteFlow, DrawRoofStep,
+ * EstimateStep and the motion library behind them — into the embed's first
+ * load, about 210KB on top of React's 435KB, for a widget whose opening state
+ * is one text input and a button. Every visitor paid to parse the drawing step
+ * whether or not they ever typed a postcode.
+ *
+ * That is not only the embed's problem. The landing runs this in an iframe in
+ * its hero, so the cost lands on the main thread while somebody is scrolling
+ * the page it sits on, which is the likeliest source of the heavy scrolling two
+ * testers reported.
+ *
+ * It loads QuoteFlow, not QuoteFlowInner, deliberately. QuoteFlow brings
+ * its own APIProvider, which used to be mounted out here around the collapsed
+ * bar — meaning every embed impression fetched and executed the Google Maps JS
+ * API before anyone had typed a character. That is main-thread work and a
+ * billable Maps load for visitors who never open the flow. Inside the lazy
+ * chunk it happens when a map is actually about to be shown.
+ *
+ * ssr:false because the flow is already client-only (maps, window measurement),
+ * so there was never server output to lose.
+ */
+const LazyQuoteFlow = dynamic(
+  () => import("@/components/quote/QuoteFlow").then((m) => m.QuoteFlow),
+  { ssr: false },
+);
+
+/** Warm the chunk before it is needed — see prefetchFlow below. */
+function preloadFlow() {
+  void import("@/components/quote/QuoteFlow");
+}
 
 type QuoteBubbleProps = {
   rooferId?: string;
@@ -61,8 +95,7 @@ function QuoteBubbleShell({
   brandName = "Belpa",
   quoteConfig = null,
   startExpanded = false,
-  mapsEnabled,
-}: QuoteBubbleProps & { mapsEnabled: boolean }) {
+}: QuoteBubbleProps) {
   const [postcode, setPostcode] = useState("");
   const [flow, setFlow] = useState<OpenFlow | null>(null);
   // The step content mounts immediately so the panel is never empty glass, but
@@ -100,13 +133,12 @@ function QuoteBubbleShell({
   useEffect(() => {
     let previewTimer: number | null = null;
     try {
-      if (new URLSearchParams(window.location.search).get("preview") === "estimate") {
+      if (
+        new URLSearchParams(window.location.search).get("preview") ===
+        "estimate"
+      ) {
         previewTimer = window.setTimeout(
-          () =>
-            openFlow(
-              "GL5 4HA",
-              "65 Gannicox Rd, Stroud GL5 4HA, UK",
-            ),
+          () => openFlow("GL5 4HA", "65 Gannicox Rd, Stroud GL5 4HA, UK"),
           0,
         );
       }
@@ -200,12 +232,11 @@ function QuoteBubbleShell({
   }, []);
 
   const flowContent = flow ? (
-    <QuoteFlowInner
+    <LazyQuoteFlow
       key={flow.key}
       rooferId={rooferId}
       brandName={brandName}
       quoteConfig={quoteConfig}
-      mapsEnabled={mapsEnabled}
       variant={isDesktop ? "card" : "page"}
       initialAddress={{
         postcode: flow.postcode,
@@ -254,8 +285,21 @@ function QuoteBubbleShell({
               exit={{ opacity: 0 }}
               transition={STEP_TRANSITION}
             >
-              <div className="q-search relative">
-                <MapPin size={16} strokeWidth={2} className="q-search-icon" aria-hidden="true" />
+              {/* Warm the flow chunk at the first sign of intent, so the saving
+                  lands on what an idle visitor downloads rather than on how long
+                  an interested one waits. By the time a postcode has been typed
+                  the fetch has had seconds to finish. */}
+              <div
+                className="q-search relative"
+                onPointerEnter={preloadFlow}
+                onFocusCapture={preloadFlow}
+              >
+                <MapPin
+                  size={16}
+                  strokeWidth={2}
+                  className="q-search-icon"
+                  aria-hidden="true"
+                />
                 <AddressEntry
                   variant="bare"
                   postcode={postcode}
@@ -265,11 +309,7 @@ function QuoteBubbleShell({
                   }}
                   onSubmit={submitPostcode}
                 />
-                <button
-                  type="button"
-                  className="q-go"
-                  onClick={submitPostcode}
-                >
+                <button type="button" className="q-go" onClick={submitPostcode}>
                   Get quote
                   <ArrowRight size={16} strokeWidth={2} aria-hidden="true" />
                 </button>
@@ -317,16 +357,7 @@ function QuoteBubbleShell({
 }
 
 export function QuoteBubble(props: QuoteBubbleProps) {
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
-  if (!apiKey) return <QuoteBubbleShell {...props} mapsEnabled={false} />;
-  return (
-    <APIProvider
-      apiKey={apiKey}
-      region="GB"
-      language="en-GB"
-      solutionChannel="belpa-bubble"
-    >
-      <QuoteBubbleShell {...props} mapsEnabled />
-    </APIProvider>
-  );
+  // No APIProvider here on purpose — see the note on LazyQuoteFlow above. The
+  // flow mounts its own once it loads, so the collapsed bar costs no Maps.
+  return <QuoteBubbleShell {...props} />;
 }
