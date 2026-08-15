@@ -206,7 +206,7 @@ export type FlowOption<Value extends string | number> = {
 const UNPRICED_HINTS: Partial<Record<JobType, string>> = {
   leak_investigation:
     "This one needs a visit to price so a roofer will call you back",
-  other: "You'll describe the job and a roofer will call you back",
+  other: "Tell us what you need and a roofer will call you back",
 };
 
 function jobTypeHint(value: JobType): string | undefined {
