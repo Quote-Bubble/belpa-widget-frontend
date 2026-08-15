@@ -204,14 +204,15 @@ export type FlowOption<Value extends string | number> = {
  * unsignposted dead end.
  */
 const UNPRICED_HINTS: Partial<Record<JobType, string>> = {
-  leak_investigation: "No instant price — a roofer calls you back",
-  other: "No instant price — tell us what you need",
+  leak_investigation:
+    "This one needs a visit to price so a roofer will call you back",
+  other: "Tell us what you need and a roofer will call you back",
 };
 
 function jobTypeHint(value: JobType): string | undefined {
   const meta = SERVICE_CATALOG.find((service) => service.key === value);
   if (!meta || meta.priced) return undefined;
-  return UNPRICED_HINTS[value] ?? "No instant price — a roofer calls you back";
+  return UNPRICED_HINTS[value] ?? "A roofer will call you back about this one";
 }
 
 export const JOB_TYPE_OPTIONS: FlowOption<JobType>[] = (

@@ -242,9 +242,9 @@ export function EstimateStep({
                 </span>
               </div>
               <p className="mt-2 text-[11.5px] leading-relaxed text-muted">
-                Each line is a range because this is measured from satellite
-                imagery, not a survey — the exact price is confirmed on the
-                visit.
+                Every line is a range because your roof was measured from
+                satellite imagery rather than in person, and your roofer will
+                confirm the exact price when they visit.
               </p>
               {quote.modelAssumptions.length > 0 ? (
                 <p className="mt-3 border-t border-line pt-2.5 text-[11.5px] leading-relaxed text-muted">

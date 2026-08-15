@@ -58,8 +58,8 @@ describe("postcode error messages", () => {
     expect(postcodeError("")).toBe("Enter your postcode");
     expect(postcodeError("   ")).toBe("Enter your postcode");
     // Stopped part-way — needs another character, not a correction.
-    expect(postcodeError("HP13")).toBe("Almost — add the rest of your postcode");
-    expect(postcodeError("HP13 5B")).toBe("Almost — add the rest of your postcode");
+    expect(postcodeError("HP13")).toBe("That postcode looks unfinished");
+    expect(postcodeError("HP13 5B")).toBe("That postcode looks unfinished");
     expect(postcodeError("8 Maitland Drive")).toBe(
       "That doesn\u2019t look like a UK postcode",
     );

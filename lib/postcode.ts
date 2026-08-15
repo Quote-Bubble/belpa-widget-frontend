@@ -25,7 +25,8 @@ export function extractPostcode(value: string): string | null {
 
   // \b at the end would not fire after a letter followed by end-of-string in
   // some inputs, so the inward code is bounded by a non-alphanumeric or the end.
-  const pattern = /(?:^|[^A-Z0-9])([A-Z]{1,2}\d[A-Z\d]?)\s*(\d[A-Z]{2})(?![A-Z0-9])/g;
+  const pattern =
+    /(?:^|[^A-Z0-9])([A-Z]{1,2}\d[A-Z\d]?)\s*(\d[A-Z]{2})(?![A-Z0-9])/g;
   let match: RegExpExecArray | null;
   let last: string | null = null;
   while ((match = pattern.exec(upper)) !== null) {
@@ -65,7 +66,7 @@ export function postcodeError(value: string): string | null {
   // character, not a correction.
   const compact = normalisePostcode(trimmed);
   if (/^[A-Z]{1,2}\d[A-Z\d]?\d?[A-Z]?$/.test(compact)) {
-    return "Almost — add the rest of your postcode";
+    return "That postcode looks unfinished";
   }
 
   return "That doesn’t look like a UK postcode";
