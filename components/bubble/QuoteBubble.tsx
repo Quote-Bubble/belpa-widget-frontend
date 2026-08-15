@@ -16,7 +16,11 @@ import {
 } from "@/lib/motion";
 import { initAnalytics, track } from "@/lib/analytics";
 import { flushPendingLead } from "@/lib/pending-lead";
-import { looksLikeUkPostcode, prettyPostcode } from "@/lib/postcode";
+import {
+  looksLikeUkPostcode,
+  postcodeError,
+  prettyPostcode,
+} from "@/lib/postcode";
 import type { QuoteConfig } from "@/lib/quote-config";
 
 type QuoteBubbleProps = {
@@ -272,7 +276,7 @@ function QuoteBubbleShell({
               </div>
               {showAddressHint && (
                 <p className="q-hint" role="alert">
-                  Enter a valid UK postcode to get a quote
+                  {postcodeError(postcode) ?? "Enter your postcode"}
                 </p>
               )}
             </motion.div>

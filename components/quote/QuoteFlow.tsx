@@ -30,6 +30,7 @@ import { materialLabel, materialOptionsFor } from "@/lib/materials";
 import type { QuoteConfig } from "@/lib/quote-config";
 import { defaultQuoteConfig } from "@/lib/quote-config";
 import {
+  extractPostcode,
   looksLikeUkPostcode,
   normalisePostcode,
   prettyPostcode,
@@ -365,7 +366,15 @@ function QuoteFlowBody({
         const response = await fetch(apiUrl("/api/geocode"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ postcode: answers.address.postcode }),
+          // Extracted, not raw. The field normalises on blur, but submitting
+        // with Enter straight from typing skips that — and this is the value
+        // the geocoder resolves against, so a pasted
+        // "HP13 5BP, 8 MAITLAND DRIVE" must not reach it intact.
+        body: JSON.stringify({
+          postcode:
+            extractPostcode(answers.address.postcode) ??
+            answers.address.postcode,
+        }),
         });
         const body = (await response.json()) as {
           coords?: LatLng;
