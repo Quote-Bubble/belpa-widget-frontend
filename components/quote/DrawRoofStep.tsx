@@ -833,14 +833,19 @@ export function DrawCanvas({
     },
   ];
 
-  const toolbarPrimary =
-    "rounded-full bg-brand-500 px-3 py-1.5 text-[12px] font-semibold text-white shadow-[0_8px_18px_-6px_rgba(31,87,240,0.55)] transition-colors hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50";
-
   return (
-    <div className={variant === "card" ? "relative min-h-0 flex-1" : ""}>
+    <div
+      className={
+        variant === "card"
+          ? "relative flex min-h-0 flex-1 flex-col"
+          : "flex flex-col"
+      }
+    >
       <div
         className={`overflow-hidden rounded-3xl border border-line shadow-[var(--shadow-soft)] ${
-          variant === "card" ? "absolute inset-2" : `relative ${mapHeight}`
+          variant === "card"
+            ? "absolute inset-2 bottom-[3.25rem]"
+            : `relative ${mapHeight}`
         }`}
       >
         <Map
@@ -1143,85 +1148,72 @@ export function DrawCanvas({
             </span>
           </div>
         ) : null}
-
-        {/* Floating CTA on the map for BOTH card and page. Page (mobile) used
-            to put Done under a fixed-height map inside an overflow:hidden
-            fullscreen shell — on iPhone the button was clipped with no way to
-            scroll to it. Keep it on the imagery, clear of Google's zoom (+/−). */}
-        <div className="absolute bottom-3 left-3 right-14 z-20 flex items-center justify-between gap-2">
-            <div className="flex min-w-0 items-center gap-1.5">
-              {inFaces && drawing && draft.length > 0 ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setDraft((current) => current.slice(0, -1))}
-                    aria-label="Undo last point"
-                    title="Undo last point"
-                    className="grid size-8 place-items-center rounded-full bg-white/95 text-lg font-semibold text-ink shadow-sm"
-                  >
-                    ↶
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDraft([]);
-                      setCursor(null);
-                    }}
-                    className="rounded-full bg-white/95 px-3 py-2 text-[12px] font-semibold text-ink shadow-sm"
-                  >
-                    Clear
-                  </button>
-                </>
-              ) : null}
-              {inFaces && !drawing && roofs.length > 0 ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={onStartDrawing}
-                    className="rounded-full bg-white/95 px-3 py-2 text-[12px] font-semibold text-ink shadow-sm"
-                  >
-                    Add face
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onReset}
-                    className="rounded-full bg-white/80 px-3 py-2 text-[12px] font-semibold text-ink shadow-sm"
-                  >
-                    Reset
-                  </button>
-                </>
-              ) : null}
-            </div>
-            <ContinueBubble
-              label={inFaces ? "Done" : inGutters ? "Done" : "Continue"}
-              disabled={
-                (inFaces && roofs.length === 0) ||
-                (inGutters && mode === "roofline" && gutterCount === 0) ||
-                (inObstructions && !ready)
-              }
-              onClick={handleDone}
-            />
-          </div>
       </div>
 
-      {/* Roofline gutters phase still needs a below-map Done on page; faces
-          CTAs live on the map so this row stays empty otherwise. */}
-      {variant === "page" && inGutters ? (
-        <div className="mt-2 flex h-9 items-center justify-end gap-1.5">
-          <button
-            type="button"
-            onClick={handleDone}
-            disabled={mode === "roofline" && gutterCount === 0}
-            className={toolbarPrimary}
-          >
-            {gutterCount > 0
-              ? "Done marking gutters"
-              : mode === "roofline"
-                ? "Mark a gutter edge to continue"
-                : "Skip gutters"}
-          </button>
+      {/* CTA bar is a SIBLING of the map frame, not a child of the Maps canvas
+          container. On iOS Safari, Google Maps WebGL often steals taps from
+          HTML overlays inside the map div even with high z-index — Done looked
+          tappable and did nothing. Keep this outside that stacking context. */}
+      <div
+        className={
+          variant === "card"
+            ? "absolute bottom-2 left-2 right-2 z-30 flex items-center justify-between gap-2"
+            : "relative z-30 mt-2 flex items-center justify-between gap-2"
+        }
+      >
+        <div className="flex min-w-0 items-center gap-1.5">
+          {inFaces && drawing && draft.length > 0 ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setDraft((current) => current.slice(0, -1))}
+                aria-label="Undo last point"
+                title="Undo last point"
+                className="grid size-8 place-items-center rounded-full bg-white text-lg font-semibold text-ink shadow-sm ring-1 ring-black/5"
+              >
+                ↶
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setDraft([]);
+                  setCursor(null);
+                }}
+                className="rounded-full bg-white px-3 py-2 text-[12px] font-semibold text-ink shadow-sm ring-1 ring-black/5"
+              >
+                Clear
+              </button>
+            </>
+          ) : null}
+          {inFaces && !drawing && roofs.length > 0 ? (
+            <>
+              <button
+                type="button"
+                onClick={onStartDrawing}
+                className="rounded-full bg-white px-3 py-2 text-[12px] font-semibold text-ink shadow-sm ring-1 ring-black/5"
+              >
+                Add face
+              </button>
+              <button
+                type="button"
+                onClick={onReset}
+                className="rounded-full bg-white/90 px-3 py-2 text-[12px] font-semibold text-ink shadow-sm ring-1 ring-black/5"
+              >
+                Reset
+              </button>
+            </>
+          ) : null}
         </div>
-      ) : null}
+        <ContinueBubble
+          label={inFaces ? "Done" : inGutters ? "Done" : "Continue"}
+          disabled={
+            (inFaces && roofs.length === 0) ||
+            (inGutters && mode === "roofline" && gutterCount === 0) ||
+            (inObstructions && !ready)
+          }
+          onClick={handleDone}
+        />
+      </div>
     </div>
   );
 }

@@ -401,7 +401,18 @@ export function nextStep(
 ): FlowStepId | null {
   const sequence = stepSequence(answers);
   const index = sequence.indexOf(current);
-  if (index === -1 || index === sequence.length - 1) return null;
+  if (index === sequence.length - 1) return null;
+  if (index === -1) {
+    // Orphaned step (not on this path). Common case: landed on draw_roof when
+    // the path is scan_only — advance as if we just left locate.
+    if (current === "draw_roof") {
+      const locateIndex = sequence.indexOf("locate");
+      if (locateIndex >= 0 && locateIndex < sequence.length - 1) {
+        return sequence[locateIndex + 1];
+      }
+    }
+    return null;
+  }
   return sequence[index + 1];
 }
 

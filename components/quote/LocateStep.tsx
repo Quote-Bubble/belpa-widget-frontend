@@ -313,7 +313,9 @@ export function LocateStep({
 
       <div
         className={`overflow-hidden rounded-3xl border border-line shadow-[var(--shadow-soft)] ${
-          variant === "card" ? "absolute inset-2" : `relative ${mapHeight}`
+          variant === "card"
+            ? "absolute inset-2 bottom-[3.25rem]"
+            : `relative ${mapHeight}`
         }`}
       >
         {centre ? (
@@ -366,16 +368,6 @@ export function LocateStep({
           ) : null}
         </AnimatePresence>
 
-        {phase === "confirm" ? (
-          <div className="absolute bottom-3 left-3 right-14 z-20 flex justify-end">
-            <ContinueBubble
-              label="Continue"
-              ariaLabel="Yes, measure this roof"
-              onClick={() => void confirmAndScan()}
-            />
-          </div>
-        ) : null}
-
         {phase === "scanning" ? (
           <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-white/70 backdrop-blur-sm">
             <span className="q-spinner" />
@@ -385,6 +377,22 @@ export function LocateStep({
           </div>
         ) : null}
       </div>
+
+      {phase === "confirm" ? (
+        <div
+          className={
+            variant === "card"
+              ? "absolute bottom-2 left-2 right-2 z-30 flex justify-end"
+              : "relative z-30 mt-2 flex justify-end"
+          }
+        >
+          <ContinueBubble
+            label="Continue"
+            ariaLabel="Yes, measure this roof"
+            onClick={() => void confirmAndScan()}
+          />
+        </div>
+      ) : null}
     </StepShell>
   );
 }

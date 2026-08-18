@@ -46,6 +46,7 @@ import {
   createFlowAnswers,
   displayAddress,
   drawApproach,
+  emptyDrawnRoof,
   flowPath,
   measureRoofs,
   measureWholeRoof,
@@ -56,6 +57,7 @@ import {
   type FlowStepId,
   type QuoteFlowAnswers,
 } from "@/lib/quote-flow";
+import { pathFromBounds } from "@/lib/roof-geometry";
 import type { LatLng, SolarScan } from "@/lib/types";
 import { ADVANCE_DELAY_MS, STEP_TRANSITION } from "@/lib/motion";
 import { track } from "@/lib/analytics";
@@ -147,7 +149,14 @@ function reducer(state: FlowState, action: FlowAction): FlowState {
       return { ...state, answers: { ...state.answers, ...patch } };
     }
     case "GO_NEXT": {
-      const step = nextStep(state.answers, state.step);
+      // If we're stranded on a step that isn't in this path (historically
+      // SCAN_SUCCESS always jumped to draw_roof even for scan_only detached /
+      // bungalow), nextStep still advances from locate so Done is never a no-op.
+      const step =
+        nextStep(state.answers, state.step) ??
+        (state.step === "draw_roof"
+          ? nextStep(state.answers, "locate")
+          : null);
       return step ? { ...state, step, direction: 1 } : state;
     }
     case "GO_BACK": {
@@ -161,6 +170,16 @@ function reducer(state: FlowState, action: FlowAction): FlowState {
     case "SCAN_SUCCESS": {
       // Ignore late scan responses after the user has left the locate step.
       if (state.step !== "locate") return state;
+      // Outline path: seed the whole detected building so the user trims in
+      // rather than tracing from blank. scan_only / gutter_lines: no seed.
+      const approach = drawApproach(
+        state.answers.jobType,
+        state.answers.propertyType,
+      );
+      const roofs =
+        approach === "outline" && state.answers.roofs.length === 0
+          ? [emptyDrawnRoof(pathFromBounds(action.scan.boundingBox))]
+          : state.answers.roofs;
       const answers = {
         ...state.answers,
         coords: action.coords,
@@ -174,8 +193,13 @@ function reducer(state: FlowState, action: FlowAction): FlowState {
             : action.formatted ?? state.answers.address.formatted,
         },
         scan: action.scan,
+        roofs,
       };
-      return { ...state, answers, step: "draw_roof", direction: 1 };
+      // Follow the path sequence — never hardcode draw_roof. Detached /
+      // bungalow (scan_only) skip drawing and go to material; forcing
+      // draw_roof left Done calling GO_NEXT with nextStep=null (stuck).
+      const step = nextStep(answers, "locate") ?? "contact";
+      return { ...state, answers, step, direction: 1 };
     }
     case "SCAN_FALLBACK": {
       if (state.step !== "locate") return state;

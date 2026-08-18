@@ -103,6 +103,15 @@ describe("step sequencing", () => {
     expect(stepSequence(answers)).not.toContain("scanning");
   });
 
+  it("advances past an orphaned draw_roof on scan_only paths (Done must not no-op)", () => {
+    const answers = createFlowAnswers("r");
+    answers.jobType = "full_replacement";
+    answers.propertyType = "detached";
+    expect(stepSequence(answers)).not.toContain("draw_roof");
+    expect(nextStep(answers, "draw_roof")).toBe("material");
+    expect(nextStep(answers, "locate")).toBe("material");
+  });
+
   it("routes repairs through the size-band question instead of the map", () => {
     const answers = createFlowAnswers("r");
     answers.jobType = "tile_or_slate_repair";
