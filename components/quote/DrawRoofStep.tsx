@@ -1,12 +1,21 @@
 "use client";
 
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type MutableRefObject,
+} from "react";
 import {
   Map,
   Marker,
   Polygon,
   Polyline,
   Rectangle,
+  useMap,
 } from "@vis.gl/react-google-maps";
 import type {
   MapCameraChangedEvent,
@@ -257,6 +266,41 @@ const CornerMarker = memo(function CornerMarker({
   );
 });
 
+/**
+ * Freeze map pan/zoom the instant a corner handle is grabbed. Must live under
+ * <Map> so useMap() resolves. Sync setOptions on the map instance (not only
+ * React props) so the lock applies before the next paint — otherwise the first
+ * finger movement pans the satellite under the lollipop.
+ */
+function setMapPanLocked(map: google.maps.Map | null, locked: boolean) {
+  if (!map) return;
+  map.setOptions({
+    gestureHandling: locked ? "none" : "greedy",
+    draggable: !locked,
+    keyboardShortcuts: !locked,
+  });
+}
+
+function MapPanLock({
+  locked,
+  mapRef,
+}: {
+  locked: boolean;
+  mapRef: MutableRefObject<google.maps.Map | null>;
+}) {
+  const map = useMap();
+
+  useLayoutEffect(() => {
+    mapRef.current = map;
+  }, [map, mapRef]);
+
+  useLayoutEffect(() => {
+    setMapPanLocked(map, locked);
+  }, [map, locked]);
+
+  return null;
+}
+
 // Marker drag events can arrive as a raw google event (`.latLng` with lat()/lng()
 // methods) or a vis.gl-wrapped one (`.detail.latLng`); coords may be methods or
 // literals. Read defensively so it works across the library's shapes.
@@ -498,7 +542,24 @@ export function DrawCanvas({
   // Drag handlers fire from Google listeners, so read the session off a ref
   // rather than trusting the closure they were created in.
   const dragSessionRef = useRef<{ bearing: number; zoom: number } | null>(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
   const mapHeight = useMapHeightClass();
+  const cornerDragging = dragCorner !== null;
+
+  // While a lollipop corner is held, lock scroll so the finger doesn't move the
+  // page under the map (iOS especially likes to rubber-band the scroller).
+  useEffect(() => {
+    if (!cornerDragging) return;
+    const scroller = document.querySelector<HTMLElement>(".quote-flow-scroller");
+    const prevScroller = scroller?.style.overflowY ?? "";
+    const prevBody = document.body.style.overflow;
+    if (scroller) scroller.style.overflowY = "hidden";
+    document.body.style.overflow = "hidden";
+    return () => {
+      if (scroller) scroller.style.overflowY = prevScroller;
+      document.body.style.overflow = prevBody;
+    };
+  }, [cornerDragging]);
 
   useEffect(() => {
     if (startDrawingToken === 0) return;
@@ -597,6 +658,9 @@ export function DrawCanvas({
     (roofIndex: number, vertexIndex: number, point: LatLng) => {
       const roof = roofsRef.current[roofIndex];
       if (!roof) return;
+      // Lock map pan on this same frame — don't wait for React to re-render
+      // gestureHandling, or the first finger move pans the satellite.
+      setMapPanLocked(mapRef.current, true);
       const bearing = liftBearing(point, polygonCentroid(roof.path));
       dragSessionRef.current = { bearing, zoom: zoomRef.current };
       setDragCorner({ roofIndex, vertexIndex, bearing, preview: null });
@@ -623,6 +687,7 @@ export function DrawCanvas({
       const session = dragSessionRef.current;
       dragSessionRef.current = null;
       setDragCorner(null);
+      setMapPanLocked(mapRef.current, false);
       const ball = readEventLatLng(event);
       if (!session || !ball) return;
       const next = offsetByPixels(ball, session.bearing, PIN_LIFT, session.zoom);
@@ -864,7 +929,7 @@ export function DrawCanvas({
         minZoom={SATELLITE_MIN_ZOOM}
         maxZoom={SATELLITE_MAX_ZOOM}
         clickableIcons={false}
-        gestureHandling="greedy"
+        gestureHandling={cornerDragging ? "none" : "greedy"}
         reuseMaps
         draggableCursor={
           (inFaces && drawing) || obstructionDraft ? BLUE_DOT_CURSOR : "grab"
@@ -874,6 +939,7 @@ export function DrawCanvas({
         onMousemove={handleMouseMove}
         onCameraChanged={handleCameraChanged}
       >
+        <MapPanLock locked={cornerDragging} mapRef={mapRef} />
         {roofs.map((roof, roofIndex) => (
           <Polygon
             key={roof.id}
@@ -883,7 +949,7 @@ export function DrawCanvas({
             // floats above the finger — so native vertex handles are OFF. The
             // body stays draggable to move the whole box (captured on dragend).
             editable={false}
-            draggable={inFaces && !drawing}
+            draggable={inFaces && !drawing && !cornerDragging}
             geodesic
             fillColor={BRAND}
             fillOpacity={0.22}
