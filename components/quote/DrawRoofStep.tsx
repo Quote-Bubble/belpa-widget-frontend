@@ -22,7 +22,14 @@ import {
   useMapHeightClass,
 } from "@/components/quote/ui";
 import { emptyDrawnRoof, type CombinedMeasurement } from "@/lib/quote-flow";
-import { haversineM, metersPerPixel, midpoint, offsetByPixels } from "@/lib/geo";
+import {
+  haversineM,
+  metersPerPixel,
+  midpoint,
+  offsetByPixels,
+  SATELLITE_MAX_ZOOM,
+  SATELLITE_MIN_ZOOM,
+} from "@/lib/geo";
 import { isSimpleRing, ringsOverlapExcessively } from "@/lib/roof-geometry";
 import type {
   DrawnRoof,
@@ -469,7 +476,9 @@ export function DrawCanvas({
   const [draft, setDraft] = useState<LatLng[]>([]);
   const [drawing, setDrawing] = useState(roofs.length === 0);
   const [cursor, setCursor] = useState<LatLng | null>(null);
-  const [zoom, setZoom] = useState(19);
+  const [zoom, setZoom] = useState(
+    mapView ? Math.min(mapView.zoom, SATELLITE_MAX_ZOOM) : 19,
+  );
   const [activeRoofIndex, setActiveRoofIndex] = useState<number | null>(
     roofs.length > 0 ? roofs.length - 1 : null,
   );
@@ -747,15 +756,38 @@ export function DrawCanvas({
 
   function handleCameraChanged(event: MapCameraChangedEvent) {
     if (typeof event.detail.zoom !== "number" || !event.detail.center) return;
+    const nextZoom = Math.min(
+      Math.max(event.detail.zoom, SATELLITE_MIN_ZOOM),
+      SATELLITE_MAX_ZOOM,
+    );
     const nextView = {
       center: {
         lat: event.detail.center.lat,
         lng: event.detail.center.lng,
       },
-      zoom: event.detail.zoom,
+      zoom: nextZoom,
     };
-    setZoom(nextView.zoom);
+    setZoom(nextZoom);
     onMapViewChange(nextView);
+  }
+
+  function handleDone() {
+    // Roof replacement is priced from the outline alone. Roofline mode still
+    // needs a gutters phase.
+    if (inFaces && mode === "roofline") {
+      onPhaseChange("gutters");
+      return;
+    }
+    if (inFaces && roofs.length === 0) {
+      setCloseError("Outline your roof first, then press Done.");
+      return;
+    }
+    try {
+      onContinue();
+    } catch (err) {
+      console.error("[belpa] draw Done failed", err);
+      setCloseError("Couldn’t continue — try Reset, then outline again.");
+    }
   }
 
   function toggleGutter(roofIndex: number, edgeIndex: number) {
@@ -766,16 +798,6 @@ export function DrawCanvas({
     updateRoof(roofIndex, {
       ...roof,
       gutterEdgeIndices: [...set].sort((a, b) => a - b),
-    });
-  }
-
-  function undoObstruction() {
-    if (activeRoofIndex === null) return;
-    const roof = roofs[activeRoofIndex];
-    if (roof.obstructions.length === 0) return;
-    updateRoof(activeRoofIndex, {
-      ...roof,
-      obstructions: roof.obstructions.slice(0, -1),
     });
   }
 
@@ -812,8 +834,6 @@ export function DrawCanvas({
     },
   ];
 
-  const toolbarButton =
-    "rounded-full border border-line bg-white px-3 py-1.5 text-[12px] font-semibold text-ink-soft shadow-sm transition-colors hover:border-brand-300 hover:text-brand-600";
   const toolbarPrimary =
     "rounded-full bg-brand-500 px-3 py-1.5 text-[12px] font-semibold text-white shadow-[0_8px_18px_-6px_rgba(31,87,240,0.55)] transition-colors hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50";
 
@@ -826,11 +846,19 @@ export function DrawCanvas({
       >
         <Map
         {...(mapView
-          ? { center: mapView.center, zoom: mapView.zoom }
+          ? {
+              // Defaults only — do NOT pass controlled center/zoom on every
+              // camera tick. Re-driving the camera each frame thrashes tile
+              // loads and is a common path into blank “no imagery” states.
+              defaultCenter: mapView.center,
+              defaultZoom: Math.min(mapView.zoom, SATELLITE_MAX_ZOOM),
+            }
           : { defaultBounds: { ...scan.boundingBox, padding: 70 } })}
         mapTypeId="satellite"
         disableDefaultUI
         zoomControl
+        minZoom={SATELLITE_MIN_ZOOM}
+        maxZoom={SATELLITE_MAX_ZOOM}
         clickableIcons={false}
         gestureHandling="greedy"
         reuseMaps
@@ -1117,8 +1145,11 @@ export function DrawCanvas({
           </div>
         ) : null}
 
-        {variant === "card" ? (
-          <div className="absolute bottom-9 left-3 right-3 z-10 flex items-center justify-between gap-2">
+        {/* Floating CTA on the map for BOTH card and page. Page (mobile) used
+            to put Done under a fixed-height map inside an overflow:hidden
+            fullscreen shell — on iPhone the button was clipped with no way to
+            scroll to it. Keep it on the imagery, clear of Google's zoom (+/−). */}
+        <div className="absolute bottom-3 left-3 right-14 z-20 flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-1.5">
               {inFaces && drawing && draft.length > 0 ? (
                 <>
@@ -1161,67 +1192,20 @@ export function DrawCanvas({
                   </button>
                 </>
               ) : null}
-              {/* Temporarily disabled: retain obstruction drawing controls until
-                  chimney / rooflight pricing is brought back. */}
-              {/* {inObstructions ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setObstructionDraft({
-                        kind: "chimney",
-                        first: null,
-                        adjacent: null,
-                        preview: null,
-                      })
-                    }
-                    className="rounded-full bg-white/95 px-3 py-2 text-[12px] font-semibold text-ink shadow-sm"
-                  >
-                    Chimney
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setObstructionDraft({
-                        kind: "rooflight",
-                        first: null,
-                        adjacent: null,
-                        preview: null,
-                      })
-                    }
-                    className="rounded-full bg-white/95 px-3 py-2 text-[12px] font-semibold text-ink shadow-sm"
-                  >
-                    Rooflight
-                  </button>
-                </>
-              ) : null} */}
             </div>
             <ContinueBubble
-              label={
-                inFaces ? "Done" : inGutters ? "Done" : "Continue"
-              }
+              label={inFaces ? "Done" : inGutters ? "Done" : "Continue"}
               disabled={
                 (inFaces && roofs.length === 0) ||
                 (inGutters && mode === "roofline" && gutterCount === 0) ||
                 (inObstructions && !ready)
               }
-              onClick={() => {
-                // A roof replacement is priced from the outline alone, gutters
-                // are a survey-time add, not a reason to make people trace a
-                // second shape. So finishing the outline goes straight on.
-                // (The roofline mode, if ever routed here, still needs gutters.)
-                if (inFaces) {
-                  if (mode === "roofline") onPhaseChange("gutters");
-                  else onContinue();
-                } else onContinue();
-              }}
+              onClick={handleDone}
             />
           </div>
-        ) : null}
       </div>
 
-      {/* Controls live below the map so they never cover the imagery, the
-          zoom control, or Google's attribution. */}
+      {/* Page-only secondary controls under the map (Done lives on the map). */}
       {variant === "page" ? (
       <div className="mt-2 flex h-9 items-center gap-1.5 overflow-hidden whitespace-nowrap">
         {measurementAreaM2 !== null && !drawing && mode === "roof" ? (
@@ -1231,47 +1215,10 @@ export function DrawCanvas({
         ) : null}
         <span className="flex-1" />
 
-        {inFaces && drawing && draft.length > 0 ? (
-          <>
-            <button
-              type="button"
-              onClick={() => setDraft((current) => current.slice(0, -1))}
-              aria-label="Undo last point"
-              title="Undo last point"
-              className={toolbarButton}
-            >
-              ↶
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setDraft([]);
-                setCursor(null);
-              }}
-              className={toolbarButton}
-            >
-              Clear
-            </button>
-          </>
-        ) : null}
-
-        {inFaces && !drawing && roofs.length > 0 ? (
-          <button
-            type="button"
-            onClick={() =>
-              mode === "roofline" ? onPhaseChange("gutters") : onContinue()
-            }
-            className={toolbarPrimary}
-          >
-            Done
-          </button>
-        ) : null}
-
         {inGutters ? (
           <button
             type="button"
-            // Obstruction marking is intentionally bypassed for now.
-            onClick={onContinue}
+            onClick={handleDone}
             disabled={mode === "roofline" && gutterCount === 0}
             className={toolbarPrimary}
           >
@@ -1282,55 +1229,6 @@ export function DrawCanvas({
                 : "Skip gutters"}
           </button>
         ) : null}
-
-        {/* Temporarily disabled: retain obstruction drawing controls until
-            chimney / rooflight pricing is brought back. */}
-        {/* {inObstructions ? (
-          <>
-            <button
-              type="button"
-              onClick={() =>
-                setObstructionDraft({
-                  kind: "chimney",
-                  first: null,
-                  adjacent: null,
-                  preview: null,
-                })
-              }
-              className={toolbarButton}
-            >
-              Chimney
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                setObstructionDraft({
-                  kind: "rooflight",
-                  first: null,
-                  adjacent: null,
-                  preview: null,
-                })
-              }
-              className={toolbarButton}
-            >
-              Rooflight
-            </button>
-            {(activeRoofIndex !== null &&
-              roofs[activeRoofIndex]?.obstructions.length > 0) ||
-            obstructionDraft ? (
-              <button
-                type="button"
-                onClick={() => {
-                  if (obstructionDraft) setObstructionDraft(null);
-                  else undoObstruction();
-                }}
-                className={toolbarButton}
-              >
-                Undo
-              </button>
-            ) : null}
-          </>
-        ) : null} */}
       </div>
       ) : null}
     </div>

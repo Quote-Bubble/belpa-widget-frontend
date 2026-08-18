@@ -15,7 +15,7 @@ import {
   useFlowVariant,
   useMapHeightClass,
 } from "@/components/quote/ui";
-import { pathLengthM } from "@/lib/geo";
+import { pathLengthM, SATELLITE_MAX_ZOOM, SATELLITE_MIN_ZOOM } from "@/lib/geo";
 import type { LatLng, SolarScan } from "@/lib/types";
 
 const GUTTER = "#f59e0b";
@@ -138,12 +138,16 @@ export function GutterLineStep({
 
   function handleCameraChanged(event: MapCameraChangedEvent) {
     if (!event.detail.center || typeof event.detail.zoom !== "number") return;
+    const nextZoom = Math.min(
+      Math.max(event.detail.zoom, SATELLITE_MIN_ZOOM),
+      SATELLITE_MAX_ZOOM,
+    );
     onMapViewChange({
       center: {
         lat: event.detail.center.lat,
         lng: event.detail.center.lng,
       },
-      zoom: event.detail.zoom,
+      zoom: nextZoom,
     });
   }
 
@@ -172,11 +176,16 @@ export function GutterLineStep({
       >
         <Map
           {...(mapView
-            ? { center: mapView.center, zoom: mapView.zoom }
+            ? {
+                defaultCenter: mapView.center,
+                defaultZoom: Math.min(mapView.zoom, SATELLITE_MAX_ZOOM),
+              }
             : { defaultBounds: { ...scan.boundingBox, padding: 60 } })}
           mapTypeId="satellite"
           disableDefaultUI
           zoomControl
+          minZoom={SATELLITE_MIN_ZOOM}
+          maxZoom={SATELLITE_MAX_ZOOM}
           clickableIcons={false}
           gestureHandling="greedy"
           reuseMaps

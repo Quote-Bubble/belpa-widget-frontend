@@ -2,6 +2,15 @@ import type { GeoBounds, LatLng } from "@/lib/types";
 
 const EARTH_RADIUS_M = 6_371_000;
 
+/**
+ * Google satellite often has no tiles above ~20 in UK residential areas.
+ * Past that the map goes grey with “Sorry, we have no imagery here” while
+ * polygons remain — users then think the product is broken. Cap every
+ * satellite Map at this zoom.
+ */
+export const SATELLITE_MAX_ZOOM = 20;
+export const SATELLITE_MIN_ZOOM = 16;
+
 function toRad(degrees: number) {
   return (degrees * Math.PI) / 180;
 }

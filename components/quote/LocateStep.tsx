@@ -14,7 +14,7 @@ import {
   useMapHeightClass,
 } from "@/components/quote/ui";
 import { apiUrl } from "@/lib/api";
-import { haversineM } from "@/lib/geo";
+import { haversineM, SATELLITE_MAX_ZOOM, SATELLITE_MIN_ZOOM } from "@/lib/geo";
 import type { LatLng, SolarScan } from "@/lib/types";
 
 // Just enough of a hold that the spinner doesn't flash-and-vanish on a fast
@@ -76,7 +76,9 @@ export function LocateStep({
   const [centre, setCentre] = useState<LatLng | null>(
     mapView?.center ?? prefetched?.coords ?? null,
   );
-  const [zoom, setZoom] = useState(mapView?.zoom ?? 19);
+  const [zoom, setZoom] = useState(
+    Math.min(mapView?.zoom ?? 19, SATELLITE_MAX_ZOOM),
+  );
   const mapHeight = useMapHeightClass();
 
   useEffect(() => {
@@ -256,9 +258,14 @@ export function LocateStep({
   function handleCameraChanged(event: MapCameraChangedEvent) {
     const next = event.detail.center;
     if (!next) return;
+    const rawZoom = event.detail.zoom ?? zoom;
+    const nextZoom = Math.min(
+      Math.max(rawZoom, SATELLITE_MIN_ZOOM),
+      SATELLITE_MAX_ZOOM,
+    );
     const nextView = {
       center: { lat: next.lat, lng: next.lng },
-      zoom: event.detail.zoom ?? zoom,
+      zoom: nextZoom,
     };
     setCentre(nextView.center);
     setZoom(nextView.zoom);
@@ -312,10 +319,12 @@ export function LocateStep({
         {centre ? (
           <Map
             center={centre}
-            zoom={zoom}
+            zoom={Math.min(zoom, SATELLITE_MAX_ZOOM)}
             mapTypeId="satellite"
             disableDefaultUI
             zoomControl
+            minZoom={SATELLITE_MIN_ZOOM}
+            maxZoom={SATELLITE_MAX_ZOOM}
             clickableIcons={false}
             gestureHandling="greedy"
             reuseMaps
@@ -358,7 +367,7 @@ export function LocateStep({
         </AnimatePresence>
 
         {phase === "confirm" ? (
-          <div className="absolute bottom-9 left-3 right-3 z-10 flex justify-end">
+          <div className="absolute bottom-3 left-3 right-14 z-20 flex justify-end">
             <ContinueBubble
               label="Continue"
               ariaLabel="Yes, measure this roof"

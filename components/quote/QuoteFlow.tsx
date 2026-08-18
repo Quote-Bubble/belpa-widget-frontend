@@ -900,7 +900,10 @@ function QuoteFlowBody({
       className={`quote-surface relative ${
         variant === "card"
           ? "quote-card-shell overflow-hidden bg-transparent"
-          : "flex min-h-dvh flex-col bg-white"
+          : // Mobile fullscreen portal locks document scroll. Use a hard dvh
+            // shell + scrollable body so CTAs below tall maps are never clipped
+            // with nowhere to scroll (iPhone “no Done button” reports).
+            "flex h-dvh max-h-dvh flex-col overflow-hidden bg-white"
       }`}
     >
       <ProgressHeader
@@ -913,19 +916,22 @@ function QuoteFlowBody({
           steps can center their content and map steps can fill to the edges,
           instead of sitting top-aligned with blank space below. Overflow-auto
           is a safety net for anything taller than the fixed panel. Page
-          variant scrolls the whole document instead. */}
+          (mobile fullscreen) must also scroll inside this shell — the host
+          document is overflow:hidden while the flow is open. */}
       <div
         ref={bodyRef}
-        className={`quote-flow-scroller relative flex-1 ${
-          variant === "card"
-            ? "flex min-h-0 flex-col overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]"
-            : "min-h-0"
+        className={`quote-flow-scroller relative flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden ${
+          variant === "card" ? "[scrollbar-gutter:stable]" : ""
         }`}
       >
         <AnimatePresence mode="popLayout" initial={false}>
           <motion.div
             key={step}
-            className={variant === "card" ? "flex min-h-0 flex-1 flex-col" : undefined}
+            className={
+              variant === "card" || step === "locate" || step === "draw_roof"
+                ? "flex min-h-0 flex-1 flex-col"
+                : undefined
+            }
             initial={
               step === "locate" || step === "draw_roof"
                 ? false
