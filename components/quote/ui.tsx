@@ -92,7 +92,8 @@ export function StepHeading({
   compact = false,
 }: {
   children: ReactNode;
-  /** Keep to one line — this sits under the heading permanently. */
+  /** Short supporting line under the heading. Prefer brief copy — long
+   *  sentences used to `truncate` mid-word on iPhone. */
   sub?: ReactNode;
   /** Longer "why we ask" context, tucked behind a small (i) next to the
    *  heading instead of taking up its own block of vertical space. */
@@ -123,7 +124,7 @@ export function StepHeading({
       </h1>
       {sub ? (
         <p
-          className={`mt-2 truncate text-muted ${
+          className={`mx-auto mt-2 max-w-[22rem] px-4 text-balance text-muted line-clamp-2 ${
             variant === "card" ? "text-[14.5px]" : "text-[16px]"
           }`}
         >

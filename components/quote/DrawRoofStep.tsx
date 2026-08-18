@@ -15,7 +15,6 @@ import type {
 
 import {
   ContinueBubble,
-  PrimaryButton,
   StepHeading,
   StepShell,
   useFlowVariant,
@@ -1106,7 +1105,7 @@ export function DrawCanvas({
         })}
       </Map>
 
-        {variant === "card" && measurementAreaM2 !== null && !drawing && mode === "roof" ? (
+        {measurementAreaM2 !== null && !drawing && mode === "roof" ? (
           <span className="absolute left-3 top-3 z-10 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-ink shadow-sm backdrop-blur-sm">
             ≈ {measurementAreaM2} m²
           </span>
@@ -1205,17 +1204,10 @@ export function DrawCanvas({
           </div>
       </div>
 
-      {/* Page-only secondary controls under the map (Done lives on the map). */}
-      {variant === "page" ? (
-      <div className="mt-2 flex h-9 items-center gap-1.5 overflow-hidden whitespace-nowrap">
-        {measurementAreaM2 !== null && !drawing && mode === "roof" ? (
-          <span className="rounded-full bg-[#f1f2f5] px-3 py-1.5 text-[11px] font-semibold text-ink-soft">
-            ≈ {measurementAreaM2} m² measured
-          </span>
-        ) : null}
-        <span className="flex-1" />
-
-        {inGutters ? (
+      {/* Roofline gutters phase still needs a below-map Done on page; faces
+          CTAs live on the map so this row stays empty otherwise. */}
+      {variant === "page" && inGutters ? (
+        <div className="mt-2 flex h-9 items-center justify-end gap-1.5">
           <button
             type="button"
             onClick={handleDone}
@@ -1228,8 +1220,7 @@ export function DrawCanvas({
                 ? "Mark a gutter edge to continue"
                 : "Skip gutters"}
           </button>
-        ) : null}
-      </div>
+        </div>
       ) : null}
     </div>
   );
@@ -1281,10 +1272,10 @@ export function DrawRoofStep({
   const sub =
     phase === "faces"
       ? mode === "roofline"
-        ? "Draw each section, then press Done."
+        ? "Draw each section, then Done."
         : roofs.length > 0
-          ? "Pull the corners in to cover just your roof, then press Done."
-          : "Tap corners, then press Done."
+          ? "Pull the corners onto your roof, then Done."
+          : "Tap corners, then Done."
       : "Tap edges where water runs off.";
 
   const info =
@@ -1295,7 +1286,7 @@ export function DrawRoofStep({
   return (
     <StepShell bleed>
       {variant === "page" ? (
-        <StepHeading sub={sub} info={info}>
+        <StepHeading sub={sub} info={info} compact>
           {heading}
         </StepHeading>
       ) : null}
@@ -1321,29 +1312,6 @@ export function DrawRoofStep({
         mapView={mapView}
         onMapViewChange={onMapViewChange}
       />
-
-      {variant === "page" && phase === "faces" && roofs.length > 0 ? (
-        <div className="mt-2 flex h-8 items-center justify-center gap-2">
-          <button
-            type="button"
-            onClick={() => setStartDrawingToken((n) => n + 1)}
-            className="rounded-full border border-line bg-white px-3 py-1.5 text-[12px] font-semibold text-ink-soft shadow-sm transition-colors hover:border-brand-300 hover:text-brand-600"
-          >
-            + Add another {mode === "roofline" ? "section" : "roof face"}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              onRoofsChange([]);
-              setResetToken((n) => n + 1);
-              setPhase("faces");
-            }}
-            className="rounded-full px-3 py-1.5 text-[12px] font-medium text-muted transition-colors hover:text-ink"
-          >
-            Start again
-          </button>
-        </div>
-      ) : null}
 
       {/* Temporarily disabled: obstruction marking now bypasses this phase. */}
       {/* {variant === "page" && phase === "obstructions" ? (
