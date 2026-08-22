@@ -134,10 +134,53 @@ describe("step sequencing", () => {
       "locate",
       "draw_roof",
       "roofline_scope",
+      "photos",
       "contact",
       "estimate",
       "quote_next",
     ]);
+  });
+
+  it("offers the photo step only on the job types with no measured area", () => {
+    const withPhotos = [
+      "tile_or_slate_repair",
+      "gutters_fascias_soffits",
+      "gutter_clearing",
+    ] as const;
+    for (const jobType of withPhotos) {
+      const answers = createFlowAnswers("r");
+      answers.jobType = jobType;
+      expect(stepSequence(answers)).toContain("photos");
+    }
+
+    // Everything with a measured area, plus the unpriced consultation paths.
+    const withoutPhotos = [
+      "full_replacement",
+      "flat_roof_replacement",
+      "roof_soft_wash",
+      "roof_biocide_treatment",
+      "leak_investigation",
+      "other",
+    ] as const;
+    for (const jobType of withoutPhotos) {
+      const answers = createFlowAnswers("r");
+      answers.jobType = jobType;
+      expect(stepSequence(answers)).not.toContain("photos");
+    }
+  });
+
+  it("puts the photo step after material and before contact", () => {
+    const answers = createFlowAnswers("r");
+    answers.jobType = "tile_or_slate_repair";
+    const sequence = stepSequence(answers);
+    expect(sequence.indexOf("photos")).toBeGreaterThan(
+      sequence.indexOf("material"),
+    );
+    expect(sequence.indexOf("photos")).toBeLessThan(
+      sequence.indexOf("contact"),
+    );
+    expect(nextStep(answers, "photos")).toBe("contact");
+    expect(previousStep(answers, "photos")).toBe("material");
   });
 
   it("routes non-quotable jobs to a consultation without the condition step", () => {

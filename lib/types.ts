@@ -172,6 +172,26 @@ export type RoofLineMeasurement = {
   warning: string;
 };
 
+/**
+ * How severe the visible damage is, graded 1-5 from customer-supplied photos
+ * and anchored to the RICS Home Survey condition ratings (1 = CR1 "no repair
+ * currently needed", 3 = CR2 "needs repair, not urgent", 5 = CR3 "serious
+ * and/or urgent"). Only produced for the repair-shaped jobs that have no
+ * measured area, where extent is otherwise invisible to the estimate.
+ *
+ * `confidence` deliberately cannot be "low": a low-confidence grading is
+ * discarded at the boundary and stored as a null severity, so anything that
+ * reaches this type is safe to price on.
+ */
+export type DamageSeverity = {
+  score: 1 | 2 | 3 | 4 | 5;
+  confidence: "medium" | "high";
+  /** Short phrases naming what the grader could actually see. */
+  visibleIssues: string[];
+  /** Which model produced the score, so a re-grade can be compared later. */
+  model: string;
+};
+
 export type ContactDetails = {
   name: string;
   phone: string;
@@ -236,6 +256,17 @@ export type LeadPayload = {
     version: 1;
     fingerprint: string;
     enabledServices: string[];
+  } | null;
+  /**
+   * Photos the customer attached and what the grader made of them. Null when
+   * the job type never offers the step or the customer skipped it. `severity`
+   * is separately null when photos were uploaded but not gradeable (grader
+   * unavailable, or low confidence) — in every one of those cases the estimate
+   * is exactly what it would have been with no photos at all.
+   */
+  damage: {
+    photoPaths: string[];
+    severity: DamageSeverity | null;
   } | null;
   contact: ContactDetails;
   fallbackReason: string | null;
