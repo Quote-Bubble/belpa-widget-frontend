@@ -42,7 +42,11 @@ export type SiteObservation = {
   /** Can scaffold reach the rear without going through the house? */
   sideAccess: "clear" | "narrow" | "none_visible" | "unclear";
   obstructions: Array<
-    "mature_trees" | "conservatory" | "power_lines" | "steep_ground" | "outbuilding"
+    | "mature_trees"
+    | "conservatory"
+    | "power_lines"
+    | "steep_ground"
+    | "outbuilding"
   >;
   /** Was the imagery usable at all? Rural coverage is patchy. */
   imageryUsable: boolean;
@@ -102,7 +106,9 @@ export function siteAccessEffect(
       labourMultiplier: 1,
       extraConfidence: observation ? 0.02 : 0,
       notes: observation
-        ? ["No usable street imagery for this address, so site access is unconfirmed."]
+        ? [
+            "No usable street imagery for this address, so site access is unconfirmed.",
+          ]
         : [],
     };
   }
@@ -165,7 +171,10 @@ export function siteAccessEffect(
     effect.labourMultiplier *= 1.06;
   }
 
-  if (o.obstructions.includes("mature_trees") || o.obstructions.includes("steep_ground")) {
+  if (
+    o.obstructions.includes("mature_trees") ||
+    o.obstructions.includes("steep_ground")
+  ) {
     effect.labourMultiplier *= 1.05;
     effect.notes.push(
       "Trees or sloping ground next to the elevations add time to erect and strike the scaffold.",
