@@ -94,8 +94,12 @@ describe("site access pricing", () => {
   });
 
   it("widens the band for stale imagery instead of trusting it", () => {
-    const fresh = siteAccessEffect(obs({ imageryYear: new Date().getFullYear() }));
-    const stale = siteAccessEffect(obs({ imageryYear: new Date().getFullYear() - 8 }));
+    const fresh = siteAccessEffect(
+      obs({ imageryYear: new Date().getFullYear() }),
+    );
+    const stale = siteAccessEffect(
+      obs({ imageryYear: new Date().getFullYear() - 8 }),
+    );
     expect(stale.extraConfidence).toBeGreaterThan(fresh.extraConfidence);
     expect(stale.labourMultiplier).toBe(fresh.labourMultiplier);
   });
@@ -116,5 +120,15 @@ describe("site access pricing", () => {
       }),
     );
     expect(e).toEqual(noSiteEffect());
+  });
+
+  it("widens the band when side access is suspected but not seen", () => {
+    // The most commonly uncertain field: a front-on photo usually cannot show
+    // whether a side gate exists. Must not charge, must not stay silent.
+    const e = siteAccessEffect(
+      obs({ sideAccess: "none_visible", confidence: { sideAccess: 0.5 } }),
+    );
+    expect(e.labourMultiplier).toBe(1);
+    expect(e.extraConfidence).toBeGreaterThan(0);
   });
 });

@@ -169,6 +169,14 @@ export function siteAccessEffect(
     );
   } else if (o.sideAccess === "narrow" && sure(o, "sideAccess")) {
     effect.labourMultiplier *= 1.06;
+  } else if (o.sideAccess === "none_visible" || o.sideAccess === "narrow") {
+    // Suspected but not seen clearly. Every other field widens the band in this
+    // situation and this one did not, which was an oversight rather than a
+    // decision — and it is the field most often uncertain, because a front-on
+    // photograph frequently cannot show whether a side gate exists. Leaving it
+    // silent meant the single most common unknown in the whole set produced no
+    // signal at all.
+    effect.extraConfidence += 0.03;
   }
 
   if (
