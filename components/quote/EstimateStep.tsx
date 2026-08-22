@@ -6,7 +6,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import { InfoTip, StepShell, useFlowVariant } from "@/components/quote/ui";
 import type { CombinedMeasurement } from "@/lib/quote-flow";
 import { displayQuoteAmount, quoteBandedLineItems } from "@/lib/quote";
-import type { LatLng, QuoteResult } from "@/lib/types";
+import type { DamageSeverity, LatLng, QuoteResult } from "@/lib/types";
+import { severityLabel, severityTone } from "@/lib/severity";
 
 function useCountUp(target: number, durationMs = 1100, delayMs = 250) {
   const [value, setValue] = useState(0);
@@ -78,10 +79,13 @@ export function EstimateStep({
   measurement,
   address,
   contactName,
+  severity,
   onConfirm,
   onContinue,
 }: {
   quote: QuoteResult;
+  /** Photo-derived severity, when the customer added photos and they graded. */
+  severity?: DamageSeverity | null;
   measurement: CombinedMeasurement | null;
   /** Kept for call-site compatibility; the redesign no longer shows a roof image. */
   roofs?: LatLng[][];
@@ -191,6 +195,25 @@ export function EstimateStep({
               <p className="mt-2 text-[11px] font-medium text-muted">
                 excl. VAT
               </p>
+              {severity ? (
+                <p className="mt-2.5 flex items-center gap-1.5 text-[11.5px] font-medium text-muted">
+                  <span
+                    aria-hidden="true"
+                    className="inline-block size-1.5 rounded-full"
+                    style={{ backgroundColor: severityTone(severity.score).fg }}
+                  />
+                  Estimated severity{" "}
+                  <span
+                    className="font-semibold"
+                    style={{ color: severityTone(severity.score).fg }}
+                  >
+                    {severity.score}/5
+                  </span>
+                  <span className="text-muted/70">
+                    · {severityLabel(severity.score)}
+                  </span>
+                </p>
+              ) : null}
             </div>
             {chips.length > 0 ? (
               <div

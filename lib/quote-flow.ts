@@ -22,6 +22,7 @@ import {
   type ServiceKey,
 } from "@/lib/quote-config";
 import { buildRateTable, resolveAccessForService } from "@/lib/rate-table";
+import { applySeverityToQuote } from "@/lib/severity";
 import {
   isImageryOlderThanThreeYears,
   measureBoundary,
@@ -32,6 +33,7 @@ import {
 import type {
   ConditionAnswer,
   ContactDetails,
+  DamageSeverity,
   DrawnRoof,
   JobType,
   LatLng,
@@ -60,6 +62,7 @@ export type FlowStepId =
   | "repair_size"
   | "material"
   | "roofline_scope"
+  | "photos"
   | "contact"
   | "estimate"
   | "quote_next"
@@ -96,6 +99,13 @@ export type QuoteFlowAnswers = {
   repairBandId: string | null;
   material: Material | null;
   rooflineScope: RooflineScope | null;
+  /** Compressed damage photos the customer attached on the "photos" step. */
+  photos: File[];
+  /** Storage paths returned by /api/severity, carried into the lead payload. */
+  photoPaths: string[];
+  /** Graded 1-5 from those photos. Null whenever it must not affect pricing:
+   *  no photos, grader unavailable, or a low-confidence verdict. */
+  severity: DamageSeverity | null;
   contact: ContactDetails;
 };
 
@@ -122,6 +132,9 @@ export function createFlowAnswers(
     repairBandId: null,
     material: null,
     rooflineScope: null,
+    photos: [],
+    photoPaths: [],
+    severity: null,
     contact: { name: "", phone: "", email: "" },
   };
 }
@@ -334,6 +347,30 @@ export function flowPath(answers: QuoteFlowAnswers): FlowPath {
   return "consultation";
 }
 
+/**
+ * The job types that offer the damage-photo step: the ones priced with no
+ * measured area at all, where extent is otherwise invisible to the estimate.
+ * A size band, a linear metre count and a flat fee each say nothing about how
+ * bad the problem actually is.
+ *
+ * Deliberately excludes leak_investigation — UK industry guidance is explicit
+ * that a leak's source cannot be diagnosed from photographs because water
+ * travels far from where it enters, and that path is an unpriced consultation
+ * anyway. Also excludes the cleaning services, which already get a measured
+ * area from the drawn outline.
+ *
+ * Must stay in step with SEVERITY_JOB_TYPES in the backend's severity-prompt.
+ */
+export const PHOTO_JOB_TYPES: JobType[] = [
+  "tile_or_slate_repair",
+  "gutters_fascias_soffits",
+  "gutter_clearing",
+];
+
+export function offersPhotoStep(jobType: JobType | null): boolean {
+  return jobType !== null && PHOTO_JOB_TYPES.includes(jobType);
+}
+
 export function stepSequence(answers: QuoteFlowAnswers): FlowStepId[] {
   const steps = ((): FlowStepId[] => {
     switch (flowPath(answers)) {
@@ -372,6 +409,7 @@ export function stepSequence(answers: QuoteFlowAnswers): FlowStepId[] {
           "storeys",
           "repair_size",
           "material",
+          "photos",
           "contact",
           "estimate",
           "quote_next",
@@ -385,20 +423,31 @@ export function stepSequence(answers: QuoteFlowAnswers): FlowStepId[] {
           "locate",
           "draw_roof",
           "roofline_scope",
+          "photos",
           "contact",
           "estimate",
           "quote_next",
         ];
       case "flat":
-        return ["address", "job_type", "contact", "estimate", "quote_next"];
+        return [
+          "address",
+          "job_type",
+          "photos",
+          "contact",
+          "estimate",
+          "quote_next",
+        ];
       case "consultation":
         return ["address", "job_type", "contact", "consultation"];
     }
   })();
+  const withPhotos = offersPhotoStep(answers.jobType)
+    ? steps
+    : steps.filter((step) => step !== "photos");
   // A bungalow is single-storey by definition, asking would be redundant.
   return answers.propertyType === "bungalow"
-    ? steps.filter((step) => step !== "storeys")
-    : steps;
+    ? withPhotos.filter((step) => step !== "storeys")
+    : withPhotos;
 }
 
 export function nextStep(
@@ -590,7 +639,25 @@ function isValidMaterialForJob(
   );
 }
 
+/**
+ * Price the flow, then let any graded photo severity reshape the range.
+ *
+ * The severity pass is deliberately the outermost layer rather than an input
+ * to the estimators: with no usable severity `applySeverityToQuote` returns the
+ * very same object, so "the customer skipped photos" and "this feature does not
+ * exist" cannot drift apart. See lib/severity.ts.
+ */
 export function computeFlowQuote(
+  answers: QuoteFlowAnswers,
+  measurement: CombinedMeasurement | null,
+  quoteConfig?: QuoteConfig | null,
+): QuoteResult | null {
+  const quote = computeBaseFlowQuote(answers, measurement, quoteConfig);
+  if (!quote) return null;
+  return applySeverityToQuote(quote, answers.severity);
+}
+
+function computeBaseFlowQuote(
   answers: QuoteFlowAnswers,
   measurement: CombinedMeasurement | null,
   quoteConfig?: QuoteConfig | null,
@@ -858,5 +925,11 @@ export function buildLeadPayload(
           enabledServices: cfg.enabledServices,
         }
       : null,
+    // Null unless the customer actually attached photos, so leads from the
+    // job types that never offer the step look exactly as they did before.
+    damage:
+      answers.photoPaths.length > 0 || answers.severity
+        ? { photoPaths: answers.photoPaths, severity: answers.severity }
+        : null,
   };
 }

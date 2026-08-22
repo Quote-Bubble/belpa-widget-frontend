@@ -9,6 +9,7 @@ import { EstimateStep } from "@/components/quote/EstimateStep";
 import { QuoteNextStep } from "@/components/quote/QuoteNextStep";
 import { GutterLineStep } from "@/components/quote/GutterLineStep";
 import { LocateStep } from "@/components/quote/LocateStep";
+import { PhotosStep } from "@/components/quote/PhotosStep";
 import {
   AddressStep,
   ConsultationStep,
@@ -25,6 +26,8 @@ import {
   type FlowVariant,
 } from "@/components/quote/ui";
 import { apiUrl } from "@/lib/api";
+import type { CompressedPhoto } from "@/lib/image-compress";
+import { uploadAndGrade } from "@/lib/severity-client";
 import { addressEntryReady } from "@/components/quote/AddressEntry";
 import { materialLabel, materialOptionsFor } from "@/lib/materials";
 import type { QuoteConfig } from "@/lib/quote-config";
@@ -146,6 +149,11 @@ function reducer(state: FlowState, action: FlowAction): FlowState {
         patch.repairBandId = null;
         patch.rooflineScope = null;
         patch.fallbackReason = null;
+        // Photos are of a specific problem; they mean nothing for a different
+        // job, and a stale severity would silently keep skewing the price.
+        patch.photos = [];
+        patch.photoPaths = [];
+        patch.severity = null;
       }
       return { ...state, answers: { ...state.answers, ...patch } };
     }
@@ -353,6 +361,57 @@ function QuoteFlowBody({
   const submissionIdRef = useRef<string | null>(null);
   const flowMountedAtRef = useRef<number>(Date.now());
   const [intentPromoted, setIntentPromoted] = useState(false);
+
+  // Damage photos live in local component state, not the reducer, because they
+  // carry object URLs that need revoking — the reducer's answers are cloned
+  // freely and would leak them. Only the graded result and storage paths are
+  // promoted into answers, where pricing can see them.
+  const [photos, setPhotos] = useState<CompressedPhoto[]>([]);
+  const [grading, setGrading] = useState(false);
+
+  /**
+   * Upload, grade, then advance. Any failure still advances: a customer who
+   * attached photos must never be worse off than one who skipped, so a grading
+   * outage simply produces the same estimate they would have had anyway.
+   */
+  const submitPhotos = async () => {
+    if (photos.length === 0) {
+      dispatch({ type: "GO_NEXT" });
+      return;
+    }
+    setGrading(true);
+    submissionIdRef.current ??= newSubmissionId();
+    try {
+      const result = await uploadAndGrade(
+        photos.map((p) => p.file),
+        state.answers.jobType ?? "",
+        state.answers.rooferId,
+        submissionIdRef.current,
+      );
+      dispatch({
+        type: "PATCH",
+        patch: {
+          photos: photos.map((p) => p.file),
+          photoPaths: result.photoPaths,
+          severity: result.severity,
+        },
+      });
+    } finally {
+      setGrading(false);
+      dispatch({ type: "GO_NEXT" });
+    }
+  };
+
+  /** Explicit skip: clear anything attached so pricing sees a clean "no". */
+  const skipPhotos = () => {
+    for (const p of photos) URL.revokeObjectURL(p.previewUrl);
+    setPhotos([]);
+    dispatch({
+      type: "PATCH",
+      patch: { photos: [], photoPaths: [], severity: null },
+    });
+    dispatch({ type: "GO_NEXT" });
+  };
 
   // Dev shortcut: ?preview=estimate seeds a finished repair estimate so the
   // estimate screen can be opened directly while designing it. Applied after
@@ -908,6 +967,17 @@ function QuoteFlowBody({
             onSelect={(material) => selectAndAdvance({ material })}
           />
         );
+      case "photos":
+        return (
+          <PhotosStep
+            jobType={answers.jobType ?? ""}
+            photos={photos}
+            onChange={setPhotos}
+            busy={grading}
+            onContinue={() => void submitPhotos()}
+            onSkip={skipPhotos}
+          />
+        );
       case "contact":
         return (
           <ContactStep
@@ -939,6 +1009,7 @@ function QuoteFlowBody({
             }
             jobLabel={jobLabel}
             contactName={answers.contact.name}
+            severity={answers.severity}
             brandName={brandName}
             mapsEnabled={mapsEnabled}
             // "Get my exact quote" leads to the next screen where they arrange
