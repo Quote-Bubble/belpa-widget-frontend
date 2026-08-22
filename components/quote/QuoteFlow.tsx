@@ -57,6 +57,7 @@ import {
   type FlowStepId,
   type QuoteFlowAnswers,
 } from "@/lib/quote-flow";
+import type { SiteObservation } from "@/lib/site-access";
 import { pathFromBounds } from "@/lib/roof-geometry";
 import type { LatLng, SolarScan } from "@/lib/types";
 import { ADVANCE_DELAY_MS, STEP_TRANSITION } from "@/lib/motion";
@@ -154,15 +155,19 @@ function reducer(state: FlowState, action: FlowAction): FlowState {
       // bungalow), nextStep still advances from locate so Done is never a no-op.
       const step =
         nextStep(state.answers, state.step) ??
-        (state.step === "draw_roof"
-          ? nextStep(state.answers, "locate")
-          : null);
+        (state.step === "draw_roof" ? nextStep(state.answers, "locate") : null);
       return step ? { ...state, step, direction: 1 } : state;
     }
     case "GO_BACK": {
       const step = previousStep(state.answers, state.step);
       return step
-        ? { ...state, step, direction: -1, submitStatus: "idle", submitError: null }
+        ? {
+            ...state,
+            step,
+            direction: -1,
+            submitStatus: "idle",
+            submitError: null,
+          }
         : state;
     }
     case "GO_TO":
@@ -190,7 +195,7 @@ function reducer(state: FlowState, action: FlowAction): FlowState {
           // house). Only fall back to the resolved address when no line exists.
           formatted: state.answers.address.line?.trim()
             ? state.answers.address.formatted
-            : action.formatted ?? state.answers.address.formatted,
+            : (action.formatted ?? state.answers.address.formatted),
         },
         scan: action.scan,
         roofs,
@@ -213,7 +218,7 @@ function reducer(state: FlowState, action: FlowAction): FlowState {
           // house). Only fall back to the resolved address when no line exists.
           formatted: state.answers.address.line?.trim()
             ? state.answers.address.formatted
-            : action.formatted ?? state.answers.address.formatted,
+            : (action.formatted ?? state.answers.address.formatted),
         },
         fallbackReason: action.reason,
       };
@@ -322,28 +327,24 @@ function QuoteFlowBody({
 }: QuoteFlowProps & { mapsEnabled: boolean }) {
   const config = quoteConfig ?? defaultQuoteConfig();
   const variant = useFlowVariant();
-  const [state, dispatch] = useReducer(
-    reducer,
-    undefined,
-    (): FlowState => {
-      const answers = createFlowAnswers(rooferId, {
-        postcode: initialAddress?.postcode ?? "",
-        formatted: initialAddress?.formatted ?? null,
-      });
-      // Always land on the address step first, even when the bubble already
-      // captured a valid postcode. It shows that postcode pre-filled and asks
-      // for the house number/name, the roofer needs a specific, contactable
-      // property, and we capture it up front (lowest drop-off point) rather
-      // than at the contact step at the very end.
-      return {
-        answers,
-        step: "address",
-        direction: 1,
-        submitStatus: "idle",
-        submitError: null,
-      };
-    },
-  );
+  const [state, dispatch] = useReducer(reducer, undefined, (): FlowState => {
+    const answers = createFlowAnswers(rooferId, {
+      postcode: initialAddress?.postcode ?? "",
+      formatted: initialAddress?.formatted ?? null,
+    });
+    // Always land on the address step first, even when the bubble already
+    // captured a valid postcode. It shows that postcode pre-filled and asks
+    // for the house number/name, the roofer needs a specific, contactable
+    // property, and we capture it up front (lowest drop-off point) rather
+    // than at the contact step at the very end.
+    return {
+      answers,
+      step: "address",
+      direction: 1,
+      submitStatus: "idle",
+      submitError: null,
+    };
+  });
   const advanceTimerRef = useRef<number | null>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   // One stable id for the whole session so the initial lead and any later
@@ -391,14 +392,14 @@ function QuoteFlowBody({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           // Extracted, not raw. The field normalises on blur, but submitting
-        // with Enter straight from typing skips that — and this is the value
-        // the geocoder resolves against, so a pasted
-        // "HP13 5BP, 8 MAITLAND DRIVE" must not reach it intact.
-        body: JSON.stringify({
-          postcode:
-            extractPostcode(answers.address.postcode) ??
-            answers.address.postcode,
-        }),
+          // with Enter straight from typing skips that — and this is the value
+          // the geocoder resolves against, so a pasted
+          // "HP13 5BP, 8 MAITLAND DRIVE" must not reach it intact.
+          body: JSON.stringify({
+            postcode:
+              extractPostcode(answers.address.postcode) ??
+              answers.address.postcode,
+          }),
         });
         const body = (await response.json()) as {
           coords?: LatLng;
@@ -428,6 +429,51 @@ function QuoteFlowBody({
   }
 
   useEffect(() => () => clearAdvanceTimer(), []);
+
+  /* Site access observation.
+   *
+   * Fires once coordinates are known and runs in the background while the user
+   * answers material and contact — so it costs no visible latency and the
+   * estimate simply has it, or does not.
+   *
+   * Nothing awaits it and nothing fails without it: on any error the effect is
+   * neutral and the quote prices exactly as it did before this existed. Started
+   * after the scan on purpose, so two paid requests never race for the same
+   * moment. */
+  const siteRequested = useRef<string | null>(null);
+  useEffect(() => {
+    const coords = answers.coords;
+    if (!coords || answers.siteObservation) return;
+    const key = `${coords.lat.toFixed(5)},${coords.lng.toFixed(5)}`;
+    if (siteRequested.current === key) return;
+    siteRequested.current = key;
+
+    let active = true;
+    (async () => {
+      try {
+        const response = await fetch(apiUrl("/api/site-access"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ coords }),
+        });
+        if (!response.ok) return;
+        const body = (await response.json()) as {
+          observation?: SiteObservation | null;
+        };
+        if (active && body.observation?.imageryUsable) {
+          dispatch({
+            type: "PATCH",
+            patch: { siteObservation: body.observation },
+          });
+        }
+      } catch {
+        /* Accuracy improvement, not a dependency. Silence is the right failure. */
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [answers.coords, answers.siteObservation]);
 
   const approach = drawApproach(answers.jobType, answers.propertyType);
   const measurement = useMemo(() => {
@@ -463,9 +509,7 @@ function QuoteFlowBody({
 
   const jobTypeOptions = useMemo(
     () =>
-      JOB_TYPE_OPTIONS.filter((o) =>
-        config.enabledServices.includes(o.value),
-      ),
+      JOB_TYPE_OPTIONS.filter((o) => config.enabledServices.includes(o.value)),
     [config.enabledServices],
   );
 
@@ -538,7 +582,12 @@ function QuoteFlowBody({
     dispatch({
       type: "PATCH",
       patch: {
-        address: { ...answers.address, postcode, line, formatted: `${line}, ${postcode}` },
+        address: {
+          ...answers.address,
+          postcode,
+          line,
+          formatted: `${line}, ${postcode}`,
+        },
       },
     });
 
@@ -552,7 +601,8 @@ function QuoteFlowBody({
 
   function updatePostcode(postcode: string) {
     const postcodeChanged =
-      normalisePostcode(postcode) !== normalisePostcode(answers.address.postcode);
+      normalisePostcode(postcode) !==
+      normalisePostcode(answers.address.postcode);
     if (postcodeChanged) {
       setMapView(null);
       setPrefetchedGeocode(null);
@@ -681,8 +731,7 @@ function QuoteFlowBody({
   const path = flowPath(answers);
 
   const jobLabel =
-    jobTypeOptions.find((option) => option.value === answers.jobType)
-      ?.label ??
+    jobTypeOptions.find((option) => option.value === answers.jobType)?.label ??
     JOB_TYPE_OPTIONS.find((option) => option.value === answers.jobType)
       ?.label ??
     "Roof work";
@@ -825,7 +874,9 @@ function QuoteFlowBody({
             roofs={answers.roofs}
             measurement={measurement}
             mode="roof"
-            onRoofsChange={(roofs) => dispatch({ type: "PATCH", patch: { roofs } })}
+            onRoofsChange={(roofs) =>
+              dispatch({ type: "PATCH", patch: { roofs } })
+            }
             onContinue={() => dispatch({ type: "GO_NEXT" })}
             mapView={mapView}
             onMapViewChange={setMapView}
@@ -957,9 +1008,7 @@ function QuoteFlowBody({
                 : undefined
             }
             initial={
-              step === "locate" || step === "draw_roof"
-                ? false
-                : { opacity: 0 }
+              step === "locate" || step === "draw_roof" ? false : { opacity: 0 }
             }
             animate={{ opacity: 1 }}
             exit={

@@ -566,3 +566,72 @@ describe("unpriced job types are signposted", () => {
     expect(byValue.tile_or_slate_repair.hint).toBeUndefined();
   });
 });
+
+describe("site access does not disturb the existing engine", () => {
+  it("prices identically when nothing was observed", () => {
+    // The guard that matters most. This feature must be additive: with no
+    // observation — feature off, request in flight, imagery unavailable — the
+    // estimate has to be byte-for-byte what it was before it existed.
+    const answers = measuredAnswers();
+    const measurement = measureWholeRoof(answers.scan!, [], 0, 0);
+
+    const before = computeFlowQuote(answers, measurement);
+    answers.siteObservation = null;
+    const after = computeFlowQuote(answers, measurement);
+
+    expect(after!.min).toBe(before!.min);
+    expect(after!.max).toBe(before!.max);
+  });
+
+  it("raises the estimate once a hard site is confidently observed", () => {
+    const answers = measuredAnswers();
+    const measurement = measureWholeRoof(answers.scan!, [], 0, 0);
+    const plain = computeFlowQuote(answers, measurement);
+
+    answers.siteObservation = {
+      frontage: "on_pavement",
+      vehicleAccess: "restricted",
+      parkingRestriction: "double_yellow",
+      sideAccess: "none_visible",
+      obstructions: [],
+      imageryUsable: true,
+      imageryYear: new Date().getFullYear(),
+      confidence: {
+        frontage: 0.9,
+        vehicleAccess: 0.9,
+        parkingRestriction: 0.9,
+        sideAccess: 0.9,
+      },
+    };
+    const hard = computeFlowQuote(answers, measurement);
+
+    expect(hard!.max).toBeGreaterThan(plain!.max);
+  });
+
+  it("leaves the price alone when the model was unsure", () => {
+    const answers = measuredAnswers();
+    const measurement = measureWholeRoof(answers.scan!, [], 0, 0);
+    const plain = computeFlowQuote(answers, measurement);
+
+    answers.siteObservation = {
+      frontage: "on_pavement",
+      vehicleAccess: "restricted",
+      parkingRestriction: "double_yellow",
+      sideAccess: "none_visible",
+      obstructions: [],
+      imageryUsable: true,
+      imageryYear: new Date().getFullYear(),
+      // Everything seen, nothing seen CLEARLY. Must widen, never charge.
+      confidence: {
+        frontage: 0.4,
+        vehicleAccess: 0.4,
+        parkingRestriction: 0.4,
+        sideAccess: 0.4,
+      },
+    };
+    const unsure = computeFlowQuote(answers, measurement);
+
+    expect(unsure!.min).toBeLessThanOrEqual(plain!.min);
+    expect(unsure!.max).toBeGreaterThanOrEqual(plain!.max);
+  });
+});

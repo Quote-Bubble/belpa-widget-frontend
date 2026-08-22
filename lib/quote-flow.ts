@@ -1,4 +1,5 @@
 import { assessAccess } from "@/lib/access";
+import { siteAccessEffect, type SiteObservation } from "@/lib/site-access";
 import {
   boundsAreaM2,
   edgeLengthM,
@@ -86,6 +87,10 @@ export type QuoteFlowAnswers = {
   /** Open gutter-run polylines, drawn directly rather than clicked off a
    *  face's edges. Used when drawApproach() is "gutter_lines". */
   gutterRuns: LatLng[][];
+  /** What the vision pass saw around the property, if it ran. Null means the
+   *  feature is off, still in flight, or it could not see — all of which price
+   *  identically to how the engine priced before it existed. */
+  siteObservation: SiteObservation | null;
   chimneyCount: number;
   rooflightCount: number;
   repairBandId: string | null;
@@ -111,6 +116,7 @@ export function createFlowAnswers(
     fallbackReason: null,
     roofs: [],
     gutterRuns: [],
+    siteObservation: null,
     chimneyCount: 0,
     rooflightCount: 0,
     repairBandId: null,
@@ -598,6 +604,17 @@ export function computeFlowQuote(
     path,
   );
   const storeys = access.estimatedStoreys;
+
+  /* What we could see around the property, folded into the access numbers.
+     Scaffolding is priced on two separate things and assessAccess only knows
+     one: how many elevations need wrapping. This is the other — whether the
+     scaffold can physically get there. With no observation the effect is
+     neutral, so the estimate is exactly what it was before this existed. */
+  const site = siteAccessEffect(answers.siteObservation);
+  access.accessMultiplier *= site.labourMultiplier;
+  access.extraConfidence += site.extraConfidence;
+  access.notes.push(...site.notes);
+
   const { table, model, config } = buildRateTable(quoteConfig ?? null);
   const pricing: PricingContext = { table, model };
   const service = answers.jobType as ServiceKey | null;
