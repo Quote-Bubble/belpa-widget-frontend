@@ -55,7 +55,7 @@
           <small>Call Dave’s desk</small>
           <strong>01494 412 880</strong>
         </a>
-        <button class="btn btn-gold btn-sm head-cta" type="button" data-belpa-launch>
+        <button class="btn btn-gold btn-sm head-cta" type="button" data-belpa-launch data-roofer="hatherley-roofing-ltd">
           Free quote
         </button>
         <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label="Open menu">
@@ -78,7 +78,7 @@
             — except less full of tennis balls.
           </p>
           <div class="hero__actions">
-            <button class="btn btn-gold" type="button" data-belpa-launch>
+            <button class="btn btn-gold" type="button" data-belpa-launch data-roofer="hatherley-roofing-ltd">
               Get a free quote
             </button>
             <a class="btn btn-ghost" href="tel:+441494412880">01494 412 880</a>
@@ -222,7 +222,7 @@
               <p>Scaffold, tear-off, new roof, tip run. Kettle optional, boards in the hall not optional.</p>
             </li>
           </ol>
-          <button class="btn btn-gold" type="button" data-belpa-launch>Get a free quote</button>
+          <button class="btn btn-gold" type="button" data-belpa-launch data-roofer="hatherley-roofing-ltd">Get a free quote</button>
         </div>
       </section>
 
@@ -330,7 +330,7 @@
               Trace the roof on a map and get a written figure. No-one has to come
               round first. Dave still answers the phone if you’d rather.
             </p>
-            <button class="btn btn-gold" type="button" data-belpa-launch>
+            <button class="btn btn-gold" type="button" data-belpa-launch data-roofer="hatherley-roofing-ltd">
               Get a free quote
             </button>
           </div>
@@ -378,7 +378,7 @@
 
     <div class="dock" aria-label="Call or quote">
       <a class="btn btn-red btn-sm" href="tel:+441494412880">Call</a>
-      <button class="btn btn-gold btn-sm" type="button" data-belpa-launch>Free quote</button>
+      <button class="btn btn-gold btn-sm" type="button" data-belpa-launch data-roofer="hatherley-roofing-ltd">Free quote</button>
     </div>
 
     <script>
@@ -392,18 +392,8 @@
             toggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
           });
         }
-
-        var slug =
-          new URLSearchParams(location.search).get("roofer") ||
-          "belpa-landing-demo";
-        document.querySelectorAll("[data-belpa-launch]").forEach(function (b) {
-          b.setAttribute("data-roofer", slug);
-        });
-        var s = document.createElement("script");
-        s.src = "/launch.js";
-        s.async = true;
-        document.body.appendChild(s);
       })();
     </script>
+    <script src="https://widget.belpa.co.uk/v1/launch.js" async></script>
   </body>
 </html>
