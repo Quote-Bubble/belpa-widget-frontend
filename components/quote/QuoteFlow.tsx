@@ -234,16 +234,52 @@ function reducer(state: FlowState, action: FlowAction): FlowState {
     }
     case "ADDRESS_RESOLVED": {
       const stateCoords = state.answers.coords;
-      const coordsMatch =
-        stateCoords?.lat === action.coords.lat &&
-        stateCoords?.lng === action.coords.lng;
+      // A response for a postcode the user has since changed is always stale.
       if (
-        !coordsMatch ||
         normalisePostcode(state.answers.address.postcode) !==
-          normalisePostcode(action.postcode)
+        normalisePostcode(action.postcode)
       ) {
         return state;
       }
+
+      /* Adopt the geocoded coordinates when we have none.
+       *
+       * This case used to require that state.coords ALREADY equalled the
+       * incoming coords, which is unsatisfiable before anything has set them —
+       * so the first write never happened and the coordinates were discarded.
+       *
+       * Only the "measured" and "roofline" paths run a locate step, so repair,
+       * flat and consultation leads reached the database with coords null. The
+       * geocode had fetched them correctly every time; the reducer threw them
+       * away. That is why a tile-repair lead shows no street view: not because
+       * the customer skipped the roof outline, but because nothing ever stored
+       * a position for the property.
+       *
+       * Postcode-centroid accuracy is coarser than a dropped pin, which is why
+       * scan coordinates still win — they are never overwritten below. But a
+       * centroid is easily good enough to find the right street, and street
+       * view is snapped to the nearest panorama and aimed by bearing anyway. */
+      if (!stateCoords) {
+        return {
+          ...state,
+          answers: {
+            ...state.answers,
+            coords: action.coords,
+            address: {
+              ...state.answers.address,
+              formatted: state.answers.address.line?.trim()
+                ? state.answers.address.formatted
+                : action.formatted,
+            },
+          },
+        };
+      }
+
+      const coordsMatch =
+        stateCoords.lat === action.coords.lat &&
+        stateCoords.lng === action.coords.lng;
+      // Coords already set from a scan: more precise, so never clobber them.
+      if (!coordsMatch) return state;
       {
         // The user types their own first line now, so their address
         // ("14 Elm Grove, M1 2AB", set in continueFromAddress) is the source
