@@ -129,6 +129,12 @@ type FlowAction =
       coords: LatLng;
       formatted: string;
     }
+  | {
+      /** Pin confirmed on a path that does not scan (repair). */
+      type: "PIN_CONFIRMED";
+      coords: LatLng;
+      formatted: string | null;
+    }
   | { type: "SUBMIT_START"; patch: Partial<QuoteFlowAnswers> }
   | { type: "SUBMIT_ERROR"; message: string }
   | { type: "SUBMIT_DONE" }
@@ -231,6 +237,26 @@ function reducer(state: FlowState, action: FlowAction): FlowState {
         fallbackReason: action.reason,
       };
       return { ...state, answers, step: "contact", direction: 1 };
+    }
+    case "PIN_CONFIRMED": {
+      // Ignore a late confirm after the user has already left the step.
+      if (state.step !== "locate") return state;
+      const answers = {
+        ...state.answers,
+        coords: action.coords,
+        address: {
+          ...state.answers.address,
+          // Same rule as the scanning paths: the user's typed first line wins,
+          // because the pin's reverse-geocode can resolve to a different house.
+          formatted: state.answers.address.line?.trim()
+            ? state.answers.address.formatted
+            : (action.formatted ?? state.answers.address.formatted),
+        },
+      };
+      // Follow the sequence rather than naming the next step, so this keeps
+      // working if the repair path gains or loses a step.
+      const step = nextStep(answers, "locate") ?? "contact";
+      return { ...state, answers, step, direction: 1 };
     }
     case "ADDRESS_RESOLVED": {
       const stateCoords = state.answers.coords;
@@ -944,6 +970,12 @@ function QuoteFlowBody({
                 coords,
                 formatted,
               })
+            }
+            // Repair prices off the size the customer picks, not measured area,
+            // so the pin is for coordinates only — no Solar call.
+            pinOnly={path === "repair"}
+            onPinConfirmed={(coords, formatted) =>
+              dispatch({ type: "PIN_CONFIRMED", coords, formatted })
             }
             onEditAddress={() => {
               clearAdvanceTimer();

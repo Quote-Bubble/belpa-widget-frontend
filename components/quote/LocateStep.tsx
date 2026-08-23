@@ -40,6 +40,8 @@ export function LocateStep({
   onFallback,
   onAddressResolved,
   onEditAddress,
+  pinOnly = false,
+  onPinConfirmed,
 }: {
   postcode: string;
   /** Resolved in the background as soon as the flow knew an address (see
@@ -61,6 +63,16 @@ export function LocateStep({
   onFallback: (coords: LatLng | null, formatted: string | null, reason: string) => void;
   onAddressResolved: (coords: LatLng, formatted: string) => void;
   onEditAddress: () => void;
+  /** Take the pin, skip the roof scan.
+   *
+   *  Repair jobs are priced by the size the customer picks, not by measured
+   *  area, so there is nothing for the Solar API to contribute — but the
+   *  coordinates still matter downstream for street view and site access.
+   *  In this mode the step confirms the pin and moves straight on, which also
+   *  means no Solar call and no "measuring" wait for a job that isn't being
+   *  measured. */
+  pinOnly?: boolean;
+  onPinConfirmed?: (coords: LatLng, formatted: string | null) => void;
 }) {
   const variant = useFlowVariant();
   const startedRef = useRef(false);
@@ -182,7 +194,9 @@ export function LocateStep({
       return;
     }
 
-    setPhase("scanning");
+    // Nothing is being measured in pin-only mode, so showing the measuring
+    // overlay would be a lie and an unnecessary pause.
+    if (!pinOnly) setPhase("scanning");
     const startedAt = performance.now();
     const abort = new AbortController();
     scanAbortRef.current?.abort();
@@ -210,6 +224,14 @@ export function LocateStep({
       formatted = resolved;
       onAddressResolved(confirmedCoords, resolved);
     });
+
+    // Pin taken; there is no scan to wait for. The reverse-geocode above is
+    // still in flight and will upgrade the displayed address through
+    // onAddressResolved if it lands while this pin is still current.
+    if (pinOnly) {
+      onPinConfirmed?.(confirmedCoords, formatted);
+      return;
+    }
 
     async function holdMinimum() {
       const elapsed = performance.now() - startedAt;
@@ -388,7 +410,7 @@ export function LocateStep({
         >
           <ContinueBubble
             label="Continue"
-            ariaLabel="Yes, measure this roof"
+            ariaLabel={pinOnly ? "Yes, this is the house" : "Yes, measure this roof"}
             onClick={() => void confirmAndScan()}
           />
         </div>

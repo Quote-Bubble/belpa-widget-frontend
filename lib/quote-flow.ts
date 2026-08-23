@@ -407,6 +407,13 @@ export function stepSequence(answers: QuoteFlowAnswers): FlowStepId[] {
           "job_type",
           "property_type",
           "storeys",
+          // Repair takes the pin too. Nothing here is measured from it, so this
+          // used to be skipped — but that left the lead with only a postcode,
+          // and a postcode centroid put the roofer's street view on a
+          // neighbour's house. The pin costs one tap and fixes the coordinates
+          // for street view and site access alike. It runs pin-only: no roof
+          // scan, because there is no area to measure on a repair.
+          "locate",
           "repair_size",
           "material",
           "photos",
