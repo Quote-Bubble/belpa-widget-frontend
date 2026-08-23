@@ -1,15 +1,16 @@
-/* Hatherley Roofing — demo trade site. Not Belpa chrome. */
+/* Hatherley Roofing — trade layout, blue and white. */
 :root {
-  --navy: #0b1c36;
-  --navy-2: #132848;
-  --ink: #16191f;
+  --navy: #0e2a62;
+  --navy-2: #16398a;
+  --ink: #12161d;
   --muted: #5a6370;
-  --paper: #fbfbf9;
+  --paper: #ffffff;
   --white: #ffffff;
-  --line: #d8dde4;
-  --gold: #e8b323;
-  --gold-deep: #c4920c;
-  --hivis: #ffcd00;
+  --line: #dce3ee;
+  --gold: #1f57f0;
+  --gold-deep: #1546c9;
+  --hivis: #1f57f0;
+  --star: #e8b323;
   --ok: #1b7a46;
   --danger: #c1121f;
   --display: "Oswald", "Arial Narrow", Impact, sans-serif;
@@ -55,7 +56,7 @@ button {
   left: -999px;
   top: 0;
   background: var(--gold);
-  color: var(--navy);
+  color: #fff;
   padding: 0.5rem 1rem;
   z-index: 100;
 }
@@ -71,8 +72,8 @@ button {
 
 /* —— Top strip —— */
 .ticker {
-  background: var(--hivis);
-  color: #1a1400;
+  background: var(--navy-2);
+  color: #fff;
   font-weight: 700;
   font-size: 0.82rem;
   letter-spacing: 0.06em;
@@ -115,7 +116,7 @@ button {
 .brand__mark {
   width: 42px;
   height: 42px;
-  background: var(--gold);
+  background: #fff;
   color: var(--navy);
   display: grid;
   place-items: center;
@@ -134,7 +135,7 @@ button {
   font-family: var(--body);
   font-size: 0.68rem;
   letter-spacing: 0.14em;
-  color: var(--gold);
+  color: #cfe0ff;
   margin-top: 0.2rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -179,7 +180,7 @@ button {
   font-family: var(--display);
   font-size: 1.45rem;
   letter-spacing: 0.03em;
-  color: var(--gold);
+  color: #fff;
   font-weight: 600;
 }
 
@@ -213,6 +214,10 @@ button {
 }
 .btn-gold {
   background: var(--gold);
+  color: #fff;
+}
+.head-cta.btn-gold {
+  background: #fff;
   color: var(--navy);
 }
 .btn-navy {
@@ -304,9 +309,9 @@ button {
   inset: 0;
   background: linear-gradient(
     90deg,
-    rgba(11, 28, 54, 0.88) 0%,
-    rgba(11, 28, 54, 0.55) 48%,
-    rgba(11, 28, 54, 0.28) 100%
+    rgba(14, 42, 98, 0.88) 0%,
+    rgba(14, 42, 98, 0.55) 48%,
+    rgba(31, 87, 240, 0.28) 100%
   );
 }
 .hero__inner {
@@ -317,8 +322,8 @@ button {
 }
 .hero__kicker {
   display: inline-block;
-  background: var(--hivis);
-  color: #1a1400;
+  background: #fff;
+  color: var(--navy);
   font-weight: 800;
   font-size: 0.75rem;
   letter-spacing: 0.12em;
@@ -401,7 +406,7 @@ button {
   font-family: var(--display);
   font-size: clamp(1.6rem, 3vw, 2.1rem);
   letter-spacing: 0.04em;
-  color: var(--gold);
+  color: #fff;
   font-weight: 600;
   line-height: 1.1;
 }
@@ -538,6 +543,10 @@ button {
   margin: 0 0 1.3rem;
   color: rgba(255, 255, 255, 0.82);
 }
+.contact__card .btn-gold {
+  background: #fff;
+  color: var(--navy);
+}
 @media (max-width: 800px) {
   .contact {
     grid-template-columns: 1fr;
@@ -565,7 +574,7 @@ button {
   margin: 0 0 0.4rem;
 }
 .section--navy .kicker {
-  color: var(--gold);
+  color: #cfe0ff;
 }
 h2 {
   font-family: var(--display);
@@ -715,8 +724,8 @@ h2 {
   position: absolute;
   top: 0.7rem;
   left: 0.7rem;
-  background: var(--hivis);
-  color: #1a1400;
+  background: var(--navy);
+  color: #fff;
   font-family: var(--display);
   font-size: 0.85rem;
   letter-spacing: 0.1em;
@@ -744,7 +753,7 @@ h2 {
   box-shadow: 0 8px 20px -16px rgba(11, 28, 54, 0.5);
 }
 .stars {
-  color: var(--gold-deep);
+  color: var(--star);
   letter-spacing: 0.12em;
   font-size: 0.95rem;
   margin-bottom: 0.55rem;
@@ -782,8 +791,8 @@ h2 {
 
 /* —— CTA band —— */
 .band {
-  background: var(--hivis);
-  color: #1a1400;
+  background: var(--navy);
+  color: #fff;
   padding: 2.6rem 0;
 }
 .band .wrap {
@@ -804,8 +813,8 @@ h2 {
 
 /* —— Footer —— */
 .site-foot {
-  background: #070f1d;
-  color: rgba(255, 255, 255, 0.78);
+  background: #0a2458;
+  color: rgba(255, 255, 255, 0.82);
   padding: 3rem 0 6.5rem;
   font-size: 0.92rem;
 }
@@ -813,7 +822,7 @@ h2 {
   text-decoration: none;
 }
 .site-foot a:hover {
-  color: var(--gold);
+  color: #fff;
 }
 .foot-grid {
   display: grid;
@@ -825,7 +834,7 @@ h2 {
   font-family: var(--display);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--gold);
+  color: #cfe0ff;
   font-size: 0.9rem;
   margin: 0 0 0.8rem;
   font-weight: 600;
