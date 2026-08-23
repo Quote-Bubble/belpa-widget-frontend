@@ -34,37 +34,14 @@ export function readEventLatLng(event: unknown): LatLng | null {
   return { lat, lng };
 }
 
-/**
- * Keep an axis-aligned rectangle when one corner is dragged.
- * Corners are ordered NW → NE → SE → SW (clockwise from north-west).
- */
-export function updateRectCorner(
+/** Move one corner only — neighbours stay put so the patch can become a free quad. */
+export function updatePathCorner(
   path: LatLng[],
   cornerIndex: number,
   point: LatLng,
 ): LatLng[] {
-  if (path.length !== 4) return path;
-  const next = [...path] as [LatLng, LatLng, LatLng, LatLng];
+  if (cornerIndex < 0 || cornerIndex >= path.length) return path;
+  const next = path.slice();
   next[cornerIndex] = point;
-  switch (cornerIndex) {
-    case 0:
-      next[1] = { lat: point.lat, lng: next[1].lng };
-      next[3] = { lat: next[3].lat, lng: point.lng };
-      break;
-    case 1:
-      next[0] = { lat: point.lat, lng: next[0].lng };
-      next[2] = { lat: next[2].lat, lng: point.lng };
-      break;
-    case 2:
-      next[1] = { lat: next[1].lat, lng: point.lng };
-      next[3] = { lat: point.lat, lng: next[3].lng };
-      break;
-    case 3:
-      next[0] = { lat: next[0].lat, lng: point.lng };
-      next[2] = { lat: point.lat, lng: next[2].lng };
-      break;
-    default:
-      break;
-  }
   return next;
 }

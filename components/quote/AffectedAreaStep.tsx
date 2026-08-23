@@ -2,6 +2,7 @@
 
 import {
   memo,
+  useCallback,
   useLayoutEffect,
   useRef,
   useState,
@@ -24,7 +25,7 @@ import {
 import {
   defaultAffectedAreaBox,
   readEventLatLng,
-  updateRectCorner,
+  updatePathCorner,
 } from "@/lib/affected-area";
 import { SATELLITE_MAX_ZOOM, SATELLITE_MIN_ZOOM } from "@/lib/geo";
 import type { LatLng } from "@/lib/types";
@@ -41,16 +42,15 @@ function pinIcon(): string {
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
-function cornerIcon(): google.maps.Symbol {
-  return {
-    path: google.maps.SymbolPath.CIRCLE,
-    scale: 7,
-    fillColor: "#ffffff",
-    fillOpacity: 1,
-    strokeColor: AFFECTED,
-    strokeWeight: 2.5,
-  };
+function cornerIcon(): string {
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18">` +
+    `<circle cx="9" cy="9" r="6.5" fill="#fff" stroke="${AFFECTED}" stroke-width="2.5"/>` +
+    `</svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
+
+const CORNER_ICON = cornerIcon();
 
 function setMapPanLocked(map: google.maps.Map | null, locked: boolean) {
   if (!map) return;
@@ -103,8 +103,8 @@ const CornerMarker = memo(function CornerMarker({
       position={position}
       draggable={draggable}
       clickable={draggable}
-      zIndex={draggable ? 30 : 20}
-      icon={cornerIcon()}
+      zIndex={30}
+      icon={CORNER_ICON}
       onDragStart={() => onCornerDragStart(cornerIndex)}
       onDrag={(event) => onCornerDrag(event)}
       onDragEnd={(event) => onCornerDragEnd(event, cornerIndex)}
@@ -134,43 +134,72 @@ export function AffectedAreaStep({
   const variant = useFlowVariant();
   const mapHeight = useMapHeightClass();
   const mapRef = useRef<google.maps.Map | null>(null);
-  const dragCornerRef = useRef<number | null>(null);
-  const [path, setPath] = useState<LatLng[]>(
-    () => initialPath ?? defaultAffectedAreaBox(coords),
+  const pathRef = useRef<LatLng[]>(
+    initialPath ?? defaultAffectedAreaBox(coords),
   );
-  const [dragCorner, setDragCorner] = useState<number | null>(null);
+  const [path, setPath] = useState<LatLng[]>(pathRef.current);
+  // Mid-drag preview only — path state stays put until release so the memoised
+  // corner marker never re-applies position under Google's native drag.
+  const [dragCorner, setDragCorner] = useState<{
+    index: number;
+    preview: LatLng | null;
+  } | null>(null);
+  const dragCornerRef = useRef(dragCorner);
+  dragCornerRef.current = dragCorner;
+  pathRef.current = path;
 
   const center = mapView?.center ?? coords;
   const zoom = Math.min(mapView?.zoom ?? 19, SATELLITE_MAX_ZOOM);
 
   function handleCameraChanged(event: MapCameraChangedEvent) {
-    const next = {
+    onMapViewChange({
       center: event.detail.center,
       zoom: event.detail.zoom,
-    };
-    onMapViewChange(next);
+    });
   }
 
-  function handleCornerDragStart(cornerIndex: number) {
-    dragCornerRef.current = cornerIndex;
-    setDragCorner(cornerIndex);
-  }
+  const displayPath =
+    dragCorner?.preview != null
+      ? updatePathCorner(path, dragCorner.index, dragCorner.preview)
+      : path;
 
-  function handleCornerDrag(event: unknown) {
-    const cornerIndex = dragCornerRef.current;
-    if (cornerIndex === null) return;
+  const handleCornerDragStart = useCallback((cornerIndex: number) => {
+    setDragCorner({ index: cornerIndex, preview: null });
+  }, []);
+
+  const handleCornerDrag = useCallback((event: unknown) => {
+    const session = dragCornerRef.current;
+    if (!session) return;
     const point = readEventLatLng(event);
     if (!point) return;
-    setPath((current) => updateRectCorner(current, cornerIndex, point));
-  }
+    setDragCorner({ index: session.index, preview: point });
+  }, []);
 
-  function handleCornerDragEnd(event: unknown, cornerIndex: number) {
-    const point = readEventLatLng(event);
-    if (point) {
-      setPath((current) => updateRectCorner(current, cornerIndex, point));
-    }
-    dragCornerRef.current = null;
-    setDragCorner(null);
+  const handleCornerDragEnd = useCallback(
+    (event: unknown, cornerIndex: number) => {
+      const point = readEventLatLng(event);
+      if (point) {
+        setPath((current) => updatePathCorner(current, cornerIndex, point));
+      }
+      setDragCorner(null);
+    },
+    [],
+  );
+
+  // Whole-box drag: onPathsChanged does not fire for body moves, so commit on
+  // dragend from the live polygon instance (same pattern as DrawRoofStep).
+  const polyListener = useRef<google.maps.MapsEventListener | null>(null);
+  function registerPoly(poly: google.maps.Polygon | null) {
+    polyListener.current?.remove();
+    polyListener.current = null;
+    if (!poly) return;
+    polyListener.current = poly.addListener("dragend", () => {
+      const next = poly
+        .getPath()
+        .getArray()
+        .map((ll) => ({ lat: ll.lat(), lng: ll.lng() }));
+      if (next.length >= 3) setPath(next);
+    });
   }
 
   return (
@@ -207,7 +236,8 @@ export function AffectedAreaStep({
           />
 
           <Polygon
-            paths={path}
+            ref={registerPoly}
+            paths={displayPath}
             draggable={dragCorner === null}
             geodesic
             fillColor={AFFECTED}
@@ -215,26 +245,24 @@ export function AffectedAreaStep({
             strokeColor={AFFECTED}
             strokeOpacity={1}
             strokeWeight={3}
-            onPathsChanged={(paths) => {
-              const nextPath = paths[0]?.map((point) => ({
-                lat: point.lat(),
-                lng: point.lng(),
-              }));
-              if (nextPath && nextPath.length === 4) setPath(nextPath);
-            }}
           />
 
-          {path.map((point, cornerIndex) => (
-            <CornerMarker
-              key={`corner-${cornerIndex}`}
-              position={point}
-              cornerIndex={cornerIndex}
-              draggable={dragCorner === null || dragCorner === cornerIndex}
-              onCornerDragStart={handleCornerDragStart}
-              onCornerDrag={handleCornerDrag}
-              onCornerDragEnd={handleCornerDragEnd}
-            />
-          ))}
+          {path.map((point, cornerIndex) => {
+            const otherDragging =
+              dragCorner !== null && dragCorner.index !== cornerIndex;
+            return (
+              <CornerMarker
+                key={`corner-${cornerIndex}`}
+                // Resting position only — Google owns it for the drag duration.
+                position={point}
+                cornerIndex={cornerIndex}
+                draggable={!otherDragging}
+                onCornerDragStart={handleCornerDragStart}
+                onCornerDrag={handleCornerDrag}
+                onCornerDragEnd={handleCornerDragEnd}
+              />
+            );
+          })}
         </Map>
 
         {variant === "card" ? (
@@ -243,7 +271,7 @@ export function AffectedAreaStep({
               Mark the damaged area
             </p>
             <p className="mt-0.5 text-[12px] font-medium text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.65)]">
-              Drag the box corners, or move the whole box. Skip if you are not sure.
+              Drag each corner on its own, or move the whole box. Skip if unsure.
             </p>
           </div>
         ) : (
@@ -252,7 +280,7 @@ export function AffectedAreaStep({
               Mark the damaged area
             </p>
             <p className="mt-0.5 text-[13px] text-white/85">
-              Drag the corners to fit the patch on your roof.
+              Drag each corner to fit the patch on your roof.
             </p>
           </div>
         )}

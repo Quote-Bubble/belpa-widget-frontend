@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   defaultAffectedAreaBox,
-  updateRectCorner,
+  updatePathCorner,
 } from "@/lib/affected-area";
 
 describe("affected area helpers", () => {
@@ -18,12 +18,12 @@ describe("affected area helpers", () => {
     expect(Math.min(...lngs)).toBeLessThan(center.lng);
   });
 
-  it("keeps a rectangle axis-aligned when a corner moves", () => {
+  it("moves only the dragged corner", () => {
     const path = defaultAffectedAreaBox({ lat: 51.7, lng: -2.2 });
-    const moved = updateRectCorner(path, 1, { lat: 51.7002, lng: -2.1995 });
-    expect(moved[0].lat).toBeCloseTo(51.7002, 4);
-    expect(moved[2].lng).toBeCloseTo(-2.1995, 4);
-    expect(moved[0].lng).toBe(path[0].lng);
-    expect(moved[2].lat).toBe(path[2].lat);
+    const moved = updatePathCorner(path, 1, { lat: 51.7002, lng: -2.1995 });
+    expect(moved[1]).toEqual({ lat: 51.7002, lng: -2.1995 });
+    expect(moved[0]).toEqual(path[0]);
+    expect(moved[2]).toEqual(path[2]);
+    expect(moved[3]).toEqual(path[3]);
   });
 });
