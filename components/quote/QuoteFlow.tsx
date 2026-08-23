@@ -506,6 +506,29 @@ function QuoteFlowBody({
             coords: body.coords,
             formatted: body.formattedAddress ?? null,
           });
+
+          /* Also commit the coordinates to the answers.
+           *
+           * This result used to be kept purely as a hint for LocateStep, which
+           * is the ONLY place that dispatched ADDRESS_RESOLVED. But just two of
+           * the five flow paths render a locate step, so repair, flat and
+           * consultation leads reached the database with coords null — no
+           * street view in the dashboard, and no site-access observation
+           * either, since that is keyed on coords too.
+           *
+           * The geocode had run correctly on every one of those leads. The
+           * result simply had nowhere to go.
+           *
+           * Safe to dispatch unconditionally: the reducer adopts these only
+           * when nothing has set coords yet, and a later SCAN_SUCCESS is more
+           * precise and overwrites them, so paths that do locate are
+           * unaffected. */
+          dispatch({
+            type: "ADDRESS_RESOLVED",
+            postcode: answers.address.postcode,
+            coords: body.coords,
+            formatted: body.formattedAddress ?? "",
+          });
         }
       } catch {
         // Silent, LocateStep falls back to its own live geocode call.
