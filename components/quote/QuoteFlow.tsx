@@ -5,6 +5,7 @@ import { APIProvider } from "@vis.gl/react-google-maps";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
 
 import { DrawRoofStep } from "@/components/quote/DrawRoofStep";
+import { AffectedAreaStep } from "@/components/quote/AffectedAreaStep";
 import { EstimateStep } from "@/components/quote/EstimateStep";
 import { QuoteNextStep } from "@/components/quote/QuoteNextStep";
 import { GutterLineStep } from "@/components/quote/GutterLineStep";
@@ -160,6 +161,7 @@ function reducer(state: FlowState, action: FlowAction): FlowState {
         patch.photos = [];
         patch.photoPaths = [];
         patch.severity = null;
+        patch.affectedArea = null;
       }
       return { ...state, answers: { ...state.answers, ...patch } };
     }
@@ -985,6 +987,24 @@ function QuoteFlowBody({
             }}
           />
         );
+      case "affected_area":
+        if (!answers.coords) return null;
+        return (
+          <AffectedAreaStep
+            coords={answers.coords}
+            initialPath={answers.affectedArea}
+            mapView={mapView}
+            onMapViewChange={setMapView}
+            onContinue={(affectedArea) => {
+              dispatch({ type: "PATCH", patch: { affectedArea } });
+              dispatch({ type: "GO_NEXT" });
+            }}
+            onSkip={() => {
+              dispatch({ type: "PATCH", patch: { affectedArea: null } });
+              dispatch({ type: "GO_NEXT" });
+            }}
+          />
+        );
       case "draw_roof":
         if (!answers.scan) return null;
         if (approach === "gutter_lines") {
@@ -1165,21 +1185,32 @@ function QuoteFlowBody({
           <motion.div
             key={step}
             className={
-              variant === "card" || step === "locate" || step === "draw_roof"
+              variant === "card" ||
+              step === "locate" ||
+              step === "affected_area" ||
+              step === "draw_roof"
                 ? "flex min-h-0 flex-1 flex-col"
                 : undefined
             }
             initial={
-              step === "locate" || step === "draw_roof" ? false : { opacity: 0 }
+              step === "locate" ||
+              step === "affected_area" ||
+              step === "draw_roof"
+                ? false
+                : { opacity: 0 }
             }
             animate={{ opacity: 1 }}
             exit={
-              step === "locate" || step === "draw_roof"
+              step === "locate" ||
+              step === "affected_area" ||
+              step === "draw_roof"
                 ? undefined
                 : { opacity: 0 }
             }
             transition={
-              step === "locate" || step === "draw_roof"
+              step === "locate" ||
+              step === "affected_area" ||
+              step === "draw_roof"
                 ? { duration: 0 }
                 : STEP_TRANSITION
             }

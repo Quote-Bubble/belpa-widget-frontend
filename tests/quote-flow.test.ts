@@ -125,12 +125,14 @@ describe("step sequencing", () => {
      measured from the coordinates, but the lead still carries them: street
      view and site-access scoring both read them, and a postcode alone
      resolves to the centroid, which lands on a neighbour's house. */
-  it("still drops the pin on a repair, and goes to the size band next", () => {
+  it("still drops the pin on a repair, then marks the affected area", () => {
     const answers = createFlowAnswers("r");
     answers.jobType = "tile_or_slate_repair";
     const sequence = stepSequence(answers);
     expect(sequence).toContain("locate");
-    expect(nextStep(answers, "locate")).toBe("repair_size");
+    expect(sequence).toContain("affected_area");
+    expect(nextStep(answers, "locate")).toBe("affected_area");
+    expect(nextStep(answers, "affected_area")).toBe("repair_size");
   });
 
   it("routes gutters through the roofline measured path", () => {
@@ -566,6 +568,36 @@ describe("buildLeadPayload", () => {
     const payload = buildLeadPayload(answers, null, null, "estimate_viewed");
 
     expect(payload.mapView).toBeNull();
+  });
+
+  it("carries a repair affected-area box separately from the roof outline", () => {
+    const answers = createFlowAnswers("roofer-repair", {
+      line: "12 Oakfield Road",
+      postcode: "GL5 4HA",
+    });
+    answers.jobType = "tile_or_slate_repair";
+    answers.coords = { lat: 51.7, lng: -2.2 };
+    answers.affectedArea = [
+      { lat: 51.7001, lng: -2.2001 },
+      { lat: 51.7001, lng: -2.1999 },
+      { lat: 51.6999, lng: -2.1999 },
+      { lat: 51.6999, lng: -2.2001 },
+    ];
+    answers.repairBandId = "patch";
+    answers.material = "natural_slate";
+    answers.contact = { name: "Sam", phone: "07700900123", email: "" };
+    const quote = computeFlowQuote(answers, null);
+    const payload = buildLeadPayload(
+      answers,
+      null,
+      quote,
+      "estimate_viewed",
+      { center: answers.coords!, zoom: 20 },
+    );
+
+    expect(payload.polygonCoords).toBeNull();
+    expect(payload.affectedArea).toHaveLength(4);
+    expect(payload.affectedArea![0].lat).toBeCloseTo(51.7001, 4);
   });
 
   it("builds a manual-consultation lead for non-quotable jobs", () => {

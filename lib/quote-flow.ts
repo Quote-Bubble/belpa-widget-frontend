@@ -58,6 +58,7 @@ export type FlowStepId =
   | "property_type"
   | "storeys"
   | "locate"
+  | "affected_area"
   | "draw_roof"
   | "repair_size"
   | "material"
@@ -99,6 +100,8 @@ export type QuoteFlowAnswers = {
   repairBandId: string | null;
   material: Material | null;
   rooflineScope: RooflineScope | null;
+  /** Repair-only: rectangle on the satellite map around the damaged patch. */
+  affectedArea: LatLng[] | null;
   /** Compressed damage photos the customer attached on the "photos" step. */
   photos: File[];
   /** Storage paths returned by /api/severity, carried into the lead payload. */
@@ -132,6 +135,7 @@ export function createFlowAnswers(
     repairBandId: null,
     material: null,
     rooflineScope: null,
+    affectedArea: null,
     photos: [],
     photoPaths: [],
     severity: null,
@@ -384,6 +388,7 @@ export function stepSequence(answers: QuoteFlowAnswers): FlowStepId[] {
           // for street view and site access alike. It runs pin-only: no roof
           // scan, because there is no area to measure on a repair.
           "locate",
+          "affected_area",
           "repair_size",
           "material",
           "photos",
@@ -457,7 +462,11 @@ export function previousStep(
   if (index <= 0) return null;
   const previous = sequence[index - 1];
   // Never step "back" into the transient locate/scan screen; skip over it.
-  return previous === "locate" ? (sequence[index - 2] ?? null) : previous;
+  // From affected_area the customer may still want to move the pin.
+  if (previous === "locate" && current !== "affected_area") {
+    return sequence[index - 2] ?? null;
+  }
+  return previous;
 }
 
 export function progressPercent(
@@ -883,6 +892,10 @@ export function buildLeadPayload(
       imageryDate: answers.scan?.imageryDate ?? null,
     },
     polygonCoords: primaryRoofPath,
+    affectedArea:
+      path === "repair" && answers.affectedArea && answers.affectedArea.length >= 3
+        ? answers.affectedArea
+        : null,
     mapView,
     conditionAnswer: answers.condition,
     conditionFlagged: answers.condition === "yes",
