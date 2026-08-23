@@ -27,10 +27,10 @@ export default async function WidgetPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ host?: string }>;
+  searchParams: Promise<{ host?: string; launch?: string }>;
 }) {
   const { slug } = await params;
-  const { host } = await searchParams;
+  const { host, launch } = await searchParams;
   if (!ROOFER_SLUG.test(slug)) {
     return (
       <div
@@ -65,6 +65,7 @@ export default async function WidgetPage({
         brandName={displayName}
         quoteConfig={roofer.config}
         startExpanded
+        launchModal={launch === "1"}
       />
     </div>
   );

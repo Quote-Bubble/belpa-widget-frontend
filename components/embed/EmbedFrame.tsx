@@ -20,6 +20,8 @@ import type { QuoteConfig } from "@/lib/quote-config";
  *   - stage:  "input" | "flow" (mirrored for host-side selectors)
  *   - sizes:  { collapsed, expanded } posted on init so hosts need not
  *             copy QUOTE_SIZES constants
+ *   - dismiss: true when the user hits the panel X. This is NOT the same as
+ *              mode "collapsed", which is also posted while the widget boots.
  *
  * Modes and how the host treats them:
  *   collapsed  — fixed bar height, laid out in flow (the reserved slot).
@@ -36,6 +38,12 @@ type EmbedMode = "collapsed" | "suggesting" | "expanded" | "overlay";
 
 function resolveHostOrigin(): string | null {
   try {
+    const fromQuery = new URLSearchParams(window.location.search).get("host");
+    if (fromQuery) return new URL(fromQuery).origin;
+  } catch {
+    /* ignore */
+  }
+  try {
     if (document.referrer) return new URL(document.referrer).origin;
   } catch {
     /* ignore */
@@ -48,11 +56,15 @@ export function EmbedFrame({
   quoteConfig = null,
   brandName,
   startExpanded = false,
+  launchModal = false,
 }: {
   rooferId: string;
   quoteConfig?: QuoteConfig | null;
   brandName?: string;
   startExpanded?: boolean;
+  /** launch.js desktop overlay. Force the expanded card; never boot through
+   *  the collapsed search bar (that paint is what flashed in the modal). */
+  launchModal?: boolean;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
 
@@ -96,7 +108,10 @@ export function EmbedFrame({
 
       let mode: EmbedMode;
       let height: number;
-      if (stage === "flow") {
+      if (launchModal) {
+        mode = "expanded";
+        height = QUOTE_SIZES.expanded;
+      } else if (stage === "flow") {
         if (desktopQuery.matches) {
           mode = "expanded";
           height = QUOTE_SIZES.expanded;
@@ -197,6 +212,15 @@ export function EmbedFrame({
     };
     window.addEventListener("message", onHostMessage);
 
+    const onDismiss = () => {
+      if (!hostOrigin) return;
+      window.parent?.postMessage(
+        { source: "belpa-embed", dismiss: true },
+        hostOrigin,
+      );
+    };
+    window.addEventListener("belpa:dismiss", onDismiss);
+
     // The suggestions dropdown mounts/animates outside the widget subtree, so
     // re-check on typing and focus changes, then once more after the
     // dropdown's enter/exit animation settles.
@@ -252,11 +276,12 @@ export function EmbedFrame({
       document.removeEventListener("focusin", postSoon, true);
       document.removeEventListener("focusout", onFocusOut, true);
       window.removeEventListener("message", onHostMessage);
+      window.removeEventListener("belpa:dismiss", onDismiss);
       desktopQuery.removeEventListener("change", onBreakpointChange);
       if (rafId) window.cancelAnimationFrame(rafId);
       clearPostSoonTimers();
     };
-  }, []);
+  }, [launchModal]);
 
   return (
     <div ref={hostRef} className="belpa-bubble-host mx-auto w-full text-left">
@@ -265,6 +290,7 @@ export function EmbedFrame({
         brandName={brandName}
         quoteConfig={quoteConfig}
         startExpanded={startExpanded}
+        launchModal={launchModal}
       />
     </div>
   );

@@ -67,6 +67,12 @@ type QuoteBubbleProps = {
    * keeps the compact entry → fullscreen-overlay behaviour.
    */
   startExpanded?: boolean;
+  /**
+   * launch.js desktop overlay. The card is already a modal, so boot already
+   * expanded and never render the search bar — that first paint is what
+   * flashed then vanished when the overlay treated "collapsed" as close.
+   */
+  launchModal?: boolean;
 };
 
 type OpenFlow = {
@@ -95,14 +101,17 @@ function QuoteBubbleShell({
   brandName = "Belpa",
   quoteConfig = null,
   startExpanded = false,
+  launchModal = false,
 }: QuoteBubbleProps) {
   // /w opens already expanded, so kick the flow chunk now — waiting for the
   // startExpanded effect to mount LazyQuoteFlow serialises hydration and the
   // 210KB download, which is the pause after a launch.js click.
-  if (startExpanded) preloadFlow();
+  if (startExpanded || launchModal) preloadFlow();
 
   const [postcode, setPostcode] = useState("");
-  const [flow, setFlow] = useState<OpenFlow | null>(null);
+  const [flow, setFlow] = useState<OpenFlow | null>(() =>
+    launchModal ? { key: 1, postcode: "", formatted: null } : null,
+  );
   // The step content mounts immediately so the panel is never empty glass, but
   // for the length of the height tween it is taller than the box it sits in.
   // Until the shell reaches its full 544px, the step scroller stays clipped so
@@ -113,8 +122,9 @@ function QuoteBubbleShell({
   const [showAddressHint, setShowAddressHint] = useState(false);
   const hintTimerRef = useRef<number | null>(null);
   const isDesktop = useIsDesktop();
+  const desktopCard = launchModal || isDesktop;
 
-  const expanded = Boolean(flow && isDesktop);
+  const expanded = Boolean(flow && desktopCard);
 
   function openFlow(nextPostcode: string, formatted: string | null) {
     const key = flowKey + 1;
@@ -129,11 +139,12 @@ function QuoteBubbleShell({
   }, [rooferId]);
 
   useEffect(() => {
+    if (launchModal) return;
     if (startExpanded && isDesktop && !flow) {
       openFlow("", null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startExpanded, isDesktop]);
+  }, [startExpanded, isDesktop, launchModal]);
 
   useEffect(() => {
     let previewTimer: number | null = null;
@@ -193,6 +204,7 @@ function QuoteBubbleShell({
   }
 
   function closeFlow() {
+    window.dispatchEvent(new CustomEvent("belpa:dismiss"));
     setFlow(null);
     track("widget_closed");
   }
@@ -212,7 +224,7 @@ function QuoteBubbleShell({
    * fullscreen, which costs nothing.
    */
   useEffect(() => {
-    if (isDesktop || !flow) return;
+    if (desktopCard || !flow) return;
     const el = document.documentElement;
     const prevOverflow = el.style.overflow;
     const prevOverscroll = el.style.overscrollBehavior;
@@ -222,7 +234,7 @@ function QuoteBubbleShell({
       el.style.overflow = prevOverflow;
       el.style.overscrollBehavior = prevOverscroll;
     };
-  }, [isDesktop, flow]);
+  }, [desktopCard, flow]);
 
   // A host can ask us to dismiss the flow (EmbedFrame relays `action: "close"`
   // as this event). Used by the landing, whose desktop modal draws its own
@@ -253,7 +265,7 @@ function QuoteBubbleShell({
       rooferId={rooferId}
       brandName={brandName}
       quoteConfig={quoteConfig}
-      variant={isDesktop ? "card" : "page"}
+      variant={desktopCard ? "card" : "page"}
       initialAddress={{
         postcode: flow.postcode,
         formatted: flow.formatted,
@@ -274,7 +286,7 @@ function QuoteBubbleShell({
         animate={{
           height: expanded
             ? QUOTE_SIZES.expandedPanel
-            : isDesktop
+            : desktopCard
               ? QUOTE_SIZES.collapsedBar
               : QUOTE_SIZES.collapsedBarMobile,
         }}
@@ -340,7 +352,7 @@ function QuoteBubbleShell({
         </AnimatePresence>
       </motion.div>
 
-      {!isDesktop && typeof document !== "undefined"
+      {!desktopCard && typeof document !== "undefined"
         ? createPortal(
             <AnimatePresence>
               {flow ? (
