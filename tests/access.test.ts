@@ -43,8 +43,9 @@ describe("assessAccess", () => {
     expect(assessAccess(null, 3, "detached").scaffoldWeeks).toBe(2);
     expect(assessAccess(null, 4, "detached").scaffoldWeeks).toBe(3);
     expect(assessAccess(null, 1, "detached").scaffoldWeeks).toBe(1);
-    expect(assessAccess(null, 1, "detached", "repair").scaffoldWeeks).toBe(0);
-    expect(assessAccess(null, 2, "detached", "repair").scaffoldWeeks).toBe(1);
+    expect(assessAccess(null, 1, "detached", "repair", 2).scaffoldWeeks).toBe(0);
+    // Two storeys alone no longer buys a scaffold week — see the repair block.
+    expect(assessAccess(null, 2, "detached", "repair", 2).scaffoldWeeks).toBe(0);
   });
 
   it("applies attachment multipliers — standalone properties need a full scaffold wrap, terraced needs the fewest elevations", () => {
@@ -75,10 +76,30 @@ describe("assessAccess", () => {
     expect(steep.accessMultiplier).toBeGreaterThan(moderate.accessMultiplier);
   });
 
-  it("keeps repair scaffolding lighter", () => {
-    const repair = assessAccess(scanWithHeights([5.5]), 2, "detached", "repair");
-    expect(repair.scaffoldWeeks).toBe(1);
-    const single = assessAccess(null, 1, "detached", "repair");
+  /* A repair is priced on how much roof the work spans, not only on height.
+     The old rule put a full scaffold week on any two-storey repair, so a few
+     slipped tiles cost hundreds more than the identical job a storey lower. */
+  it("sends a small repair at height up a tower, not a scaffold", () => {
+    const patch = assessAccess(scanWithHeights([5.5]), 2, "detached", "repair", 2);
+    expect(patch.scaffoldWeeks).toBe(0);
+    expect(patch.towerAccess).toBe(true);
+  });
+
+  it("charges no access line for a single-storey repair", () => {
+    const single = assessAccess(null, 1, "detached", "repair", 2);
     expect(single.scaffoldWeeks).toBe(0);
+    expect(single.towerAccess).toBe(false);
+  });
+
+  it("scaffolds a repair once the area needs a working platform", () => {
+    const large = assessAccess(null, 2, "detached", "repair", 17);
+    expect(large.scaffoldWeeks).toBe(1);
+    expect(large.towerAccess).toBe(false);
+  });
+
+  it("scaffolds any repair three storeys up, however small", () => {
+    const high = assessAccess(null, 3, "detached", "repair", 2);
+    expect(high.scaffoldWeeks).toBe(1);
+    expect(high.towerAccess).toBe(false);
   });
 });

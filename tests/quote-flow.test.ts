@@ -112,14 +112,25 @@ describe("step sequencing", () => {
     expect(nextStep(answers, "locate")).toBe("material");
   });
 
-  it("routes repairs through the size-band question instead of the map", () => {
+  it("routes repairs through the size-band question instead of drawing the roof", () => {
     const answers = createFlowAnswers("r");
     answers.jobType = "tile_or_slate_repair";
     const sequence = stepSequence(answers);
     expect(sequence).toContain("repair_size");
-    expect(sequence).not.toContain("locate");
     expect(sequence).not.toContain("draw_roof");
     expect(sequence).not.toContain("condition");
+  });
+
+  /* Repair takes the pin but not the measurement. Nothing on this path is
+     measured from the coordinates, but the lead still carries them: street
+     view and site-access scoring both read them, and a postcode alone
+     resolves to the centroid, which lands on a neighbour's house. */
+  it("still drops the pin on a repair, and goes to the size band next", () => {
+    const answers = createFlowAnswers("r");
+    answers.jobType = "tile_or_slate_repair";
+    const sequence = stepSequence(answers);
+    expect(sequence).toContain("locate");
+    expect(nextStep(answers, "locate")).toBe("repair_size");
   });
 
   it("routes gutters through the roofline measured path", () => {

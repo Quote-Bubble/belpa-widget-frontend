@@ -5,10 +5,19 @@ export type AccessAssessment = {
   steepPitch: boolean;
   complexity: "simple" | "moderate" | "complex";
   scaffoldWeeks: number;
+  /** Repair only: reachable from a tower, so no scaffold week is warranted. */
+  towerAccess: boolean;
   accessMultiplier: number;
   extraConfidence: number;
   notes: string[];
 };
+
+/**
+ * Above this many m², a repair stops being a patch and needs a real working
+ * platform. Below it a roofer works from a tower or a roof ladder, which is
+ * both what actually happens on site and a fraction of the cost.
+ */
+export const REPAIR_SCAFFOLD_AREA_M2 = 10;
 
 function clampStoreys(value: number): StoreyBand {
   if (value <= 1) return 1;
@@ -128,6 +137,8 @@ export function assessAccess(
     | "roofline"
     | "flat"
     | "consultation" = "measured",
+  /** Repair path only: the representative area of the band the customer chose. */
+  repairAreaM2?: number,
 ): AccessAssessment {
   const notes: string[] = [];
   let extraConfidence = 0;
@@ -166,8 +177,37 @@ export function assessAccess(
   if (attachment.note) notes.push(attachment.note);
 
   let scaffoldWeeks = 0;
+  let towerAccess = false;
   if (path === "repair") {
-    scaffoldWeeks = estimatedStoreys >= 2 ? 1 : 0;
+    /* A repair is not a re-roof, and it was being priced as though the only
+       question were height.
+     *
+     * The old rule was `storeys >= 2 ? 1 week : 0`, which put a £625 scaffold
+     * week on a job whose labour is a few hundred pounds, and nothing at all
+     * on the identical repair one storey lower. Two customers with the same
+     * few slipped tiles saw wildly different prices, which is what makes the
+     * estimate look arbitrary.
+     *
+     * What decides it on site is how much roof the work spans, not just how
+     * far up it is. A patch is reached from a tower or a roof ladder; an area
+     * big enough to walk about on needs a platform, and so does anything
+     * three storeys up where a tower will not safely reach. */
+    const area = repairAreaM2 ?? 0;
+    if (estimatedStoreys >= 3 || area > REPAIR_SCAFFOLD_AREA_M2) {
+      scaffoldWeeks = 1;
+      notes.push(
+        estimatedStoreys >= 3
+          ? "Priced with a scaffold week: at three storeys and up, a tower will not reach the work safely."
+          : "Priced with a scaffold week: a repair over this area needs a working platform rather than a tower.",
+      );
+    } else if (estimatedStoreys >= 2) {
+      towerAccess = true;
+      notes.push(
+        "Priced for tower access rather than a full scaffold, which is how a patch at this height is normally reached.",
+      );
+    }
+    // Single storey falls through to no access line at all: that is ladder
+    // work, and the repair rate already covers it.
   } else if (path === "consultation") {
     scaffoldWeeks = 0;
   } else {
@@ -179,6 +219,7 @@ export function assessAccess(
     steepPitch,
     complexity,
     scaffoldWeeks,
+    towerAccess,
     accessMultiplier,
     extraConfidence,
     notes,

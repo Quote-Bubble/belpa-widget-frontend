@@ -18,6 +18,7 @@ import { materialOptionsFor } from "@/lib/materials";
 import {
   SERVICE_CATALOG,
   configFingerprint,
+  defaultAccess,
   type QuoteConfig,
   type ServiceKey,
 } from "@/lib/quote-config";
@@ -676,6 +677,9 @@ function computeBaseFlowQuote(
     answers.storeys,
     answers.propertyType,
     path,
+    // How much roof the repair spans decides whether it needs a scaffold or a
+    // tower, so the access assessment has to know it.
+    repairBandById(answers.repairBandId)?.representativeAreaM2,
   );
   const storeys = access.estimatedStoreys;
 
@@ -746,7 +750,20 @@ function computeBaseFlowQuote(
         material: answers.material as RepairMaterial,
         storeys,
         scaffoldWeeks: resolved.scaffoldWeeks,
-        fixedAccessExVat: resolved.fixedAccessExVat,
+        /* Tower instead of scaffold.
+         *
+         * Only substituted when the company is on the default scaffold-by-week
+         * policy: if they have deliberately chosen "none", or set their own
+         * fixed access rate, that choice is theirs and stands. */
+        fixedAccessExVat:
+          resolved.fixedAccessExVat ||
+          (access.towerAccess && resolved.mode === "scaffold_weeks"
+            ? defaultAccess("tower").rateExVat
+            : 0),
+        fixedAccessDetail:
+          !resolved.fixedAccessExVat && access.towerAccess
+            ? "Tower hire — a patch at this height does not need a full scaffold"
+            : undefined,
         includeSkip: false,
         conditionAnswer: condition,
         accessMultiplier: resolved.accessMultiplier,

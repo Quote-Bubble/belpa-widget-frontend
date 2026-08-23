@@ -45,6 +45,9 @@ type BaseEstimateInput = {
   accessMultiplier?: number;
   /** Fixed access line (MEWP / tower / allowance) instead of scaffold weeks. */
   fixedAccessExVat?: number;
+  /** Overrides the access line's description when the allowance is modelled
+   *  (e.g. a tower substituted for a scaffold) rather than set by the company. */
+  fixedAccessDetail?: string;
   extraAssumptions?: string[];
   extraConfidence?: number;
   pricing?: PricingContext;
@@ -71,6 +74,9 @@ export type RooflineEstimateInput = {
   scaffoldWeeks: number;
   accessMultiplier?: number;
   fixedAccessExVat?: number;
+  /** Overrides the access line's description when the allowance is modelled
+   *  (e.g. a tower substituted for a scaffold) rather than set by the company. */
+  fixedAccessDetail?: string;
   extraAssumptions?: string[];
   extraConfidence?: number;
   pricing?: PricingContext;
@@ -182,7 +188,8 @@ function accessAndRooflineItems(input: BaseEstimateInput): QuoteLineItem[] {
   if (fixed > 0) {
     items.push({
       label: "Access equipment",
-      detail: "Fixed access allowance for this company",
+      detail:
+        input.fixedAccessDetail ?? "Fixed access allowance for this company",
       min: fixed,
       max: fixed,
       rateId: "fixed_access",
