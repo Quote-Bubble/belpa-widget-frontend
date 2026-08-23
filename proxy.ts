@@ -36,10 +36,10 @@ const API_BASE = (
 /**
  * Our own surfaces always keep access, so locking a roofer down can never
  * break something we serve:
- *   'self'  — demo-button.html / demo-widget.html live on this origin and
- *             frame these routes. They're what the dashboard's "Preview ↗"
- *             opens, so without this an operator previewing a locked roofer
- *             gets a blank box.
+ *   'self'  — demo-button.html / demo-widget.html / hatherley.html live on
+ *             this origin and frame these routes. They're what the dashboard's
+ *             "Preview ↗" opens, so without this an operator previewing a
+ *             locked roofer gets a blank box.
  *   belpa.co.uk — the landing frames the demo roofer.
  */
 const FIRST_PARTY = ["'self'", "https://belpa.co.uk", "https://www.belpa.co.uk"];

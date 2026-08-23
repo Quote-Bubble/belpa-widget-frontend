@@ -34,6 +34,14 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  async rewrites() {
+    return [
+      // Fake UK trade homepage for sales demos. Static HTML in /public so it
+      // does not inherit Geist / Inter / Poppins from the product layout.
+      { source: "/hatherley", destination: "/hatherley.html" },
+      { source: "/hatherley/", destination: "/hatherley.html" },
+    ];
+  },
   async redirects() {
     return [
       // Back-compat: the fullscreen loader was renamed belpa-launch.js →
