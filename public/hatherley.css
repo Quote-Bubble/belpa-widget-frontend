@@ -1,15 +1,15 @@
-/* Hatherley Roofing — trade layout, blue and white. */
+/* Hatherley Roofing — demo trade site. */
 :root {
-  --navy: #0e2a62;
-  --navy-2: #16398a;
-  --ink: #12161d;
+  --navy: #0b1c36;
+  --navy-2: #132848;
+  --ink: #16191f;
   --muted: #5a6370;
   --paper: #ffffff;
   --white: #ffffff;
-  --line: #dce3ee;
-  --gold: #1f57f0;
-  --gold-deep: #1546c9;
-  --hivis: #1f57f0;
+  --line: #d8dde4;
+  --gold: #e8b323;
+  --gold-deep: #c4920c;
+  --hivis: #ffcd00;
   --star: #e8b323;
   --ok: #1b7a46;
   --danger: #c1121f;
@@ -56,7 +56,7 @@ button {
   left: -999px;
   top: 0;
   background: var(--gold);
-  color: #fff;
+  color: var(--navy);
   padding: 0.5rem 1rem;
   z-index: 100;
 }
@@ -72,8 +72,8 @@ button {
 
 /* —— Top strip —— */
 .ticker {
-  background: var(--navy-2);
-  color: #fff;
+  background: var(--hivis);
+  color: #1a1400;
   font-weight: 700;
   font-size: 0.82rem;
   letter-spacing: 0.06em;
@@ -116,7 +116,7 @@ button {
 .brand__mark {
   width: 42px;
   height: 42px;
-  background: #fff;
+  background: var(--gold);
   color: var(--navy);
   display: grid;
   place-items: center;
@@ -135,7 +135,7 @@ button {
   font-family: var(--body);
   font-size: 0.68rem;
   letter-spacing: 0.14em;
-  color: #cfe0ff;
+  color: var(--gold);
   margin-top: 0.2rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -180,7 +180,7 @@ button {
   font-family: var(--display);
   font-size: 1.45rem;
   letter-spacing: 0.03em;
-  color: #fff;
+  color: var(--gold);
   font-weight: 600;
 }
 
@@ -214,10 +214,6 @@ button {
 }
 .btn-gold {
   background: var(--gold);
-  color: #fff;
-}
-.head-cta.btn-gold {
-  background: #fff;
   color: var(--navy);
 }
 .btn-navy {
@@ -296,34 +292,23 @@ button {
 
 /* —— Hero —— */
 .hero {
-  position: relative;
-  min-height: min(78vh, 640px);
-  display: grid;
-  align-items: end;
+  background: var(--navy);
   color: #fff;
-  background: var(--navy) center / cover no-repeat;
+  padding: 2.6rem 0;
 }
-.hero::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    90deg,
-    rgba(14, 42, 98, 0.88) 0%,
-    rgba(14, 42, 98, 0.55) 48%,
-    rgba(31, 87, 240, 0.28) 100%
-  );
+.hero__grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 2.4rem;
+  align-items: center;
 }
-.hero__inner {
-  position: relative;
-  z-index: 1;
-  padding: 4.5rem 0 3.5rem;
-  max-width: 38rem;
+.hero__copy {
+  max-width: 36rem;
 }
 .hero__kicker {
   display: inline-block;
-  background: #fff;
-  color: var(--navy);
+  background: var(--hivis);
+  color: #1a1400;
   font-weight: 800;
   font-size: 0.75rem;
   letter-spacing: 0.12em;
@@ -334,17 +319,16 @@ button {
 .hero h1 {
   font-family: var(--display);
   font-weight: 600;
-  font-size: clamp(2.4rem, 5.4vw, 3.85rem);
+  font-size: clamp(2rem, 4.4vw, 3.1rem);
   line-height: 1.05;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  margin: 0 0 0.85rem;
-  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.35);
+  margin: 0 0 0.75rem;
 }
 .hero p {
-  margin: 0 0 1.6rem;
-  font-size: 1.12rem;
-  max-width: 40ch;
+  margin: 0 0 1.4rem;
+  font-size: 1.08rem;
+  max-width: 42ch;
   color: rgba(255, 255, 255, 0.9);
 }
 .hero__actions {
@@ -352,6 +336,25 @@ button {
   flex-wrap: wrap;
   gap: 0.75rem;
   align-items: center;
+}
+.hero__shot {
+  margin: 0;
+}
+.hero__shot img {
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+  box-shadow: 10px 10px 0 var(--gold);
+}
+@media (max-width: 800px) {
+  .hero__grid {
+    grid-template-columns: 1fr;
+    gap: 1.4rem;
+  }
+  .hero__shot img {
+    height: 180px;
+    box-shadow: 8px 8px 0 var(--gold);
+  }
 }
 
 /* —— Trust —— */
@@ -406,7 +409,7 @@ button {
   font-family: var(--display);
   font-size: clamp(1.6rem, 3vw, 2.1rem);
   letter-spacing: 0.04em;
-  color: #fff;
+  color: var(--gold);
   font-weight: 600;
   line-height: 1.1;
 }
@@ -543,10 +546,6 @@ button {
   margin: 0 0 1.3rem;
   color: rgba(255, 255, 255, 0.82);
 }
-.contact__card .btn-gold {
-  background: #fff;
-  color: var(--navy);
-}
 @media (max-width: 800px) {
   .contact {
     grid-template-columns: 1fr;
@@ -574,7 +573,7 @@ button {
   margin: 0 0 0.4rem;
 }
 .section--navy .kicker {
-  color: #cfe0ff;
+  color: var(--gold);
 }
 h2 {
   font-family: var(--display);
@@ -724,8 +723,8 @@ h2 {
   position: absolute;
   top: 0.7rem;
   left: 0.7rem;
-  background: var(--navy);
-  color: #fff;
+  background: var(--hivis);
+  color: #1a1400;
   font-family: var(--display);
   font-size: 0.85rem;
   letter-spacing: 0.1em;
@@ -791,8 +790,8 @@ h2 {
 
 /* —— CTA band —— */
 .band {
-  background: var(--navy);
-  color: #fff;
+  background: var(--hivis);
+  color: #1a1400;
   padding: 2.6rem 0;
 }
 .band .wrap {
@@ -813,8 +812,8 @@ h2 {
 
 /* —— Footer —— */
 .site-foot {
-  background: #0a2458;
-  color: rgba(255, 255, 255, 0.82);
+  background: #070f1d;
+  color: rgba(255, 255, 255, 0.78);
   padding: 3rem 0 6.5rem;
   font-size: 0.92rem;
 }
@@ -822,7 +821,7 @@ h2 {
   text-decoration: none;
 }
 .site-foot a:hover {
-  color: #fff;
+  color: var(--gold);
 }
 .foot-grid {
   display: grid;
@@ -834,7 +833,7 @@ h2 {
   font-family: var(--display);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #cfe0ff;
+  color: var(--gold);
   font-size: 0.9rem;
   margin: 0 0 0.8rem;
   font-weight: 600;
