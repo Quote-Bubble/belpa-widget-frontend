@@ -1,21 +1,20 @@
 "use client";
 
-import {
-  memo,
-  useCallback,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type MutableRefObject,
-} from "react";
-import {
-  Map,
-  Marker,
-  Polygon,
-  useMap,
-} from "@vis.gl/react-google-maps";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Map, Marker, Polygon } from "@vis.gl/react-google-maps";
 import type { MapCameraChangedEvent } from "@vis.gl/react-google-maps";
 
+import {
+  CornerMarker,
+  MapPanLock,
+  PIN_LIFT,
+  cornerGrabIcon,
+  cornerTipIcon,
+  liftBearing,
+  polygonCentroid,
+  readEventLatLng,
+  setMapPanLocked,
+} from "@/components/quote/corner-handles";
 import {
   ContinueBubble,
   StepShell,
@@ -24,10 +23,9 @@ import {
 } from "@/components/quote/ui";
 import {
   defaultAffectedAreaBox,
-  readEventLatLng,
   updatePathCorner,
 } from "@/lib/affected-area";
-import { SATELLITE_MAX_ZOOM, SATELLITE_MIN_ZOOM } from "@/lib/geo";
+import { offsetByPixels, SATELLITE_MAX_ZOOM, SATELLITE_MIN_ZOOM } from "@/lib/geo";
 import type { LatLng } from "@/lib/types";
 
 const AFFECTED = "#ef4444";
@@ -42,79 +40,9 @@ function pinIcon(): string {
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
-function cornerIcon(): string {
-  const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18">` +
-    `<circle cx="9" cy="9" r="6.5" fill="#fff" stroke="${AFFECTED}" stroke-width="2.5"/>` +
-    `</svg>`;
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
-}
-
-const CORNER_ICON = cornerIcon();
-
-function setMapPanLocked(map: google.maps.Map | null, locked: boolean) {
-  if (!map) return;
-  map.setOptions({
-    gestureHandling: locked ? "none" : "greedy",
-    draggable: !locked,
-    keyboardShortcuts: !locked,
-  });
-}
-
-function MapPanLock({
-  locked,
-  mapRef,
-}: {
-  locked: boolean;
-  mapRef: MutableRefObject<google.maps.Map | null>;
-}) {
-  const map = useMap();
-
-  useLayoutEffect(() => {
-    mapRef.current = map;
-  }, [map, mapRef]);
-
-  useLayoutEffect(() => {
-    setMapPanLocked(map, locked);
-  }, [map, locked]);
-
-  return null;
-}
-
-type CornerMarkerProps = {
-  position: LatLng;
-  cornerIndex: number;
-  draggable: boolean;
-  onCornerDragStart: (cornerIndex: number) => void;
-  onCornerDrag: (event: unknown) => void;
-  onCornerDragEnd: (event: unknown, cornerIndex: number) => void;
-};
-
-const CornerMarker = memo(function CornerMarker({
-  position,
-  cornerIndex,
-  draggable,
-  onCornerDragStart,
-  onCornerDrag,
-  onCornerDragEnd,
-}: CornerMarkerProps) {
-  return (
-    <Marker
-      position={position}
-      draggable={draggable}
-      clickable={draggable}
-      zIndex={30}
-      icon={CORNER_ICON}
-      onDragStart={() => onCornerDragStart(cornerIndex)}
-      onDrag={(event) => onCornerDrag(event)}
-      onDragEnd={(event) => onCornerDragEnd(event, cornerIndex)}
-    />
-  );
-});
-
 /**
- * Repair-only step after the pin: mark the damaged patch on the same satellite
- * view. Skippable — the lead still carries the pin either way.
+ * Repair-only step after the pin: mark the damaged patch with the same
+ * mobile corner handles as the roof-replacement outline editor.
  */
 export function AffectedAreaStep({
   coords,
@@ -134,60 +62,103 @@ export function AffectedAreaStep({
   const variant = useFlowVariant();
   const mapHeight = useMapHeightClass();
   const mapRef = useRef<google.maps.Map | null>(null);
-  const pathRef = useRef<LatLng[]>(
-    initialPath ?? defaultAffectedAreaBox(coords),
+  const [path, setPath] = useState<LatLng[]>(
+    () => initialPath ?? defaultAffectedAreaBox(coords),
   );
-  const [path, setPath] = useState<LatLng[]>(pathRef.current);
-  // Mid-drag preview only — path state stays put until release so the memoised
-  // corner marker never re-applies position under Google's native drag.
-  const [dragCorner, setDragCorner] = useState<{
-    index: number;
-    preview: LatLng | null;
-  } | null>(null);
-  const dragCornerRef = useRef(dragCorner);
-  dragCornerRef.current = dragCorner;
+  const pathRef = useRef(path);
   pathRef.current = path;
 
+  const [zoom, setZoom] = useState(
+    Math.min(mapView?.zoom ?? 19, SATELLITE_MAX_ZOOM),
+  );
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
+
+  // Same session shape as DrawRoofStep: bearing + zoom frozen at grab-start;
+  // preview is ball→crosshair resolved coords for the polygon only.
+  const [dragCorner, setDragCorner] = useState<{
+    vertexIndex: number;
+    bearing: number;
+    preview: LatLng | null;
+  } | null>(null);
+  const dragSessionRef = useRef<{ bearing: number; zoom: number } | null>(
+    null,
+  );
+  const cornerDragging = dragCorner !== null;
+
   const center = mapView?.center ?? coords;
-  const zoom = Math.min(mapView?.zoom ?? 19, SATELLITE_MAX_ZOOM);
+
+  useEffect(() => {
+    if (!cornerDragging) return;
+    const scroller = document.querySelector<HTMLElement>(".quote-flow-scroller");
+    const prevScroller = scroller?.style.overflowY ?? "";
+    const prevBody = document.body.style.overflow;
+    if (scroller) scroller.style.overflowY = "hidden";
+    document.body.style.overflow = "hidden";
+    return () => {
+      if (scroller) scroller.style.overflowY = prevScroller;
+      document.body.style.overflow = prevBody;
+    };
+  }, [cornerDragging]);
 
   function handleCameraChanged(event: MapCameraChangedEvent) {
+    const nextZoom = event.detail.zoom;
+    setZoom(nextZoom);
     onMapViewChange({
       center: event.detail.center,
-      zoom: event.detail.zoom,
+      zoom: nextZoom,
     });
   }
 
-  const displayPath =
-    dragCorner?.preview != null
-      ? updatePathCorner(path, dragCorner.index, dragCorner.preview)
-      : path;
+  function displayPath(): LatLng[] {
+    if (!dragCorner?.preview) return path;
+    return updatePathCorner(path, dragCorner.vertexIndex, dragCorner.preview);
+  }
 
-  const handleCornerDragStart = useCallback((cornerIndex: number) => {
-    setDragCorner({ index: cornerIndex, preview: null });
-  }, []);
-
-  const handleCornerDrag = useCallback((event: unknown) => {
-    const session = dragCornerRef.current;
-    if (!session) return;
-    const point = readEventLatLng(event);
-    if (!point) return;
-    setDragCorner({ index: session.index, preview: point });
-  }, []);
-
-  const handleCornerDragEnd = useCallback(
-    (event: unknown, cornerIndex: number) => {
-      const point = readEventLatLng(event);
-      if (point) {
-        setPath((current) => updatePathCorner(current, cornerIndex, point));
-      }
-      setDragCorner(null);
+  const handleCornerDragStart = useCallback(
+    (_roofIndex: number, vertexIndex: number, point: LatLng) => {
+      setMapPanLocked(mapRef.current, true);
+      const bearing = liftBearing(point, polygonCentroid(pathRef.current));
+      dragSessionRef.current = { bearing, zoom: zoomRef.current };
+      setDragCorner({ vertexIndex, bearing, preview: null });
     },
     [],
   );
 
-  // Whole-box drag: onPathsChanged does not fire for body moves, so commit on
-  // dragend from the live polygon instance (same pattern as DrawRoofStep).
+  const handleCornerDrag = useCallback((event: unknown) => {
+    const session = dragSessionRef.current;
+    const ball = readEventLatLng(event);
+    if (!session || !ball) return;
+    const corner = offsetByPixels(
+      ball,
+      session.bearing,
+      PIN_LIFT,
+      session.zoom,
+    );
+    setDragCorner((current) =>
+      current ? { ...current, preview: corner } : current,
+    );
+  }, []);
+
+  const handleCornerDragEnd = useCallback(
+    (event: unknown, _roofIndex: number, vertexIndex: number) => {
+      const session = dragSessionRef.current;
+      dragSessionRef.current = null;
+      setDragCorner(null);
+      setMapPanLocked(mapRef.current, false);
+      const ball = readEventLatLng(event);
+      if (!session || !ball) return;
+      const next = offsetByPixels(
+        ball,
+        session.bearing,
+        PIN_LIFT,
+        session.zoom,
+      );
+      setPath((current) => updatePathCorner(current, vertexIndex, next));
+    },
+    [],
+  );
+
   const polyListener = useRef<google.maps.MapsEventListener | null>(null);
   function registerPoly(poly: google.maps.Polygon | null) {
     polyListener.current?.remove();
@@ -220,12 +191,12 @@ export function AffectedAreaStep({
           minZoom={SATELLITE_MIN_ZOOM}
           maxZoom={SATELLITE_MAX_ZOOM}
           clickableIcons={false}
-          gestureHandling={dragCorner !== null ? "none" : "greedy"}
+          gestureHandling={cornerDragging ? "none" : "greedy"}
           reuseMaps
           style={{ width: "100%", height: "100%" }}
           onCameraChanged={handleCameraChanged}
         >
-          <MapPanLock locked={dragCorner !== null} mapRef={mapRef} />
+          <MapPanLock locked={cornerDragging} mapRef={mapRef} />
 
           <Marker
             position={coords}
@@ -237,8 +208,9 @@ export function AffectedAreaStep({
 
           <Polygon
             ref={registerPoly}
-            paths={displayPath}
-            draggable={dragCorner === null}
+            paths={displayPath()}
+            editable={false}
+            draggable={!cornerDragging}
             geodesic
             fillColor={AFFECTED}
             fillOpacity={0.28}
@@ -247,16 +219,24 @@ export function AffectedAreaStep({
             strokeWeight={3}
           />
 
-          {path.map((point, cornerIndex) => {
-            const otherDragging =
-              dragCorner !== null && dragCorner.index !== cornerIndex;
+          {path.map((point, vertexIndex) => {
+            const dragging =
+              dragCorner !== null && dragCorner.vertexIndex === vertexIndex;
+            const otherDragging = dragCorner !== null && !dragging;
             return (
               <CornerMarker
-                key={`corner-${cornerIndex}`}
-                // Resting position only — Google owns it for the drag duration.
+                key={`corner-${vertexIndex}`}
                 position={point}
-                cornerIndex={cornerIndex}
+                roofIndex={0}
+                vertexIndex={vertexIndex}
                 draggable={!otherDragging}
+                clickable={!otherDragging}
+                zIndex={dragging ? 40 : 30}
+                icon={
+                  dragging
+                    ? cornerGrabIcon(dragCorner.bearing)
+                    : cornerTipIcon()
+                }
                 onCornerDragStart={handleCornerDragStart}
                 onCornerDrag={handleCornerDrag}
                 onCornerDragEnd={handleCornerDragEnd}
@@ -266,22 +246,16 @@ export function AffectedAreaStep({
         </Map>
 
         {variant === "card" ? (
-          <div className="pointer-events-none absolute left-3 right-3 top-3 z-10 text-center">
-            <p className="text-[17px] font-semibold tracking-tight text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.65)]">
-              Mark the damaged area
-            </p>
-            <p className="mt-0.5 text-[12px] font-medium text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.65)]">
-              Drag each corner on its own, or move the whole box. Skip if unsure.
-            </p>
+          <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex justify-center">
+            <span className="rounded-full bg-black/45 px-3 py-1.5 text-[12px] font-medium text-white/95 shadow-sm backdrop-blur-sm">
+              Pull the corners to cover the damaged area, then Done
+            </span>
           </div>
         ) : (
-          <div className="pointer-events-none absolute left-3 right-3 top-3 z-10 rounded-2xl bg-black/55 px-4 py-3 text-center backdrop-blur-sm">
-            <p className="text-[16px] font-semibold text-white">
-              Mark the damaged area
-            </p>
-            <p className="mt-0.5 text-[13px] text-white/85">
-              Drag each corner to fit the patch on your roof.
-            </p>
+          <div className="pointer-events-none absolute left-3 right-3 top-3 z-10 flex justify-center">
+            <span className="rounded-full bg-[rgba(10,11,13,0.75)] px-4 py-2 text-[13px] font-semibold text-white backdrop-blur-sm">
+              Pull the corners to cover the damaged area
+            </span>
           </div>
         )}
       </div>
@@ -294,7 +268,7 @@ export function AffectedAreaStep({
         }
       >
         <ContinueBubble
-          label="Continue"
+          label="Done"
           ariaLabel="Save affected area and continue"
           onClick={() => onContinue(path)}
         />

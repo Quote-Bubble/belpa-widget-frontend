@@ -1,13 +1,10 @@
 "use client";
 
 import {
-  memo,
   useCallback,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
-  type MutableRefObject,
 } from "react";
 import {
   Map,
@@ -15,7 +12,6 @@ import {
   Polygon,
   Polyline,
   Rectangle,
-  useMap,
 } from "@vis.gl/react-google-maps";
 import type {
   MapCameraChangedEvent,
@@ -29,6 +25,17 @@ import {
   useFlowVariant,
   useMapHeightClass,
 } from "@/components/quote/ui";
+import {
+  CornerMarker,
+  MapPanLock,
+  PIN_LIFT,
+  cornerGrabIcon,
+  cornerTipIcon,
+  liftBearing,
+  polygonCentroid,
+  readEventLatLng,
+  setMapPanLocked,
+} from "@/components/quote/corner-handles";
 import { emptyDrawnRoof, type CombinedMeasurement } from "@/lib/quote-flow";
 import {
   haversineM,
@@ -55,268 +62,6 @@ const TICK_CIRCLE_PATH = "M -13 0 a 13 13 0 1 0 26 0 a 13 13 0 1 0 -26 0";
 const SHARE_CIRCLE_PATH = "M -5 0 a 5 5 0 1 0 10 0 a 5 5 0 1 0 -10 0";
 const SNAP_PX = 12;
 const CLOSE_M = 0.8;
-
-/**
- * Corner handles.
- *
- * At rest a corner is just a crosshair — no handle, nothing to decode. You grab
- * the corner itself; the handle materialises under your thumb on drag-start and
- * the corner lifts clear so you can see where you're putting it.
- *
- * The trick is which part of the artwork the icon is ANCHORED to, because the
- * anchor is what sits on the marker's LatLng:
- *
- *   at rest    anchor = crosshair  → the crosshair is the corner, honestly placed
- *   dragging   anchor = grab ball  → the ball tracks your thumb, and the
- *                                    crosshair renders PIN_LIFT px away from it
- *
- * Swapping between them mid-drag is what produces the small outward hop of the
- * corner at the moment you grab it: the LatLng doesn't move, but the pixel of
- * artwork pinned to it does. Because the marker's position is now the *ball*,
- * committing the corner means resolving that pixel offset back into coordinates
- * (offsetByPixels) — the drag reports where the ball ended up, not the corner.
- *
- * A plain tap never triggers this: Google only fires dragstart once the pointer
- * actually moves, so pressing a corner without dragging leaves it exactly alone.
- */
-const PIN_LIFT = 48;
-const BALL_R = 14;
-const PIN_CANVAS = 2 * (PIN_LIFT + BALL_R + 5); // ball dead centre, tip anywhere
-// 44px so the resting crosshair clears the minimum touch target — you now grab
-// the corner directly, so this tap area is the whole interaction.
-const TIP_CANVAS = 44;
-/** Never let the lift go more horizontal than this, or a thumb still covers the
- *  corner. cos(60°) = 0.5, so at least half of PIN_LIFT is always upward. */
-const MAX_LIFT_FROM_VERTICAL = (60 * Math.PI) / 180;
-
-/**
- * Which way the corner hops when you grab it, as a screen bearing (0 = up/north,
- * clockwise, so π/2 = right).
- *
- * Leans away from the face centre, so the corner moves off the roof rather than
- * further onto it — but always upward, because a thumb occludes from below and a
- * strictly outward lift would send the bottom corners straight into it. Downward
- * bearings are mirrored into the upper half, keeping their horizontal lean.
- */
-function liftBearing(point: LatLng, centre: LatLng): number {
-  const dx = (point.lng - centre.lng) * Math.cos((point.lat * Math.PI) / 180);
-  const dy = point.lat - centre.lat;
-  // Vertex sitting on the centroid (degenerate face): straight up.
-  if (Math.abs(dx) < 1e-12 && Math.abs(dy) < 1e-12) return 0;
-  const outward = Math.atan2(dx, dy);
-  // Mirror the lower half upward: 135° (down-right) → 45° (up-right).
-  const upward =
-    Math.cos(outward) < 0
-      ? Math.sign(outward) * (Math.PI - Math.abs(outward))
-      : outward;
-  return (
-    Math.sign(upward) *
-    Math.min(Math.abs(upward), MAX_LIFT_FROM_VERTICAL)
-  );
-}
-
-/** The corner point itself. A crosshair reads as "this exact spot" in a way a
- *  filled dot does not, and the white underlay keeps it legible over both pale
- *  roofs and shadow. */
-function crosshairMarkup(cx: number, cy: number): string {
-  const t0 = 7;
-  const t1 = 10.5;
-  const ticks =
-    `M ${cx - t1} ${cy} H ${cx - t0} M ${cx + t0} ${cy} H ${cx + t1} ` +
-    `M ${cx} ${cy - t1} V ${cy - t0} M ${cx} ${cy + t0} V ${cy + t1}`;
-  return (
-    `<circle cx="${cx}" cy="${cy}" r="6.5" fill="#fff" fill-opacity="0.92"/>` +
-    `<path d="${ticks}" stroke="#fff" stroke-width="3.4" stroke-opacity="0.85" stroke-linecap="round" fill="none"/>` +
-    `<path d="${ticks}" stroke="${BRAND}" stroke-width="1.8" stroke-linecap="round" fill="none"/>` +
-    `<circle cx="${cx}" cy="${cy}" r="5" fill="none" stroke="${BRAND}" stroke-width="2.4"/>` +
-    `<circle cx="${cx}" cy="${cy}" r="1.7" fill="${BRAND}"/>`
-  );
-}
-
-// vis.gl calls marker.setIcon() whenever the icon prop's identity changes, and
-// doing that mid-drag can jar the captured grab offset. Cache by 5° bucket so
-// re-renders (and the dragstart re-render in particular) reuse one object.
-// A plain record, not a Map — `Map` is vis.gl's component import in this file.
-const pinIconCache: Record<number, google.maps.Icon> = {};
-let tipIconCache: google.maps.Icon | undefined;
-
-/**
- * The dragging handle. ANCHORED ON THE BALL (canvas centre), which is what makes
- * the ball follow your thumb; the crosshair is drawn PIN_LIFT px along
- * `bearingRad` from it, which is where the corner actually goes.
- */
-function cornerGrabIcon(bearingRad: number): google.maps.Icon | undefined {
-  if (typeof google === "undefined" || !google.maps) return undefined;
-  const bucket = Math.round((bearingRad * 180) / Math.PI / 5) * 5;
-  const cached = pinIconCache[bucket];
-  if (cached) return cached;
-
-  const s = PIN_CANVAS;
-  const c = s / 2;
-  const rad = (bucket * Math.PI) / 180;
-  const ux = Math.sin(rad);
-  const uy = -Math.cos(rad);
-  const tx = c + ux * PIN_LIFT;
-  const ty = c + uy * PIN_LIFT;
-  // Tether stops clear of both ends so it reads as "grip → point" rather than
-  // one solid lollipop with two ambiguous ends.
-  const sx = c + ux * BALL_R;
-  const sy = c + uy * BALL_R;
-  const ex = c + ux * (PIN_LIFT - 12);
-  const ey = c + uy * (PIN_LIFT - 12);
-
-  const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 ${s} ${s}">` +
-    `<line x1="${sx}" y1="${sy}" x2="${ex}" y2="${ey}" stroke="#fff" stroke-width="4" stroke-opacity="0.5" stroke-linecap="round"/>` +
-    `<line x1="${sx}" y1="${sy}" x2="${ex}" y2="${ey}" stroke="${BRAND}" stroke-width="2" stroke-opacity="0.6" stroke-dasharray="4 3.5" stroke-linecap="round"/>` +
-    // Translucent, knurled ball: obviously a grip, and see-through because your
-    // thumb is on it anyway. A solid centre dot read as a second candidate
-    // "point", which was half the which-end-is-it confusion.
-    `<circle cx="${c}" cy="${c}" r="${BALL_R}" fill="#fff" fill-opacity="0.7" stroke="${BRAND}" stroke-opacity="0.75" stroke-width="2"/>` +
-    `<circle cx="${c}" cy="${c}" r="${BALL_R - 5}" fill="none" stroke="${BRAND}" stroke-opacity="0.45" stroke-width="1.4" stroke-dasharray="3 2.5"/>` +
-    // Crosshair last so it always sits above the tether.
-    crosshairMarkup(tx, ty) +
-    `</svg>`;
-
-  const icon: google.maps.Icon = {
-    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-    anchor: new google.maps.Point(c, c),
-    scaledSize: new google.maps.Size(s, s),
-  };
-  pinIconCache[bucket] = icon;
-  return icon;
-}
-
-/** The resting corner: a bare crosshair, anchored on itself. This is what you
- *  grab — there is no handle until you start moving. */
-function cornerTipIcon(): google.maps.Icon | undefined {
-  if (typeof google === "undefined" || !google.maps) return undefined;
-  if (tipIconCache) return tipIconCache;
-  const c = TIP_CANVAS / 2;
-  tipIconCache = {
-    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="${TIP_CANVAS}" height="${TIP_CANVAS}" viewBox="0 0 ${TIP_CANVAS} ${TIP_CANVAS}">` +
-        crosshairMarkup(c, c) +
-        `</svg>`,
-    )}`,
-    anchor: new google.maps.Point(c, c),
-    scaledSize: new google.maps.Size(TIP_CANVAS, TIP_CANVAS),
-  };
-  return tipIconCache;
-}
-
-/**
- * One editable corner handle, memoised.
- *
- * The whole point of the memo is drag smoothness. Every `onDrag` frame the
- * parent calls setState (to rubber-band the polygon), which re-renders the map
- * subtree. vis.gl's <Marker> re-applies *all* options on every render —
- * `marker.setOptions({ position, ... })` — with no draggable guard, so a plain
- * re-render mid-drag re-sets the marker's position to its resting corner while
- * Google is mid-drag moving it under the thumb. The two fight frame-by-frame
- * and the lollipop jitters. Skipping the marker's re-render (props are
- * referentially stable during a drag — position, icon and the callbacks below
- * never change until release) leaves Google's native drag uncontested, so the
- * ball tracks the thumb cleanly while the polygon still rubber-bands.
- */
-type CornerMarkerProps = {
-  position: LatLng;
-  roofIndex: number;
-  vertexIndex: number;
-  draggable: boolean;
-  clickable: boolean;
-  zIndex: number;
-  icon: google.maps.Icon | undefined;
-  onCornerDragStart: (
-    roofIndex: number,
-    vertexIndex: number,
-    point: LatLng,
-  ) => void;
-  onCornerDrag: (event: unknown) => void;
-  onCornerDragEnd: (
-    event: unknown,
-    roofIndex: number,
-    vertexIndex: number,
-  ) => void;
-};
-
-const CornerMarker = memo(function CornerMarker({
-  position,
-  roofIndex,
-  vertexIndex,
-  draggable,
-  clickable,
-  zIndex,
-  icon,
-  onCornerDragStart,
-  onCornerDrag,
-  onCornerDragEnd,
-}: CornerMarkerProps) {
-  return (
-    <Marker
-      position={position}
-      draggable={draggable}
-      clickable={clickable}
-      zIndex={zIndex}
-      icon={icon}
-      onDragStart={() => onCornerDragStart(roofIndex, vertexIndex, position)}
-      onDrag={(event) => onCornerDrag(event)}
-      onDragEnd={(event) => onCornerDragEnd(event, roofIndex, vertexIndex)}
-    />
-  );
-});
-
-/**
- * Freeze map pan/zoom the instant a corner handle is grabbed. Must live under
- * <Map> so useMap() resolves. Sync setOptions on the map instance (not only
- * React props) so the lock applies before the next paint — otherwise the first
- * finger movement pans the satellite under the lollipop.
- */
-function setMapPanLocked(map: google.maps.Map | null, locked: boolean) {
-  if (!map) return;
-  map.setOptions({
-    gestureHandling: locked ? "none" : "greedy",
-    draggable: !locked,
-    keyboardShortcuts: !locked,
-  });
-}
-
-function MapPanLock({
-  locked,
-  mapRef,
-}: {
-  locked: boolean;
-  mapRef: MutableRefObject<google.maps.Map | null>;
-}) {
-  const map = useMap();
-
-  useLayoutEffect(() => {
-    mapRef.current = map;
-  }, [map, mapRef]);
-
-  useLayoutEffect(() => {
-    setMapPanLocked(map, locked);
-  }, [map, locked]);
-
-  return null;
-}
-
-// Marker drag events can arrive as a raw google event (`.latLng` with lat()/lng()
-// methods) or a vis.gl-wrapped one (`.detail.latLng`); coords may be methods or
-// literals. Read defensively so it works across the library's shapes.
-function readEventLatLng(event: unknown): LatLng | null {
-  const e = event as {
-    latLng?: unknown;
-    detail?: { latLng?: unknown };
-  };
-  const raw = e?.latLng ?? e?.detail?.latLng;
-  if (!raw) return null;
-  const o = raw as { lat: number | (() => number); lng: number | (() => number) };
-  const lat = typeof o.lat === "function" ? o.lat() : o.lat;
-  const lng = typeof o.lng === "function" ? o.lng() : o.lng;
-  if (typeof lat !== "number" || typeof lng !== "number") return null;
-  return { lat, lng };
-}
 const BLUE_DOT_CURSOR =
   'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'14\' height=\'14\' viewBox=\'0 0 14 14\'%3E%3Ccircle cx=\'7\' cy=\'7\' r=\'4\' fill=\'%232f6bff\' stroke=\'white\' stroke-width=\'2\'/%3E%3C/svg%3E") 7 7, crosshair';
 
@@ -353,12 +98,6 @@ function rectangleFromThreeCorners(first: LatLng, adjacent: LatLng, opposite: La
       },
     ),
   };
-}
-
-function polygonCentroid(path: LatLng[]): LatLng {
-  const lat = path.reduce((sum, point) => sum + point.lat, 0) / path.length;
-  const lng = path.reduce((sum, point) => sum + point.lng, 0) / path.length;
-  return { lat, lng };
 }
 
 /** Water-flow arrow: from roof interior toward the gutter edge. */
