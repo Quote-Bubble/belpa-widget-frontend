@@ -16,7 +16,6 @@ import {
 } from "@/lib/quote";
 import { materialOptionsFor } from "@/lib/materials";
 import {
-  SERVICE_CATALOG,
   configFingerprint,
   defaultAccess,
   type QuoteConfig,
@@ -207,47 +206,17 @@ export type FlowOption<Value extends string | number> = {
   hint?: string;
 };
 
-/**
- * Hints for the choices that cannot end in a price.
- *
- * Two of the nine job types route to "consultation": there is no pricing model
- * for a leak investigation or for "something else", so the flow collects a
- * phone number and stops. A tester picked one, reached "Your local roofer will
- * call you back", and reported he could not work out how to get a quote — a
- * fair reading, since nothing up to that point suggested this branch had no
- * price at the end of it.
- *
- * The system already knew. SERVICE_CATALOG carries `priced: false` on exactly
- * these two, and it was surfaced to the roofer in the dashboard editor and to
- * nobody in the flow. Deriving the hint from that flag rather than repeating
- * the list here means adding a service cannot silently create a third
- * unsignposted dead end.
- */
-const UNPRICED_HINTS: Partial<Record<JobType, string>> = {
-  leak_investigation:
-    "This one needs a visit to price so a roofer will call you back to arrange one",
-  other: "Tell us what you need and a roofer will call you back",
-};
-
-function jobTypeHint(value: JobType): string | undefined {
-  const meta = SERVICE_CATALOG.find((service) => service.key === value);
-  if (!meta || meta.priced) return undefined;
-  return UNPRICED_HINTS[value] ?? "A roofer will call you back about this one";
-}
-
-export const JOB_TYPE_OPTIONS: FlowOption<JobType>[] = (
-  [
-    { value: "full_replacement", label: "Full roof replacement" },
-    { value: "tile_or_slate_repair", label: "Tile or slate repair" },
-    { value: "flat_roof_replacement", label: "New flat roof" },
-    { value: "leak_investigation", label: "Leak investigation" },
-    { value: "gutters_fascias_soffits", label: "Gutters, fascias & soffits" },
-    { value: "roof_soft_wash", label: "Roof soft wash / moss removal" },
-    { value: "roof_biocide_treatment", label: "Biocide treatment" },
-    { value: "gutter_clearing", label: "Gutter clearing" },
-    { value: "other", label: "Something else" },
-  ] as FlowOption<JobType>[]
-).map((option) => ({ ...option, hint: jobTypeHint(option.value) }));
+export const JOB_TYPE_OPTIONS: FlowOption<JobType>[] = [
+  { value: "full_replacement", label: "Full roof replacement" },
+  { value: "tile_or_slate_repair", label: "Tile or slate repair" },
+  { value: "flat_roof_replacement", label: "New flat roof" },
+  { value: "leak_investigation", label: "Leak investigation" },
+  { value: "gutters_fascias_soffits", label: "Gutters, fascias & soffits" },
+  { value: "roof_soft_wash", label: "Roof soft wash / moss removal" },
+  { value: "roof_biocide_treatment", label: "Biocide treatment" },
+  { value: "gutter_clearing", label: "Gutter clearing" },
+  { value: "other", label: "Something else" },
+];
 
 /** Cleaning jobs priced per m² of measured roof (draw the roof, no material). */
 export const CLEANING_MEASURED_JOB_TYPES: JobType[] = [

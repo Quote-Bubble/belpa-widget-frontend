@@ -586,38 +586,11 @@ describe("buildLeadPayload", () => {
   });
 });
 
-describe("unpriced job types are signposted", () => {
-  it("hints every option that cannot end in a price", () => {
-    // A tester chose Leak investigation, reached "your roofer will call you
-    // back", and could not tell how to get a quote. Nothing before that point
-    // said the branch had no price at the end of it.
-    //
-    // This is the guard, not the two assertions below it: if a new service
-    // routes to consultation and nobody adds a hint, this fails.
+describe("job type options", () => {
+  it("does not caption any job type on the picker", () => {
     for (const option of JOB_TYPE_OPTIONS) {
-      const answers = createFlowAnswers("roofer-123", {
-        line: "1 Test St",
-        postcode: "SW1A 1AA",
-        formatted: "1 Test St, SW1A 1AA",
-      });
-      answers.jobType = option.value;
-      if (flowPath(answers) === "consultation") {
-        expect(
-          option.hint,
-          `"${option.label}" ends in a callback with no hint saying so`,
-        ).toBeTruthy();
-      }
+      expect(option.hint).toBeUndefined();
     }
-  });
-
-  it("leaves priced options unhinted so the two stand out", () => {
-    const byValue = Object.fromEntries(
-      JOB_TYPE_OPTIONS.map((o) => [o.value, o]),
-    );
-    expect(byValue.leak_investigation.hint).toBeTruthy();
-    expect(byValue.other.hint).toBeTruthy();
-    expect(byValue.full_replacement.hint).toBeUndefined();
-    expect(byValue.tile_or_slate_repair.hint).toBeUndefined();
   });
 });
 
