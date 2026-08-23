@@ -181,6 +181,9 @@ export function EmbedFrame({
         lastKey = "";
         schedulePost();
       }
+      if (d.action === "open") {
+        window.dispatchEvent(new CustomEvent("belpa:open-flow"));
+      }
       // Lets a host dismiss an open flow from its own chrome — the landing
       // presents the desktop flow as a centred modal and owns the close
       // control, which lives outside this document.

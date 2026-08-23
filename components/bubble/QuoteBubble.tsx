@@ -232,8 +232,19 @@ function QuoteBubbleShell({
       setFlow(null);
       track("widget_closed");
     };
+    const onHostOpen = () => {
+      setFlow((current) => {
+        if (current) return current;
+        track("widget_opened");
+        return { key: Date.now(), postcode: "", formatted: null };
+      });
+    };
     window.addEventListener("belpa:close-flow", onHostClose);
-    return () => window.removeEventListener("belpa:close-flow", onHostClose);
+    window.addEventListener("belpa:open-flow", onHostOpen);
+    return () => {
+      window.removeEventListener("belpa:close-flow", onHostClose);
+      window.removeEventListener("belpa:open-flow", onHostOpen);
+    };
   }, []);
 
   const flowContent = flow ? (
