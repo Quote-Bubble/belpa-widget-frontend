@@ -96,6 +96,11 @@ function QuoteBubbleShell({
   quoteConfig = null,
   startExpanded = false,
 }: QuoteBubbleProps) {
+  // /w opens already expanded, so kick the flow chunk now — waiting for the
+  // startExpanded effect to mount LazyQuoteFlow serialises hydration and the
+  // 210KB download, which is the pause after a launch.js click.
+  if (startExpanded) preloadFlow();
+
   const [postcode, setPostcode] = useState("");
   const [flow, setFlow] = useState<OpenFlow | null>(null);
   // The step content mounts immediately so the panel is never empty glass, but

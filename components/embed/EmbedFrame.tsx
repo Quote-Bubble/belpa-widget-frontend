@@ -174,6 +174,13 @@ export function EmbedFrame({
           ?.querySelector<HTMLInputElement>("input");
         input?.focus();
       }
+      // launch.js asks for a fresh size announce when it promotes a warmed
+      // iframe into the overlay — the original postMessage often fired while
+      // the frame was still parked, and the host had no listener yet.
+      if (d.action === "sync") {
+        lastKey = "";
+        schedulePost();
+      }
       // Lets a host dismiss an open flow from its own chrome — the landing
       // presents the desktop flow as a centred modal and owns the close
       // control, which lives outside this document.
