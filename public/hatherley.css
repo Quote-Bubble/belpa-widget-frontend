@@ -359,14 +359,15 @@ button {
 
 /* —— Trust —— */
 .trust {
-  background: var(--white);
-  border-bottom: 1px solid var(--line);
+  background: var(--navy-2);
+  color: #fff;
+  border-top: 1px solid rgba(232, 179, 35, 0.35);
 }
 .trust .wrap {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
-  padding: 1.35rem 0;
+  padding: 1.15rem 0;
 }
 .trust figure {
   margin: 0;
@@ -381,10 +382,11 @@ button {
   display: block;
   font-size: 0.95rem;
   line-height: 1.2;
+  color: #fff;
 }
 .trust span {
   font-size: 0.8rem;
-  color: var(--muted);
+  color: rgba(255, 255, 255, 0.65);
 }
 @media (max-width: 800px) {
   .trust .wrap {
