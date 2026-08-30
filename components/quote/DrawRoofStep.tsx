@@ -28,8 +28,8 @@ import {
 import {
   CornerMarker,
   MapPanLock,
-  PIN_LIFT,
   cornerGrabIcon,
+  cornerLiftPx,
   cornerTipIcon,
   liftBearing,
   polygonCentroid,
@@ -276,11 +276,18 @@ export function DrawCanvas({
     roofIndex: number;
     vertexIndex: number;
     bearing: number;
+    /** 0 on a mouse — see cornerLiftPx. Carried on the drag rather than read
+     *  per frame so the whole gesture behaves consistently. */
+    lift: number;
     preview: LatLng | null;
   } | null>(null);
   // Drag handlers fire from Google listeners, so read the session off a ref
   // rather than trusting the closure they were created in.
-  const dragSessionRef = useRef<{ bearing: number; zoom: number } | null>(null);
+  const dragSessionRef = useRef<{
+    bearing: number;
+    zoom: number;
+    lift: number;
+  } | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const mapHeight = useMapHeightClass();
   const cornerDragging = dragCorner !== null;
@@ -401,19 +408,26 @@ export function DrawCanvas({
       // gestureHandling, or the first finger move pans the satellite.
       setMapPanLocked(mapRef.current, true);
       const bearing = liftBearing(point, polygonCentroid(roof.path));
-      dragSessionRef.current = { bearing, zoom: zoomRef.current };
-      setDragCorner({ roofIndex, vertexIndex, bearing, preview: null });
+      const lift = cornerLiftPx();
+      dragSessionRef.current = { bearing, zoom: zoomRef.current, lift };
+      setDragCorner({ roofIndex, vertexIndex, bearing, lift, preview: null });
     },
     [],
   );
 
-  // Per-frame: the drag reports where the BALL is; the corner is PIN_LIFT px
-  // along the frozen bearing from it. Only the polygon preview reads this.
+  // Per-frame: the drag reports where the grab point is; the corner sits
+  // session.lift px along the frozen bearing from it — which is zero on a
+  // mouse, so there the corner simply IS the cursor. Only the preview reads it.
   const handleCornerDrag = useCallback((event: unknown) => {
     const session = dragSessionRef.current;
     const ball = readEventLatLng(event);
     if (!session || !ball) return;
-    const corner = offsetByPixels(ball, session.bearing, PIN_LIFT, session.zoom);
+    const corner = offsetByPixels(
+      ball,
+      session.bearing,
+      session.lift,
+      session.zoom,
+    );
     setDragCorner((current) =>
       current ? { ...current, preview: corner } : current,
     );
@@ -429,7 +443,12 @@ export function DrawCanvas({
       setMapPanLocked(mapRef.current, false);
       const ball = readEventLatLng(event);
       if (!session || !ball) return;
-      const next = offsetByPixels(ball, session.bearing, PIN_LIFT, session.zoom);
+      const next = offsetByPixels(
+        ball,
+        session.bearing,
+        session.lift,
+        session.zoom,
+      );
       const current = roofsRef.current;
       const roof = current[roofIndex];
       if (!roof) return;
@@ -708,12 +727,19 @@ export function DrawCanvas({
         ))}
 
         {/* Corner handles. At rest these are bare crosshairs and nothing else —
-            you grab the corner itself. On drag-start the icon re-anchors onto a
-            grab ball under your thumb and the corner hops PIN_LIFT px clear
-            (upward, leaning off the roof) so you can see where you're placing it.
-            See the icon block at the top of this file for why the anchor swap is
-            what does the work. Confirm mode only, not while drawing a fresh
-            face. */}
+            you grab the corner itself.
+
+            On TOUCH, drag-start re-anchors the icon onto a grab ball under
+            your thumb and the corner hops clear (upward, leaning off the roof)
+            so a fingertip is not covering the thing it is placing. See the icon
+            block at the top of this file for why the anchor swap does the work.
+
+            On a MOUSE none of that happens: cornerLiftPx returns 0, so the
+            crosshair stays on the cursor and the drag is direct. A cursor
+            occludes nothing, so lifting the target away from it would only make
+            the corner harder to aim.
+
+            Confirm mode only, not while drawing a fresh face. */}
         {inFaces && !drawing
           ? roofs.flatMap((roof, roofIndex) =>
               roof.path.map((point, vertexIndex) => {
@@ -738,7 +764,7 @@ export function DrawCanvas({
                     clickable={!otherDragging}
                     zIndex={dragging ? 40 : 30}
                     icon={
-                      dragging
+                      dragging && dragCorner.lift > 0
                         ? cornerGrabIcon(dragCorner.bearing)
                         : cornerTipIcon()
                     }

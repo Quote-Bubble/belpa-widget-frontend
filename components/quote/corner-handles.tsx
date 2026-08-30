@@ -24,6 +24,31 @@ const PIN_CANVAS = 2 * (PIN_LIFT + BALL_R + 5);
 const TIP_CANVAS = 44;
 const MAX_LIFT_FROM_VERTICAL = (60 * Math.PI) / 180;
 
+/**
+ * How far to lift the crosshair clear of the pointer — nothing, on a mouse.
+ *
+ * The lift and the lollipop exist for one reason: a fingertip covers the very
+ * corner it is trying to place, so the crosshair hops clear and a grab ball
+ * stays under the thumb. A cursor is a few pixels wide and covers nothing, so
+ * on desktop that machinery only turns a direct drag into an indirect one —
+ * push a ball here, watch a crosshair move 48px away — which is harder to aim,
+ * not easier.
+ *
+ * Called at drag start rather than during render. It reads window.matchMedia,
+ * and a value that differed between server and client would be a hydration
+ * mismatch; a pointer type will not change midway through a drag anyway.
+ *
+ * Falls back to the touch behaviour when it cannot tell, since the widget is
+ * mostly opened on phones and the lift is harmless with a cursor beyond being
+ * unnecessary.
+ */
+export function cornerLiftPx(): number {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return PIN_LIFT;
+  }
+  return window.matchMedia("(pointer: coarse)").matches ? PIN_LIFT : 0;
+}
+
 export function polygonCentroid(path: LatLng[]): LatLng {
   const lat = path.reduce((sum, point) => sum + point.lat, 0) / path.length;
   const lng = path.reduce((sum, point) => sum + point.lng, 0) / path.length;

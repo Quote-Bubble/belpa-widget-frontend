@@ -7,8 +7,8 @@ import type { MapCameraChangedEvent } from "@vis.gl/react-google-maps";
 import {
   CornerMarker,
   MapPanLock,
-  PIN_LIFT,
   cornerGrabIcon,
+  cornerLiftPx,
   cornerTipIcon,
   liftBearing,
   polygonCentroid,
@@ -79,11 +79,15 @@ export function AffectedAreaStep({
   const [dragCorner, setDragCorner] = useState<{
     vertexIndex: number;
     bearing: number;
+    /** 0 on a mouse — see cornerLiftPx. */
+    lift: number;
     preview: LatLng | null;
   } | null>(null);
-  const dragSessionRef = useRef<{ bearing: number; zoom: number } | null>(
-    null,
-  );
+  const dragSessionRef = useRef<{
+    bearing: number;
+    zoom: number;
+    lift: number;
+  } | null>(null);
   const cornerDragging = dragCorner !== null;
 
   const center = mapView?.center ?? coords;
@@ -119,8 +123,9 @@ export function AffectedAreaStep({
     (_roofIndex: number, vertexIndex: number, point: LatLng) => {
       setMapPanLocked(mapRef.current, true);
       const bearing = liftBearing(point, polygonCentroid(pathRef.current));
-      dragSessionRef.current = { bearing, zoom: zoomRef.current };
-      setDragCorner({ vertexIndex, bearing, preview: null });
+      const lift = cornerLiftPx();
+      dragSessionRef.current = { bearing, zoom: zoomRef.current, lift };
+      setDragCorner({ vertexIndex, bearing, lift, preview: null });
     },
     [],
   );
@@ -132,7 +137,7 @@ export function AffectedAreaStep({
     const corner = offsetByPixels(
       ball,
       session.bearing,
-      PIN_LIFT,
+      session.lift,
       session.zoom,
     );
     setDragCorner((current) =>
@@ -151,7 +156,7 @@ export function AffectedAreaStep({
       const next = offsetByPixels(
         ball,
         session.bearing,
-        PIN_LIFT,
+        session.lift,
         session.zoom,
       );
       setPath((current) => updatePathCorner(current, vertexIndex, next));
@@ -233,7 +238,7 @@ export function AffectedAreaStep({
                 clickable={!otherDragging}
                 zIndex={dragging ? 40 : 30}
                 icon={
-                  dragging
+                  dragging && dragCorner.lift > 0
                     ? cornerGrabIcon(dragCorner.bearing)
                     : cornerTipIcon()
                 }
