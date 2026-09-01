@@ -1,0 +1,398 @@
+/*
+ * Styles for the roof-cleaning demo site.
+ *
+ * A CSS Module rather than more rules in globals.css: this is a whole fake
+ * website, and it would have roughly doubled that file for something only one
+ * route ever renders.
+ *
+ * The palette is deliberately NOT Belpa's. A roofer's site has its own brand
+ * and the widget has to sit inside it without being redesigned to match — that
+ * is the thing the demo is meant to prove. Mossy greens and slate here, so the
+ * widget's blue reads as a component someone dropped in, which is exactly what
+ * it is.
+ */
+
+.page {
+  --ink: #0e1a15;
+  --ink-soft: #3a4f47;
+  --muted: #6b8078;
+  --moss: #1f6f4a;
+  --moss-deep: #145236;
+  --wash: #f1f7f4;
+  --line: rgba(14, 26, 21, 0.1);
+
+  min-height: 100vh;
+  background: #fff;
+  color: var(--ink);
+  font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  width: 100%;
+  max-width: 68rem;
+  margin: 0 auto;
+  padding-inline: 1.25rem;
+}
+@media (min-width: 640px) {
+  .wrap {
+    padding-inline: 2rem;
+  }
+}
+
+/* —— Demo banner ——
+   This page is a fabricated company. It is noindexed, but anyone who lands on
+   it should know inside a second that Clearview is not a real business. */
+.demoBar {
+  background: var(--ink);
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.78rem;
+  letter-spacing: 0.01em;
+  text-align: center;
+  padding: 0.5rem 1rem;
+}
+.demoBar strong {
+  color: #fff;
+  font-weight: 600;
+}
+
+/* —— Header —— */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(18px) saturate(1.6);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+  border-bottom: 1px solid var(--line);
+}
+.headerInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 0.9rem;
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  text-decoration: none;
+}
+.brandMark {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: linear-gradient(160deg, var(--moss), var(--moss-deep));
+  color: #fff;
+  flex: none;
+}
+.headerNav {
+  display: none;
+  gap: 1.6rem;
+}
+@media (min-width: 860px) {
+  .headerNav {
+    display: flex;
+  }
+}
+.headerNav a {
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+.headerNav a:hover {
+  color: var(--moss);
+}
+.headerPhone {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  background: var(--moss);
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+/* —— Hero —— */
+.hero {
+  position: relative;
+  padding-block: clamp(2.5rem, 6vw, 4.5rem) clamp(2rem, 5vw, 3.5rem);
+  background:
+    radial-gradient(
+      120% 90% at 85% 0%,
+      rgba(31, 111, 74, 0.13),
+      transparent 60%
+    ),
+    var(--wash);
+  border-bottom: 1px solid var(--line);
+}
+.heroGrid {
+  display: grid;
+  gap: clamp(2rem, 4vw, 3rem);
+  align-items: center;
+}
+@media (min-width: 980px) {
+  .heroGrid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 30rem);
+  }
+}
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(31, 111, 74, 0.1);
+  color: var(--moss-deep);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.title {
+  margin: 1rem 0 0;
+  font-size: clamp(2.1rem, 5vw, 3.3rem);
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  font-weight: 700;
+}
+.lede {
+  margin: 1.1rem 0 0;
+  max-width: 34rem;
+  font-size: clamp(1rem, 1.4vw, 1.13rem);
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+.points {
+  margin: 1.6rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.7rem;
+}
+.points li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  font-size: 0.98rem;
+  color: var(--ink-soft);
+}
+.tick {
+  flex: none;
+  margin-top: 0.15rem;
+  color: var(--moss);
+}
+
+/* —— The widget slot ——
+   Given a min-height so the section does not jump when the iframe mounts. */
+.quoteCard {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: clamp(1rem, 2vw, 1.4rem);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.6) inset,
+    0 24px 60px -32px rgba(14, 26, 21, 0.45);
+}
+.quoteHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+.quoteHead h2 {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.quoteHead span {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.quoteSlot {
+  min-height: 380px;
+}
+
+/* —— Sections —— */
+.section {
+  padding-block: clamp(3rem, 7vw, 5rem);
+}
+.sectionAlt {
+  background: var(--wash);
+  border-block: 1px solid var(--line);
+}
+.sectionHead {
+  max-width: 40rem;
+}
+.sectionHead h2 {
+  margin: 0;
+  font-size: clamp(1.6rem, 3.4vw, 2.3rem);
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+}
+.sectionHead p {
+  margin: 0.85rem 0 0;
+  font-size: 1.02rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+.cards {
+  display: grid;
+  gap: 1.1rem;
+  margin-top: 2.2rem;
+}
+@media (min-width: 780px) {
+  .cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 1.4rem;
+}
+.cardIcon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: rgba(31, 111, 74, 0.1);
+  color: var(--moss-deep);
+  margin-bottom: 0.9rem;
+}
+.card h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.card p {
+  margin: 0.5rem 0 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+.cardPrice {
+  margin-top: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.cardPrice strong {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+/* —— Steps —— */
+.steps {
+  display: grid;
+  gap: 1.6rem;
+  margin-top: 2.2rem;
+  counter-reset: step;
+}
+@media (min-width: 780px) {
+  .steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.step {
+  position: relative;
+  padding-top: 2.9rem;
+}
+.step::before {
+  counter-increment: step;
+  content: counter(step);
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: var(--moss);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.step h3 {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.step p {
+  margin: 0.45rem 0 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+/* —— Proof strip —— */
+.stats {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (min-width: 780px) {
+  .stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.stat strong {
+  display: block;
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.stat span {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+/* —— Footer —— */
+.footer {
+  background: var(--ink);
+  color: rgba(255, 255, 255, 0.7);
+  padding-block: 2.6rem;
+  font-size: 0.9rem;
+}
+.footerInner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem;
+  align-items: center;
+  justify-content: space-between;
+}
+.footer strong {
+  color: #fff;
+  font-weight: 600;
+}
+.footerNote {
+  margin: 1.4rem 0 0;
+  padding-top: 1.2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+}
