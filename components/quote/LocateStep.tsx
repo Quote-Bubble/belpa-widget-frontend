@@ -42,6 +42,7 @@ export function LocateStep({
   onEditAddress,
   pinOnly = false,
   onPinConfirmed,
+  subject = "roof",
 }: {
   postcode: string;
   /** Resolved in the background as soon as the flow knew an address (see
@@ -73,6 +74,11 @@ export function LocateStep({
    *  measured. */
   pinOnly?: boolean;
   onPinConfirmed?: (coords: LatLng, formatted: string | null) => void;
+  /** What the pin is being put on. A driveway job asks for the drive, not the
+   *  roof — the pin also seeds where the area box starts, so pointing it at
+   *  the roof would drop the box on the house and make the customer drag it
+   *  off before they can begin. */
+  subject?: "roof" | "driveway";
 }) {
   const variant = useFlowVariant();
   const startedRef = useRef(false);
@@ -328,7 +334,13 @@ export function LocateStep({
   return (
     <StepShell bleed>
       {variant === "page" ? (
-        <StepHeading sub="Drag the map so the pin sits on your roof.">
+        <StepHeading
+          sub={
+            subject === "driveway"
+              ? "Drag the map so the pin sits on your driveway."
+              : "Drag the map so the pin sits on your roof."
+          }
+        >
           Is this your house?
         </StepHeading>
       ) : null}
@@ -360,10 +372,12 @@ export function LocateStep({
         {variant === "card" && phase === "confirm" ? (
           <div className="pointer-events-none absolute left-3 right-3 top-3 z-10 text-center">
             <p className="text-[17px] font-semibold tracking-tight text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.65)]">
-              Is this your house?
+              {subject === "driveway" ? "Where's the drive?" : "Is this your house?"}
             </p>
             <p className="mt-0.5 text-[12px] font-medium text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.65)]">
-              Drag the map so the pin sits on your roof.
+              {subject === "driveway"
+                ? "Drag the map so the pin sits on your driveway."
+                : "Drag the map so the pin sits on your roof."}
             </p>
           </div>
         ) : null}
@@ -410,7 +424,13 @@ export function LocateStep({
         >
           <ContinueBubble
             label="Continue"
-            ariaLabel={pinOnly ? "Yes, this is the house" : "Yes, measure this roof"}
+            ariaLabel={
+              subject === "driveway"
+                ? "Yes, this is the driveway"
+                : pinOnly
+                  ? "Yes, this is the house"
+                  : "Yes, measure this roof"
+            }
             onClick={() => void confirmAndScan()}
           />
         </div>

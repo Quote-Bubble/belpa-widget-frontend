@@ -979,7 +979,12 @@ function QuoteFlowBody({
             }
             // Repair prices off the size the customer picks, not measured area,
             // so the pin is for coordinates only — no Solar call.
-            pinOnly={path === "repair"}
+            /* Neither a repair nor a driveway is measured from the roof, so
+               neither runs the Solar scan. A driveway job was showing
+               "Measuring your roof…" and spending a Solar call on a building
+               nobody had asked about. */
+            pinOnly={path === "repair" || path === "driveway"}
+            subject={path === "driveway" ? "driveway" : "roof"}
             onPinConfirmed={(coords, formatted) =>
               dispatch({ type: "PIN_CONFIRMED", coords, formatted })
             }
