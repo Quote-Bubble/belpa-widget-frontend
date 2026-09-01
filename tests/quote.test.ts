@@ -2,6 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import { MODEL_DEFAULTS, PRICE_LIST } from "@/config/rates";
 import {
+  defaultBiocide,
+  defaultGutterClearing,
+  defaultSoftWash,
+} from "@/lib/quote-config";
+import {
   calculateCleaningEstimate,
   calculateFlatEstimate,
   calculateRepairEstimate,
@@ -277,5 +282,68 @@ describe("estimate breakdown reconciliation", () => {
     for (const item of quoteBandedLineItems(quote)) {
       expect(item.max).toBeGreaterThan(item.min);
     }
+  });
+});
+
+/* The cleaning defaults have to land inside the published UK market, using the
+ * areas THIS engine measures rather than the areas the cost guides assume.
+ *
+ * The guides disagree with themselves: their own totals divided by their own
+ * areas give £4.50–£7.30/m², while the rate they print is £8.50–£16. The
+ * totals agree across Checkatrade, MyJobQuote, FixMyRoof and N&J, so the
+ * totals are the evidence. Cleaning always traces an outline, so the customer
+ * marks their own roof — measured medians across real leads are 42 m² for a
+ * terrace and 49 m² for a semi, roughly half what a guide calls a semi's roof.
+ *
+ * If someone retunes these rates, this test says whether the quote a homeowner
+ * actually sees still resembles the market. */
+describe("roof cleaning defaults against the UK market", () => {
+  const MEDIAN_TERRACE_M2 = 42;
+  const MEDIAN_SEMI_M2 = 49;
+
+  function quote(areaM2: number, cfg: { ratePerM2ExVat: number; minCalloutExVat: number }) {
+    return calculateCleaningEstimate({
+      areaM2,
+      ratePerM2ExVat: cfg.ratePerM2ExVat,
+      minCalloutExVat: cfg.minCalloutExVat,
+      label: "Roof clean",
+    });
+  }
+
+  it("prices a soft wash within the published range for a semi and a terrace", () => {
+    // Market: semi £350–£650, terrace £250–£550 (four independent guides).
+    const semi = quote(MEDIAN_SEMI_M2, defaultSoftWash());
+    expect(semi.min).toBeGreaterThanOrEqual(350);
+    expect(semi.max).toBeLessThanOrEqual(650);
+
+    const terrace = quote(MEDIAN_TERRACE_M2, defaultSoftWash());
+    expect(terrace.min).toBeGreaterThanOrEqual(250);
+    expect(terrace.max).toBeLessThanOrEqual(550);
+  });
+
+  it("never quotes a roof clean below the price one can actually be done for", () => {
+    // Every source agrees nothing under ~£250 is a clean rather than a scrape,
+    // so a very small traced area must still hit the call-out floor.
+    const tiny = quote(4, defaultSoftWash());
+    expect(tiny.min).toBeGreaterThanOrEqual(200);
+  });
+
+  it("keeps standalone biocide inside its own, much lower range", () => {
+    // Market: £100–£250 standalone. It is the least labour on the list and
+    // must not creep towards the price of a full wash.
+    const semi = quote(MEDIAN_SEMI_M2, defaultBiocide());
+    expect(semi.min).toBeGreaterThanOrEqual(100);
+    expect(semi.max).toBeLessThanOrEqual(250);
+
+    expect(defaultBiocide().ratePerM2ExVat).toBeLessThan(
+      defaultSoftWash().ratePerM2ExVat,
+    );
+  });
+
+  it("keeps gutter clearing at the modal UK figure", () => {
+    // £70–£130 across the guides, most commonly £100.
+    const fixed = defaultGutterClearing().fixedExVat;
+    expect(fixed).toBeGreaterThanOrEqual(70);
+    expect(fixed).toBeLessThanOrEqual(130);
   });
 });

@@ -247,19 +247,83 @@ export function defaultRoofline(): RooflineServiceConfig {
   };
 }
 
-/** UK-average soft wash (£/m² of roof) with a call-out floor. */
+/* ------------------------------------------------------------------ */
+/* Roof cleaning defaults                                              */
+/*                                                                     */
+/* Set against published 2026 UK cost guides — Checkatrade, MyJobQuote,*/
+/* FixMyRoof, N&J Exterior Cleaning — cross-checked against the areas  */
+/* this engine actually measures rather than the areas those guides    */
+/* assume.                                                             */
+/*                                                                     */
+/* That distinction is the whole calibration. The guides quote both a  */
+/* £/m² and a total, and the two disagree with each other: their own   */
+/* totals divided by their own areas come out at £4.50–£7.30/m², while */
+/* the rate they print is £8.50–£16. The totals agree across all four  */
+/* sources, so the totals are the real evidence and the printed rate   */
+/* is closer to marketing.                                             */
+/*                                                                     */
+/* Our areas are smaller than theirs because cleaning always traces an */
+/* outline (drawApproach returns "outline" for wash and biocide on     */
+/* every property type), so the customer marks their own roof rather   */
+/* than the whole building. Measured medians across real leads:        */
+/* terraced 42 m², semi-detached 49 m². A guide calling a semi's roof  */
+/* 80–120 m² is describing something we measure as about half that, so */
+/* a rate calibrated to their areas would under-quote badly on ours.   */
+/*                                                                     */
+/* Everything below is ex-VAT, which is what the config stores.        */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Soft wash — scrape, treat, low-pressure rinse. £/m² of measured roof.
+ *
+ * £10 puts the median semi (49 m²) at £490 before the ±15% band, quoting
+ * £400–£550 against a market of £350–£650. It sits inside every published
+ * band: Checkatrade £8.50–£14, FixMyRoof £12–£16 for soft wash and £8–£15
+ * for hand removal with biocide, MyJobQuote £10–£20.
+ *
+ * Down from £14, which was the top of the soft-wash band and quoted £600–£800
+ * for that same semi — over the market ceiling before any extras.
+ *
+ * The floor is £250 rather than £150 because every source agrees a real roof
+ * clean does not happen below about £250–£300; N&J puts it plainly, that
+ * anything under £300 for a full roof is a scrape rather than a clean.
+ *
+ * Known limit: a flat rate cannot express the economies of scale the guides
+ * show, where £/m² falls as roofs get bigger. Any rate that centres a semi
+ * correctly will over-quote a large roof. Repairs already solve this with
+ * REPAIR_SIZE_BANDS; cleaning has no equivalent yet.
+ */
 export function defaultSoftWash(): AreaCleanServiceConfig {
-  return { ratePerM2ExVat: 14, minCalloutExVat: 150 };
+  return { ratePerM2ExVat: 10, minCalloutExVat: 250 };
 }
 
-/** UK-average biocide treatment (£/m²). */
+/**
+ * Biocide on its own — no scrape, no rinse, applied and left to work.
+ *
+ * Standalone biocide is quoted at £100–£250 (FixMyRoof), £80–£200 (N&J) and
+ * £50–£150 as an add-on to a wash. £3.50/m² puts a median semi at £172,
+ * mid-range, and a terrace at £147.
+ *
+ * Down from £5, which put that semi at £245 — the very top of the standalone
+ * range for the least labour-intensive job on the list.
+ */
 export function defaultBiocide(): AreaCleanServiceConfig {
-  return { ratePerM2ExVat: 5, minCalloutExVat: 100 };
+  return { ratePerM2ExVat: 3.5, minCalloutExVat: 120 };
 }
 
-/** UK-average flat gutter clear-out. */
+/**
+ * Gutter clear-out — a flat fee, since it tracks gutter run and access far
+ * more than roof area.
+ *
+ * £100 is the modal UK figure for a three-bed semi across MyBuilder,
+ * MyJobQuote, FixMyRoof and Fantastic Services, which between them put the
+ * range at £70–£130 with London 20–30% above. A semi carries roughly 20–25 m
+ * of guttering.
+ *
+ * Down from £120, which sat near the top of that range as a national default.
+ */
 export function defaultGutterClearing(): FlatServiceConfig {
-  return { fixedExVat: 120 };
+  return { fixedExVat: 100 };
 }
 
 /** All service configs at defaults — the editor reads rates from here even for
