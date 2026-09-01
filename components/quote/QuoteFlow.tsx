@@ -42,6 +42,8 @@ import {
 import {
   JOB_TYPE_OPTIONS,
   PROPERTY_TYPE_OPTIONS,
+  DRIVEWAY_SURFACE_OPTIONS,
+  isPlausibleDrivewayAreaM2,
   REPAIR_BANDS,
   ROOFLINE_SCOPE_OPTIONS,
   STOREY_OPTIONS,
@@ -63,6 +65,8 @@ import {
 } from "@/lib/quote-flow";
 import type { SiteObservation } from "@/lib/site-access";
 import { pathFromBounds } from "@/lib/roof-geometry";
+import { defaultAffectedAreaBox } from "@/lib/affected-area";
+import { polygonAreaM2 } from "@/lib/geo";
 import type { LatLng, SolarScan } from "@/lib/types";
 import { ADVANCE_DELAY_MS, STEP_TRANSITION } from "@/lib/motion";
 import { track } from "@/lib/analytics";
@@ -1003,6 +1007,75 @@ function QuoteFlowBody({
               dispatch({ type: "PATCH", patch: { affectedArea: null } });
               dispatch({ type: "GO_NEXT" });
             }}
+          />
+        );
+      case "driveway_surface":
+        return (
+          <OptionListStep
+            heading="What's the drive made of?"
+            sub="It changes the method as much as the price."
+            options={DRIVEWAY_SURFACE_OPTIONS}
+            selected={answers.drivewaySurface}
+            onSelect={(drivewaySurface) =>
+              selectAndAdvance({ drivewaySurface })
+            }
+            twoCol
+          />
+        );
+      case "driveway_area":
+        if (!answers.coords) return null;
+        return (
+          <AffectedAreaStep
+            coords={answers.coords}
+            initialPath={answers.drivewayArea}
+            mapView={mapView}
+            onMapViewChange={setMapView}
+            hint="Drag the corners onto your driveway"
+            doneLabel="Save the driveway and continue"
+            skipLabel="I'd rather someone called"
+            fillColor="#2f7d4f"
+            // Bigger than a damage patch: roughly a single drive, 3m × 6m.
+            initialBox={(centre) => defaultAffectedAreaBox(centre, 1.5, 3)}
+            // The area is the whole price here, so show it while they drag.
+            footnote={(path) => {
+              const m2 = polygonAreaM2(path);
+              if (m2 <= 0) return null;
+              return isPlausibleDrivewayAreaM2(m2)
+                ? `About ${Math.round(m2)}m²`
+                : `${Math.round(m2)}m² — that doesn't look like a driveway`;
+            }}
+            onContinue={(drivewayArea) => {
+              dispatch({ type: "PATCH", patch: { drivewayArea } });
+              dispatch({ type: "GO_NEXT" });
+            }}
+            onSkip={() => {
+              // No shape, no area, no price — hand it to a human instead.
+              dispatch({
+                type: "PATCH",
+                patch: {
+                  drivewayArea: null,
+                  fallbackReason:
+                    "We could not measure the driveway, so your quote will come from a quick call instead.",
+                },
+              });
+              dispatch({ type: "GO_NEXT" });
+            }}
+          />
+        );
+      case "driveway_sealing":
+        return (
+          <OptionListStep
+            heading="Seal it after cleaning?"
+            sub="A second visit once the drive has dried. Keeps it clean for longer."
+            options={[
+              { value: "yes", label: "Yes, seal it", hint: "Adds to the price" },
+              { value: "no", label: "Just clean it", hint: "" },
+            ]}
+            selected={answers.drivewaySealing ? "yes" : "no"}
+            onSelect={(value) =>
+              selectAndAdvance({ drivewaySealing: value === "yes" })
+            }
+            twoCol
           />
         );
       case "draw_roof":

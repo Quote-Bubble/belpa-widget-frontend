@@ -3,11 +3,13 @@ import { describe, expect, it } from "vitest";
 import { MODEL_DEFAULTS, PRICE_LIST } from "@/config/rates";
 import {
   defaultBiocide,
+  defaultDrivewayCleaning,
   defaultGutterClearing,
   defaultSoftWash,
 } from "@/lib/quote-config";
 import {
   calculateCleaningEstimate,
+  calculateDrivewayEstimate,
   calculateFlatEstimate,
   calculateRepairEstimate,
   calculateReplacementEstimate,
@@ -345,5 +347,59 @@ describe("roof cleaning defaults against the UK market", () => {
     const fixed = defaultGutterClearing().fixedExVat;
     expect(fixed).toBeGreaterThanOrEqual(70);
     expect(fixed).toBeLessThanOrEqual(130);
+  });
+});
+
+/* Driveway cleaning has to land in the published market too, and the taper is
+ * load-bearing here in a way it is not for roofs.
+ *
+ * Published totals: 30 m² £100–£160, 60 m² £150–£250, 90 m² £225–£350
+ * (MyJobQuote), £150–£250 for a standard 40–50 m² with an £80 minimum
+ * (Checkatrade). Divide those by their own areas and £/m² falls from about
+ * £4.30 at 30 m² to £3.20 at 90 m² — the setup, water and travel are the same
+ * whatever the size, so only the washing scales. A single flat rate that
+ * priced a small drive right would quote roughly £450 for a large one. */
+describe("driveway cleaning against the UK market", () => {
+  function quote(areaM2: number, opts: Partial<{ surfaceMultiplier: number; includeSealing: boolean }> = {}) {
+    return calculateDrivewayEstimate({
+      areaM2,
+      ...defaultDrivewayCleaning(),
+      surfaceMultiplier: opts.surfaceMultiplier ?? 1,
+      surfaceLabel: "Concrete",
+      includeSealing: opts.includeSealing ?? false,
+    });
+  }
+
+  it("prices each published size inside its range", () => {
+    const cases: [number, number, number][] = [
+      [30, 100, 160],
+      [60, 150, 250],
+      [90, 225, 350],
+    ];
+    for (const [area, low, high] of cases) {
+      const q = quote(area);
+      expect(q.min, `${area}m² low`).toBeGreaterThanOrEqual(low - 20);
+      expect(q.max, `${area}m² high`).toBeLessThanOrEqual(high + 20);
+    }
+  });
+
+  it("charges less per m² as the drive gets bigger", () => {
+    const small = quote(30);
+    const large = quote(120);
+    const perM2 = (q: { min: number; max: number }, a: number) =>
+      (q.min + q.max) / 2 / a;
+    expect(perM2(large, 120)).toBeLessThan(perM2(small, 30));
+  });
+
+  it("charges more for block paving than for concrete", () => {
+    // Washing strips the kiln sand out of the joints, so re-sanding is part of
+    // finishing the job rather than an upsell.
+    expect(quote(60, { surfaceMultiplier: 1.2 }).max).toBeGreaterThan(
+      quote(60).max,
+    );
+  });
+
+  it("never quotes below the trade's minimum call-out", () => {
+    expect(quote(8).min).toBeGreaterThanOrEqual(50);
   });
 });

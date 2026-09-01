@@ -1,4 +1,5 @@
 import {
+  DRIVEWAY_SIZE_BANDS,
   MODEL_DEFAULTS,
   PRICE_LIST,
   REPAIR_SIZE_BANDS,
@@ -555,6 +556,101 @@ export function calculateCleaningEstimate(input: {
     ],
     lineItems,
   };
+}
+
+/**
+ * Driveway cleaning — area the customer marked out, tapered by size, adjusted
+ * for what the drive is made of, optionally sealed.
+ *
+ * Unlike a roof, nothing independent measures this. The Solar API knows about
+ * roofs and nothing else, so the area here is purely the shape that was drawn.
+ * That is why the caller is expected to have sanity-banded it first: an
+ * implausible drive should never reach a price at all.
+ */
+export function calculateDrivewayEstimate(input: {
+  areaM2: number;
+  ratePerM2ExVat: number;
+  minCalloutExVat: number;
+  sealPerM2ExVat: number;
+  surfaceMultiplier: number;
+  surfaceLabel: string;
+  includeSealing: boolean;
+  extraAssumptions?: string[];
+}): QuoteResult {
+  if (!Number.isFinite(input.areaM2) || input.areaM2 <= 0) {
+    throw new Error("Driveway estimate requires a valid area.");
+  }
+  const band = drivewaySizeAdjustment(input.areaM2);
+  const surface = Math.max(0, input.surfaceMultiplier);
+  const rate = Math.max(0, input.ratePerM2ExVat) * band.rateMultiplier * surface;
+  const clean = Math.max(
+    input.areaM2 * rate,
+    Math.max(0, input.minCalloutExVat),
+  );
+
+  const lineItems: QuoteLineItem[] = [
+    {
+      label: `Driveway clean — ${input.surfaceLabel.toLowerCase()}`,
+      detail: `${input.areaM2.toFixed(1)}m² × £${rate.toFixed(2)}/m²`,
+      min: clean,
+      max: clean,
+      unit: "m²",
+      quantity: input.areaM2,
+      quantityM2: input.areaM2,
+      unitRateMin: rate,
+      unitRateMax: rate,
+    },
+  ];
+
+  let total = clean;
+  if (input.includeSealing) {
+    const sealRate = Math.max(0, input.sealPerM2ExVat) * band.rateMultiplier;
+    const seal = input.areaM2 * sealRate;
+    lineItems.push({
+      label: "Seal after cleaning",
+      detail: `${input.areaM2.toFixed(1)}m² × £${sealRate.toFixed(2)}/m²`,
+      min: seal,
+      max: seal,
+      unit: "m²",
+      quantity: input.areaM2,
+      quantityM2: input.areaM2,
+      unitRateMin: sealRate,
+      unitRateMax: sealRate,
+    });
+    total += seal;
+  }
+
+  const confidenceWidth = 0.15;
+  const min = roundToNearestFifty(total * (1 - confidenceWidth));
+  const max = roundToNearestFifty(
+    Math.max(total * (1 + confidenceWidth), min + 50),
+  );
+  return {
+    estimateType: "indicative_estimate",
+    pricingMode: "cleaning",
+    min,
+    max,
+    pricingAreaM2: input.areaM2,
+    confidenceWidth,
+    modelAssumptions: [
+      "Driveway rates are this company's own pricing.",
+      "Area is taken from the shape you marked on the satellite imagery.",
+      ...(input.includeSealing
+        ? ["Sealing is a second visit once the drive has dried."]
+        : []),
+      ...(input.extraAssumptions ?? []),
+    ],
+    lineItems,
+  };
+}
+
+/** Which size band an area falls in, and its multiplier. */
+export function drivewaySizeAdjustment(areaM2: number) {
+  const safe = Number.isFinite(areaM2) && areaM2 > 0 ? areaM2 : 0;
+  return (
+    DRIVEWAY_SIZE_BANDS.find((band) => safe <= band.maxAreaM2) ??
+    DRIVEWAY_SIZE_BANDS[DRIVEWAY_SIZE_BANDS.length - 1]
+  );
 }
 
 /** A flat-price service (e.g. a gutter clear-out) with a tight band. */

@@ -1,3 +1,5 @@
+import area from "@turf/area";
+import { polygon } from "@turf/helpers";
 import type { GeoBounds, LatLng } from "@/lib/types";
 
 const EARTH_RADIUS_M = 6_371_000;
@@ -52,6 +54,26 @@ export function edgeLengthM(path: LatLng[], edgeIndex: number): number {
 }
 
 /** Approximate plan area of an axis-aligned geographic bounds box (m²). */
+/**
+ * True area of a closed ring, in square metres.
+ *
+ * Geodesic via turf rather than the flat approximation boundsAreaM2 uses: a
+ * driveway is a quadrilateral the customer skewed to fit, not an axis-aligned
+ * box, so treating it as bounds would measure the rectangle around it and
+ * charge for the flowerbed as well.
+ */
+export function polygonAreaM2(path: LatLng[]): number {
+  if (path.length < 3) return 0;
+  const ring = path.map((p) => [p.lng, p.lat] as [number, number]);
+  ring.push(ring[0]);
+  try {
+    return Math.max(0, area(polygon([ring])));
+  } catch {
+    // A self-intersecting or degenerate ring — no usable area rather than a throw.
+    return 0;
+  }
+}
+
 export function boundsAreaM2(bounds: GeoBounds): number {
   const midLat = (bounds.north + bounds.south) / 2;
   const heightM = Math.abs(bounds.north - bounds.south) * 111_320;

@@ -1,13 +1,16 @@
 import { assessAccess } from "@/lib/access";
 import { siteAccessEffect, type SiteObservation } from "@/lib/site-access";
+import { DRIVEWAY_SURFACE_MULTIPLIERS } from "@/config/rates";
 import {
   boundsAreaM2,
+  polygonAreaM2,
   edgeLengthM,
   pathLengthM,
   polygonPerimeterM,
 } from "@/lib/geo";
 import {
   calculateCleaningEstimate,
+  calculateDrivewayEstimate,
   calculateFlatEstimate,
   calculateRepairEstimate,
   calculateReplacementEstimate,
@@ -32,6 +35,7 @@ import {
 } from "@/lib/roof-geometry";
 import type {
   ConditionAnswer,
+  DrivewaySurface,
   ContactDetails,
   DamageSeverity,
   DrawnRoof,
@@ -61,6 +65,9 @@ export type FlowStepId =
   | "affected_area"
   | "draw_roof"
   | "repair_size"
+  | "driveway_surface"
+  | "driveway_area"
+  | "driveway_sealing"
   | "material"
   | "roofline_scope"
   | "photos"
@@ -70,7 +77,12 @@ export type FlowStepId =
   | "consultation";
 
 export type FlowPath =
-  "measured" | "repair" | "roofline" | "flat" | "consultation";
+  | "measured"
+  | "repair"
+  | "roofline"
+  | "flat"
+  | "driveway"
+  | "consultation";
 
 export type QuoteFlowAnswers = {
   rooferId: string;
@@ -102,6 +114,11 @@ export type QuoteFlowAnswers = {
   rooflineScope: RooflineScope | null;
   /** Repair-only: rectangle on the satellite map around the damaged patch. */
   affectedArea: LatLng[] | null;
+  /** Driveway-only: what the drive is made of. Gravel ends the priced flow. */
+  drivewaySurface: DrivewaySurface | null;
+  /** Driveway-only: the shape the customer marked out, and whether to seal. */
+  drivewayArea: LatLng[] | null;
+  drivewaySealing: boolean;
   /** Compressed damage photos the customer attached on the "photos" step. */
   photos: File[];
   /** Storage paths returned by /api/severity, carried into the lead payload. */
@@ -136,6 +153,9 @@ export function createFlowAnswers(
     material: null,
     rooflineScope: null,
     affectedArea: null,
+    drivewaySurface: null,
+    drivewayArea: null,
+    drivewaySealing: false,
     photos: [],
     photoPaths: [],
     severity: null,
@@ -210,6 +230,53 @@ export type FlowOption<Value extends string | number> = {
   hint?: string;
 };
 
+/**
+ * Is this a shape that could be somebody's driveway?
+ *
+ * The roof flow gets a free sanity check: the Solar API measures the building
+ * independently, so a hopeless trace is contradicted by real data. Nothing
+ * does that for a driveway — the area is whatever quadrilateral was dragged
+ * around — and an audit of live leads found eleven full-replacement quotes
+ * built on 4–35 m² traces, so "customers draw badly" is measured, not feared.
+ *
+ * Six square metres is smaller than a single parking space (a UK bay is about
+ * 2.4 × 4.8 m, so 11.5 m²), and 400 is a tennis court. Outside that the flow
+ * asks for a callback rather than inventing a number.
+ */
+export const MIN_DRIVEWAY_AREA_M2 = 6;
+export const MAX_DRIVEWAY_AREA_M2 = 400;
+
+export function isPlausibleDrivewayAreaM2(areaM2: number): boolean {
+  return (
+    Number.isFinite(areaM2) &&
+    areaM2 >= MIN_DRIVEWAY_AREA_M2 &&
+    areaM2 <= MAX_DRIVEWAY_AREA_M2
+  );
+}
+
+export const DRIVEWAY_SURFACE_OPTIONS: FlowOption<DrivewaySurface>[] = [
+  {
+    value: "block_paving",
+    label: "Block paving",
+    hint: "Small bricks or blocks in a pattern",
+  },
+  { value: "concrete", label: "Concrete", hint: "Poured or slabbed" },
+  { value: "tarmac", label: "Tarmac", hint: "Black asphalt" },
+  { value: "resin", label: "Resin bound", hint: "Smooth speckled stone finish" },
+  {
+    value: "natural_stone",
+    label: "Natural stone",
+    hint: "Sandstone, granite or similar",
+  },
+  { value: "gravel", label: "Gravel", hint: "Loose stones" },
+];
+
+export function drivewaySurfaceLabel(surface: DrivewaySurface): string {
+  return (
+    DRIVEWAY_SURFACE_OPTIONS.find((o) => o.value === surface)?.label ?? "Driveway"
+  );
+}
+
 export const JOB_TYPE_OPTIONS: FlowOption<JobType>[] = [
   { value: "full_replacement", label: "Full roof replacement" },
   { value: "tile_or_slate_repair", label: "Tile or slate repair" },
@@ -219,6 +286,7 @@ export const JOB_TYPE_OPTIONS: FlowOption<JobType>[] = [
   { value: "roof_soft_wash", label: "Roof soft wash / moss removal" },
   { value: "roof_biocide_treatment", label: "Biocide treatment" },
   { value: "gutter_clearing", label: "Gutter clearing" },
+  { value: "driveway_cleaning", label: "Driveway cleaning" },
   { value: "other", label: "Something else" },
 ];
 
@@ -314,6 +382,12 @@ export function flowPath(answers: QuoteFlowAnswers): FlowPath {
     return answers.fallbackReason ? "consultation" : "measured";
   }
   if (jobType === "gutter_clearing") return "flat";
+  if (jobType === "driveway_cleaning") {
+    // Gravel has no surface to clean and a pressure washer would only spread
+    // it across the garden, so it leaves the priced flow entirely.
+    if (answers.drivewaySurface === "gravel") return "consultation";
+    return answers.fallbackReason ? "consultation" : "driveway";
+  }
   if (jobType === "tile_or_slate_repair") return "repair";
   if (jobType === "gutters_fascias_soffits") {
     return answers.fallbackReason ? "consultation" : "roofline";
@@ -406,6 +480,22 @@ export function stepSequence(answers: QuoteFlowAnswers): FlowStepId[] {
           "draw_roof",
           "roofline_scope",
           "photos",
+          "contact",
+          "estimate",
+          "quote_next",
+        ];
+      case "driveway":
+        /* No property type, no storeys — a drive does not care how many
+           floors the house has, and asking would only lengthen the flow. The
+           surface question comes before the map because gravel ends the
+           priced path and there is no point drawing a shape first. */
+        return [
+          "address",
+          "job_type",
+          "driveway_surface",
+          "locate",
+          "driveway_area",
+          "driveway_sealing",
           "contact",
           "estimate",
           "quote_next",
@@ -717,6 +807,32 @@ function computeBaseFlowQuote(
     });
   }
 
+  if (path === "driveway") {
+    const cfg = config.services.driveway_cleaning;
+    const ring = answers.drivewayArea ?? [];
+    const surface = answers.drivewaySurface;
+    if (!cfg || !surface || surface === "gravel" || ring.length < 3) return null;
+    const areaM2 = polygonAreaM2(ring);
+    /* Nothing independent measures a driveway — the Solar API knows about
+       roofs and nothing else — so this shape is purely what the customer drew.
+       An implausible one must not become a price: eleven leads once quoted a
+       full roof replacement off a 4 m² trace because nothing checked. */
+    if (!isPlausibleDrivewayAreaM2(areaM2)) return null;
+    try {
+      return calculateDrivewayEstimate({
+        areaM2,
+        ratePerM2ExVat: cfg.ratePerM2ExVat,
+        minCalloutExVat: cfg.minCalloutExVat,
+        sealPerM2ExVat: cfg.sealPerM2ExVat,
+        surfaceMultiplier: DRIVEWAY_SURFACE_MULTIPLIERS[surface] ?? 1,
+        surfaceLabel: drivewaySurfaceLabel(surface),
+        includeSealing: answers.drivewaySealing,
+      });
+    } catch {
+      return null;
+    }
+  }
+
   if (path === "repair") {
     if (!isValidMaterialForJob(answers.jobType, answers.material, config))
       return null;
@@ -895,6 +1011,20 @@ export function buildLeadPayload(
     affectedArea:
       path === "repair" && answers.affectedArea && answers.affectedArea.length >= 3
         ? answers.affectedArea
+        : null,
+    driveway:
+      path === "driveway" && answers.drivewaySurface
+        ? {
+            surface: answers.drivewaySurface,
+            sealing: answers.drivewaySealing,
+            path:
+              answers.drivewayArea && answers.drivewayArea.length >= 3
+                ? answers.drivewayArea
+                : null,
+            areaM2: answers.drivewayArea
+              ? Math.round(polygonAreaM2(answers.drivewayArea) * 10) / 10
+              : null,
+          }
         : null,
     mapView,
     conditionAnswer: answers.condition,

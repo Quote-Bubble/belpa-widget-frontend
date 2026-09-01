@@ -136,6 +136,8 @@ export function assessAccess(
     | "repair"
     | "roofline"
     | "flat"
+    // A driveway is on the ground. No scaffold, no tower, no access line.
+    | "driveway"
     | "consultation" = "measured",
   /** Repair path only: the representative area of the band the customer chose. */
   repairAreaM2?: number,

@@ -6,8 +6,23 @@ export type JobType =
   | "roof_soft_wash"
   | "roof_biocide_treatment"
   | "gutter_clearing"
+  | "driveway_cleaning"
   | "leak_investigation"
   | "other";
+
+/* What the driveway is made of.
+ *
+ * This matters more than area does. Pressure washing block paving strips the
+ * kiln sand out of the joints, so re-sanding is part of the job rather than an
+ * upsell. Gravel cannot be washed at all — there is no surface to clean, only
+ * stones to blast across a garden — so it never reaches a price. */
+export type DrivewaySurface =
+  | "block_paving"
+  | "concrete"
+  | "tarmac"
+  | "resin"
+  | "natural_stone"
+  | "gravel";
 
 export type MeasuredJobType =
   | "full_replacement"
@@ -241,6 +256,14 @@ export type LeadPayload = {
    * Null when the customer skipped the step or the job never offered it.
    */
   affectedArea: LatLng[] | null;
+  /** Driveway cleaning: what it is made of, the shape drawn, and its area.
+   *  Null for every other job. */
+  driveway: {
+    surface: DrivewaySurface;
+    sealing: boolean;
+    path: LatLng[] | null;
+    areaM2: number | null;
+  } | null;
   /**
    * Centre + zoom of the satellite map the customer drew on, so the roofer's
    * dashboard can reopen the roof on the same framing rather than inferring

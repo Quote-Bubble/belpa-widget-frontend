@@ -51,9 +51,28 @@ export function AffectedAreaStep({
   onMapViewChange,
   onContinue,
   onSkip,
+  hint = "Pull the corners to cover the damaged area",
+  doneLabel = "Save affected area and continue",
+  skipLabel = "Skip for now",
+  fillColor = AFFECTED,
+  initialBox,
+  footnote,
 }: {
   coords: LatLng;
   initialPath: LatLng[] | null;
+  /* Copy and colour are props so the same four-corner quad editor can serve
+     more than one question. The driveway step is the same interaction on a
+     different subject — a shape the customer drags to fit — and duplicating
+     280 lines of drag handling to change three strings would guarantee the
+     two drifted apart. */
+  hint?: string;
+  doneLabel?: string;
+  skipLabel?: string;
+  fillColor?: string;
+  /** Starting quad, when the default damage-patch box is the wrong size. */
+  initialBox?: (center: LatLng) => LatLng[];
+  /** Optional live readout under the map (the driveway shows its area). */
+  footnote?: (path: LatLng[]) => string | null;
   mapView: { center: LatLng; zoom: number } | null;
   onMapViewChange: (view: { center: LatLng; zoom: number }) => void;
   onContinue: (path: LatLng[]) => void;
@@ -63,7 +82,7 @@ export function AffectedAreaStep({
   const mapHeight = useMapHeightClass();
   const mapRef = useRef<google.maps.Map | null>(null);
   const [path, setPath] = useState<LatLng[]>(
-    () => initialPath ?? defaultAffectedAreaBox(coords),
+    () => initialPath ?? (initialBox ?? defaultAffectedAreaBox)(coords),
   );
   const pathRef = useRef(path);
   pathRef.current = path;
@@ -217,9 +236,9 @@ export function AffectedAreaStep({
             editable={false}
             draggable={!cornerDragging}
             geodesic
-            fillColor={AFFECTED}
+            fillColor={fillColor}
             fillOpacity={0.28}
-            strokeColor={AFFECTED}
+            strokeColor={fillColor}
             strokeOpacity={1}
             strokeWeight={3}
           />
@@ -253,13 +272,13 @@ export function AffectedAreaStep({
         {variant === "card" ? (
           <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex justify-center">
             <span className="rounded-full bg-black/45 px-3 py-1.5 text-[12px] font-medium text-white/95 shadow-sm backdrop-blur-sm">
-              Pull the corners to cover the damaged area, then Done
+              {hint}, then Done
             </span>
           </div>
         ) : (
           <div className="pointer-events-none absolute left-3 right-3 top-3 z-10 flex justify-center">
             <span className="rounded-full bg-[rgba(10,11,13,0.75)] px-4 py-2 text-[13px] font-semibold text-white backdrop-blur-sm">
-              Pull the corners to cover the damaged area
+              {hint}
             </span>
           </div>
         )}
@@ -272,9 +291,14 @@ export function AffectedAreaStep({
             : "relative z-30 mt-2 flex flex-col items-end gap-2"
         }
       >
+        {footnote?.(path) ? (
+          <span className="rounded-full bg-white/95 px-4 py-1.5 text-[13px] font-semibold text-ink shadow-sm backdrop-blur-sm">
+            {footnote(path)}
+          </span>
+        ) : null}
         <ContinueBubble
           label="Done"
-          ariaLabel="Save affected area and continue"
+          ariaLabel={doneLabel}
           onClick={() => onContinue(path)}
         />
         <button
@@ -282,7 +306,7 @@ export function AffectedAreaStep({
           onClick={onSkip}
           className="rounded-full border border-line bg-white/95 px-6 py-2.5 text-[14px] font-semibold text-ink-soft shadow-sm backdrop-blur-sm transition-colors hover:border-brand-300 hover:text-brand-600"
         >
-          Skip for now
+          {skipLabel}
         </button>
       </div>
     </StepShell>

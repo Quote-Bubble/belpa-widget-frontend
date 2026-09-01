@@ -11,6 +11,7 @@ export type ServiceKey =
   | "roof_soft_wash"
   | "roof_biocide_treatment"
   | "gutter_clearing"
+  | "driveway_cleaning"
   | "leak_investigation"
   | "other";
 
@@ -29,6 +30,9 @@ export const CLEANING_SERVICE_KEYS: ServiceKey[] = [
   "roof_soft_wash",
   "roof_biocide_treatment",
   "gutter_clearing",
+  // Exterior cleaning firms sell the drive on the same visit as the roof, so
+  // a cleaner's starting set includes it.
+  "driveway_cleaning",
 ];
 
 export type AccessMode =
@@ -81,6 +85,27 @@ export type AreaCleanServiceConfig = {
   minCalloutExVat: number;
 };
 
+/**
+ * Driveway cleaning. Area-priced like a roof wash, but with two things a roof
+ * does not have.
+ *
+ * Surface changes the work, not just the finish: block paving has to be
+ * re-sanded because washing strips the joints, and resin and natural stone
+ * need gentler settings and more care. Those ride as multipliers on the base
+ * rate rather than as separate services, because it is one job done to a
+ * different material.
+ *
+ * And sealing is a genuinely separate second visit — the guides put cleaning
+ * plus sealing at roughly double cleaning alone — so it is priced as its own
+ * £/m² rather than folded into the base.
+ */
+export type DrivewayServiceConfig = {
+  ratePerM2ExVat: number;
+  minCalloutExVat: number;
+  /** Optional second pass, priced per m² of the same area. */
+  sealPerM2ExVat: number;
+};
+
 /** A flat-price service (e.g. a gutter clear-out). */
 export type FlatServiceConfig = {
   fixedExVat: number;
@@ -94,6 +119,7 @@ export type ServiceConfigs = {
   roof_soft_wash?: AreaCleanServiceConfig;
   roof_biocide_treatment?: AreaCleanServiceConfig;
   gutter_clearing?: FlatServiceConfig;
+  driveway_cleaning?: DrivewayServiceConfig;
 };
 
 export type QuoteConfig = {
@@ -154,6 +180,12 @@ export const SERVICE_CATALOG: ServiceMeta[] = [
     key: "gutter_clearing",
     label: "Gutter clearing",
     description: "Flat-price gutter clear-out.",
+    priced: true,
+  },
+  {
+    key: "driveway_cleaning",
+    label: "Driveway cleaning",
+    description: "Priced per m² of the drive the customer marks out.",
     priced: true,
   },
   {
@@ -309,6 +341,32 @@ export function defaultSoftWash(): AreaCleanServiceConfig {
  */
 export function defaultBiocide(): AreaCleanServiceConfig {
   return { ratePerM2ExVat: 3.5, minCalloutExVat: 120 };
+}
+
+/**
+ * Driveway cleaning — £/m² of the drive the customer marks out.
+ *
+ * Published 2026 totals, which agree closely across the guides:
+ *   MyJobQuote   30 m² £100–£160 · 60 m² £150–£250 · 90 m² £225–£350
+ *   MyBuilder    typical drive £250–£400, £350 for a medium one
+ *   Checkatrade  £150–£250 for a standard 40–50 m², £80 minimum
+ *
+ * Divide those by their own areas and the rate falls hard with size: £3.30–
+ * £5.30/m² at 30 m², but £2.50–£3.90/m² at 90 m². That taper is real — the
+ * setup, the water and the drive-time are the same whatever the size — so it
+ * is applied in DRIVEWAY_SIZE_BANDS rather than pretended away.
+ *
+ * £4.50/m² is the base for the smallest band, which quotes £100–£150 for a
+ * 30 m² single drive, £200–£250 for a 60 m² double and £250–£350 for a 90 m²
+ * large one — inside the published range at every size. Sealing at £4/m² on
+ * top lands £200–£300, £350–£500 and £500–£650, against a market of
+ * £200–£300, £300–£450 and £450–£650.
+ *
+ * The £80 floor is Checkatrade's stated minimum charge, and it is what stops a
+ * badly-drawn ten-metre box quoting £50 for a job nobody would drive to.
+ */
+export function defaultDrivewayCleaning(): DrivewayServiceConfig {
+  return { ratePerM2ExVat: 4.5, minCalloutExVat: 80, sealPerM2ExVat: 4 };
 }
 
 /**

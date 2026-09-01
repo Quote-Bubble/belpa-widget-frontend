@@ -432,6 +432,57 @@ export const PRICE_LIST: PriceRate[] = [
   },
 ];
 
+/**
+ * Driveway cleaning falls in price per m² as the drive gets bigger, and
+ * steeply — far more than a roof does.
+ *
+ * From the published totals divided by their own areas:
+ *   30 m²  £100–£160  ->  £3.30–£5.30/m²
+ *   60 m²  £150–£250  ->  £2.50–£4.20/m²
+ *   90 m²  £225–£350  ->  £2.50–£3.90/m²
+ *
+ * The reason is obvious once you look at the job: the setup, the water, the
+ * generator and the drive-time are the same whether the drive is one car or
+ * four, so only the washing time scales. Roof cleaning shows the same effect
+ * but shallower — a flat rate there is a tolerable simplification, and here it
+ * is not: a single flat rate that priced a 30 m² drive correctly would quote
+ * roughly £450 for a 90 m² one against a market of £225–£350.
+ *
+ * Multipliers are applied to the base £/m² for the whole area, so the price
+ * stays continuous rather than jumping at a band edge.
+ */
+export const DRIVEWAY_SIZE_BANDS = [
+  { id: "up_to_35", maxAreaM2: 35, rateMultiplier: 1, label: "Single drive" },
+  { id: "35_to_70", maxAreaM2: 70, rateMultiplier: 0.85, label: "Double drive" },
+  { id: "70_to_120", maxAreaM2: 120, rateMultiplier: 0.75, label: "Large drive" },
+  {
+    id: "over_120",
+    maxAreaM2: Number.POSITIVE_INFINITY,
+    rateMultiplier: 0.68,
+    label: "Very large drive",
+  },
+];
+
+/**
+ * What the surface does to the price.
+ *
+ * Block paving carries the biggest uplift because washing blows the kiln sand
+ * out of the joints, so re-sanding is part of finishing the job rather than an
+ * extra. Resin and natural stone need lower pressure and more care, so they
+ * take longer for the same area. Concrete and tarmac are the plain case.
+ *
+ * Gravel has no multiplier because it never reaches a price: there is no
+ * surface to clean, and a pressure washer would redistribute it across the
+ * garden. The flow routes it to a callback instead.
+ */
+export const DRIVEWAY_SURFACE_MULTIPLIERS: Record<string, number> = {
+  block_paving: 1.2,
+  concrete: 1,
+  tarmac: 1,
+  resin: 1.15,
+  natural_stone: 1.15,
+};
+
 export const REPAIR_SIZE_BANDS = [
   {
     id: "up_to_3",
