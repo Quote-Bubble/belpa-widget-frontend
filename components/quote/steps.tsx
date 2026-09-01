@@ -234,6 +234,7 @@ export function MaterialStep({
 
 export function ContactStep({
   jobType,
+  hasEstimate,
   initial,
   initialOtherDescription,
   fallbackReason,
@@ -243,6 +244,15 @@ export function ContactStep({
   onSkipToEstimate,
 }: {
   jobType: JobType | null;
+  /** Does the next screen actually show a price?
+   *
+   *  This used to be inferred here from a hardcoded list of four job types,
+   *  which meant every cleaning job and the driveway job asked for a call back
+   *  on the way to an estimate they were about to be shown. The caller renders
+   *  that next screen and knows for certain, so it answers rather than this
+   *  guessing — and a new priced job type can never fall through the gap
+   *  again, because there is no list to forget. */
+  hasEstimate: boolean;
   initial: ContactDetails;
   initialOtherDescription: string;
   fallbackReason: string | null;
@@ -270,12 +280,7 @@ export function ContactStep({
 
   const phoneValid = /^[0-9+()\s-]{7,}$/.test(phone.trim());
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  const isQuotePath =
-    jobType === "full_replacement" ||
-    jobType === "flat_roof_replacement" ||
-    jobType === "tile_or_slate_repair" ||
-    jobType === "gutters_fascias_soffits";
-  const showEstimateNext = isQuotePath && !fallbackReason;
+  const showEstimateNext = hasEstimate && !fallbackReason;
   // On the estimate path the customer can have their estimate emailed to them,
   // so email is required here; the callback path keeps it optional.
   const emailRequired = showEstimateNext;

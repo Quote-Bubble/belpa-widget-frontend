@@ -1171,6 +1171,9 @@ function QuoteFlowBody({
         return (
           <ContactStep
             jobType={answers.jobType}
+            // The very next step renders `quote ? <Estimate/> : <Fallback/>`,
+            // so this is the same question, answered from the same value.
+            hasEstimate={quote !== null}
             initial={answers.contact}
             initialOtherDescription={answers.otherJobDescription}
             fallbackReason={answers.fallbackReason}
