@@ -1,5 +1,5 @@
 import {
-  DRIVEWAY_SIZE_BANDS,
+  drivewayRateMultiplier,
   MODEL_DEFAULTS,
   PRICE_LIST,
   REPAIR_SIZE_BANDS,
@@ -580,9 +580,9 @@ export function calculateDrivewayEstimate(input: {
   if (!Number.isFinite(input.areaM2) || input.areaM2 <= 0) {
     throw new Error("Driveway estimate requires a valid area.");
   }
-  const band = drivewaySizeAdjustment(input.areaM2);
+  const taper = drivewayRateMultiplier(input.areaM2);
   const surface = Math.max(0, input.surfaceMultiplier);
-  const rate = Math.max(0, input.ratePerM2ExVat) * band.rateMultiplier * surface;
+  const rate = Math.max(0, input.ratePerM2ExVat) * taper * surface;
   const clean = Math.max(
     input.areaM2 * rate,
     Math.max(0, input.minCalloutExVat),
@@ -604,7 +604,7 @@ export function calculateDrivewayEstimate(input: {
 
   let total = clean;
   if (input.includeSealing) {
-    const sealRate = Math.max(0, input.sealPerM2ExVat) * band.rateMultiplier;
+    const sealRate = Math.max(0, input.sealPerM2ExVat) * taper;
     const seal = input.areaM2 * sealRate;
     lineItems.push({
       label: "Seal after cleaning",
@@ -642,15 +642,6 @@ export function calculateDrivewayEstimate(input: {
     ],
     lineItems,
   };
-}
-
-/** Which size band an area falls in, and its multiplier. */
-export function drivewaySizeAdjustment(areaM2: number) {
-  const safe = Number.isFinite(areaM2) && areaM2 > 0 ? areaM2 : 0;
-  return (
-    DRIVEWAY_SIZE_BANDS.find((band) => safe <= band.maxAreaM2) ??
-    DRIVEWAY_SIZE_BANDS[DRIVEWAY_SIZE_BANDS.length - 1]
-  );
 }
 
 /** A flat-price service (e.g. a gutter clear-out) with a tight band. */

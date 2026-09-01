@@ -448,20 +448,43 @@ export const PRICE_LIST: PriceRate[] = [
  * is not: a single flat rate that priced a 30 m² drive correctly would quote
  * roughly £450 for a 90 m² one against a market of £225–£350.
  *
- * Multipliers are applied to the base £/m² for the whole area, so the price
- * stays continuous rather than jumping at a band edge.
+ * These are anchors on a continuous curve, not bands. They started as bands
+ * and that was wrong: with a step at 35 m², a drive measured at 35 quoted
+ * £150–£200 and one at 36 quoted £100–£150. One square metre — well inside
+ * the error of dragging a box on a satellite photo — moved the price by £50,
+ * and two neighbours with near-identical drives would have seen different
+ * quotes for no reason they could point at.
  */
-export const DRIVEWAY_SIZE_BANDS = [
-  { id: "up_to_35", maxAreaM2: 35, rateMultiplier: 1, label: "Single drive" },
-  { id: "35_to_70", maxAreaM2: 70, rateMultiplier: 0.85, label: "Double drive" },
-  { id: "70_to_120", maxAreaM2: 120, rateMultiplier: 0.75, label: "Large drive" },
-  {
-    id: "over_120",
-    maxAreaM2: Number.POSITIVE_INFINITY,
-    rateMultiplier: 0.68,
-    label: "Very large drive",
-  },
+export const DRIVEWAY_RATE_ANCHORS: { areaM2: number; multiplier: number }[] = [
+  { areaM2: 30, multiplier: 1 },
+  { areaM2: 60, multiplier: 0.85 },
+  { areaM2: 90, multiplier: 0.75 },
+  { areaM2: 150, multiplier: 0.68 },
 ];
+
+/**
+ * The rate multiplier for an area, interpolated between the anchors.
+ *
+ * Flat below the first anchor and above the last, straight lines between —
+ * so the price moves smoothly with the shape the customer drags, and a
+ * square metre either way is worth pennies rather than fifty pounds.
+ */
+export function drivewayRateMultiplier(areaM2: number): number {
+  const a = Number.isFinite(areaM2) ? areaM2 : 0;
+  const first = DRIVEWAY_RATE_ANCHORS[0];
+  const last = DRIVEWAY_RATE_ANCHORS[DRIVEWAY_RATE_ANCHORS.length - 1];
+  if (a <= first.areaM2) return first.multiplier;
+  if (a >= last.areaM2) return last.multiplier;
+  for (let i = 0; i < DRIVEWAY_RATE_ANCHORS.length - 1; i++) {
+    const lo = DRIVEWAY_RATE_ANCHORS[i];
+    const hi = DRIVEWAY_RATE_ANCHORS[i + 1];
+    if (a <= hi.areaM2) {
+      const t = (a - lo.areaM2) / (hi.areaM2 - lo.areaM2);
+      return lo.multiplier + t * (hi.multiplier - lo.multiplier);
+    }
+  }
+  return last.multiplier;
+}
 
 /**
  * What the surface does to the price.

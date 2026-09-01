@@ -354,7 +354,9 @@ export function defaultBiocide(): AreaCleanServiceConfig {
  * Divide those by their own areas and the rate falls hard with size: £3.30–
  * £5.30/m² at 30 m², but £2.50–£3.90/m² at 90 m². That taper is real — the
  * setup, the water and the drive-time are the same whatever the size — so it
- * is applied in DRIVEWAY_SIZE_BANDS rather than pretended away.
+ * is applied by drivewayRateMultiplier rather than pretended away — as a
+ * continuous taper, so a square metre either way moves the price by pennies
+ * instead of by fifty pounds at a band edge.
  *
  * £4.50/m² is the base for the smallest band, which quotes £100–£150 for a
  * 30 m² single drive, £200–£250 for a 60 m² double and £250–£350 for a 90 m²

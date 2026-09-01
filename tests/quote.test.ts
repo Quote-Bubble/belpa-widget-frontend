@@ -383,6 +383,24 @@ describe("driveway cleaning against the UK market", () => {
     }
   });
 
+  it("moves smoothly with size rather than jumping at a band edge", () => {
+    /* This was a step function, and backwards with it: a 35m² drive quoted
+       £150–£200 and a 36m² one quoted £100–£150, so one square metre — well
+       inside the error of dragging a box on a satellite photo — took £50 off
+       a BIGGER drive. Two neighbours would have seen different prices for no
+       reason they could point at. */
+    const q = (a: number) => {
+      const r = quote(a);
+      return (r.min + r.max) / 2;
+    };
+    let previous = q(20);
+    for (let a = 21; a <= 200; a++) {
+      const now = q(a);
+      expect(now, `price fell going from ${a - 1}m² to ${a}m²`).toBeGreaterThanOrEqual(previous);
+      previous = now;
+    }
+  });
+
   it("charges less per m² as the drive gets bigger", () => {
     const small = quote(30);
     const large = quote(120);
