@@ -1,0 +1,787 @@
+/* Clearview Roof Care — demo trade site.
+   Sibling of hatherley.css. Same bones, different trade: where Hatherley is
+   navy and hi-vis gold (heavy roofing), this is slate and moss (cleaning). */
+:root {
+  --slate: #17251f;
+  --slate-2: #21332a;
+  --ink: #131a16;
+  --muted: #5c6b63;
+  --paper: #ffffff;
+  --wash: #f2f6f3;
+  --line: #d7e0da;
+  --moss: #2f7d4f;
+  --moss-deep: #1d5e39;
+  --lime: #b6d64a;
+  --star: #e0a92b;
+  --danger: #b3261e;
+  --display: "Barlow Condensed", "Arial Narrow", Impact, sans-serif;
+  --body: "Source Sans 3", "Segoe UI", Tahoma, sans-serif;
+  --header-h: 4.5rem;
+  --radius: 4px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--body);
+  color: var(--ink);
+  background: var(--paper);
+  line-height: 1.55;
+  font-size: 17px;
+  -webkit-font-smoothing: antialiased;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--display);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.06;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+h1 {
+  font-size: clamp(2.5rem, 6vw, 4.2rem);
+}
+h2 {
+  font-size: clamp(1.9rem, 4vw, 2.9rem);
+}
+h3 {
+  font-size: 1.25rem;
+}
+
+p {
+  margin: 0.75rem 0 0;
+}
+
+a {
+  color: var(--moss-deep);
+}
+
+.wrap {
+  width: 100%;
+  max-width: 74rem;
+  margin: 0 auto;
+  padding-inline: 1.15rem;
+}
+@media (min-width: 700px) {
+  .wrap {
+    padding-inline: 1.9rem;
+  }
+}
+
+.skip {
+  position: absolute;
+  left: -9999px;
+}
+.skip:focus {
+  left: 1rem;
+  top: 1rem;
+  z-index: 200;
+  background: #fff;
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius);
+}
+
+.kicker {
+  font-family: var(--display);
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  font-size: 0.9rem;
+  color: var(--moss);
+  margin: 0 0 0.5rem;
+}
+
+.lede {
+  max-width: 46rem;
+  color: var(--muted);
+  font-size: 1.06rem;
+}
+
+/* —— Buttons —— */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 0;
+  border-radius: var(--radius);
+  padding: 0.95rem 1.6rem;
+  font-family: var(--display);
+  font-size: 1.05rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    filter 0.15s ease;
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn-sm {
+  padding: 0.6rem 1.05rem;
+  font-size: 0.92rem;
+}
+.btn-moss {
+  background: var(--moss);
+  color: #fff;
+}
+.btn-moss:hover {
+  filter: brightness(1.08);
+}
+.btn-lime {
+  background: var(--lime);
+  color: var(--slate);
+  font-weight: 600;
+}
+.btn-lime:hover {
+  filter: brightness(1.05);
+}
+.btn-ghost {
+  background: transparent;
+  color: #fff;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+}
+.btn-ghost:hover {
+  border-color: #fff;
+}
+.btn-dark {
+  background: var(--slate);
+  color: #fff;
+}
+
+/* —— Ticker —— */
+.ticker {
+  background: var(--slate);
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 0.88rem;
+}
+.ticker .wrap {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding-block: 0.5rem;
+}
+.ticker a {
+  color: var(--lime);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+/* —— Header —— */
+.site-head {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+}
+.site-head__inner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-height: var(--header-h);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  text-decoration: none;
+  color: var(--ink);
+  margin-right: auto;
+}
+.brand__mark {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--moss);
+  color: #fff;
+  flex: none;
+}
+.brand__name {
+  display: block;
+  font-family: var(--display);
+  font-size: 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+.brand__tag {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.nav {
+  display: none;
+  gap: 1.5rem;
+}
+@media (min-width: 1000px) {
+  .nav {
+    display: flex;
+  }
+}
+.nav a {
+  font-weight: 600;
+  font-size: 0.96rem;
+  color: var(--ink);
+  text-decoration: none;
+}
+.nav a:hover {
+  color: var(--moss);
+}
+
+.head-phone {
+  display: none;
+  text-decoration: none;
+  color: var(--ink);
+  text-align: right;
+  line-height: 1.15;
+}
+@media (min-width: 780px) {
+  .head-phone {
+    display: block;
+  }
+}
+.head-phone small {
+  display: block;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+.head-phone strong {
+  font-family: var(--display);
+  font-size: 1.2rem;
+}
+
+.head-cta {
+  margin-left: 0.35rem;
+}
+/* Below the dock's breakpoint the header would be brand + button + burger on a
+   360px phone. The fixed dock carries the same action, so this one goes. */
+@media (max-width: 779px) {
+  .head-cta {
+    display: none;
+  }
+}
+
+.nav-toggle {
+  display: grid;
+  gap: 5px;
+  background: none;
+  border: 0;
+  padding: 0.5rem;
+  cursor: pointer;
+}
+@media (min-width: 1000px) {
+  .nav-toggle {
+    display: none;
+  }
+}
+.nav-toggle span {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: var(--ink);
+}
+.site-head.is-open .nav {
+  display: flex;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  flex-direction: column;
+  gap: 0;
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+  padding: 0.5rem 1.15rem 1rem;
+}
+.site-head.is-open .nav a {
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+/* —— Hero —— */
+.hero {
+  position: relative;
+  background: var(--slate);
+  color: #fff;
+  overflow: hidden;
+}
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    var(--slate) 0%,
+    var(--slate) 42%,
+    rgba(23, 37, 31, 0.55) 62%,
+    rgba(23, 37, 31, 0.15) 100%
+  );
+  pointer-events: none;
+}
+@media (max-width: 899px) {
+  .hero::after {
+    background: linear-gradient(
+      180deg,
+      rgba(23, 37, 31, 0.35) 0%,
+      var(--slate) 58%
+    );
+  }
+}
+.hero__grid {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: 2rem;
+  padding-block: clamp(2.5rem, 6vw, 4.5rem);
+}
+@media (min-width: 900px) {
+  .hero__grid {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    align-items: center;
+    min-height: 32rem;
+  }
+}
+.hero__kicker {
+  display: inline-block;
+  font-family: var(--display);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.86rem;
+  color: var(--lime);
+  border-left: 3px solid var(--lime);
+  padding-left: 0.65rem;
+  margin-bottom: 1rem;
+}
+.hero h1 {
+  color: #fff;
+}
+.hero p {
+  color: rgba(255, 255, 255, 0.82);
+  max-width: 34rem;
+  font-size: 1.08rem;
+}
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-top: 1.7rem;
+}
+.hero__note {
+  margin-top: 1rem;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+.hero__copy {
+  max-width: 36rem;
+}
+.hero__shot {
+  margin: 0;
+  position: relative;
+}
+@media (min-width: 900px) {
+  .hero__shot {
+    position: absolute;
+    inset: 0 0 0 46%;
+    z-index: -1;
+  }
+  .hero__shot img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+.hero__shot img {
+  border-radius: var(--radius);
+}
+
+/* —— Stats —— */
+.stats {
+  background: var(--wash);
+  border-bottom: 1px solid var(--line);
+}
+.stats .wrap {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.4rem;
+  padding-block: 1.8rem;
+}
+@media (min-width: 780px) {
+  .stats .wrap {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.stats strong {
+  display: block;
+  font-family: var(--display);
+  font-size: clamp(1.8rem, 3.4vw, 2.5rem);
+  line-height: 1;
+  color: var(--moss-deep);
+}
+.stats span {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.87rem;
+  color: var(--muted);
+}
+
+/* —— Sections —— */
+.section {
+  padding-block: clamp(3rem, 7vw, 5rem);
+}
+.section--wash {
+  background: var(--wash);
+  border-block: 1px solid var(--line);
+}
+.section--dark {
+  background: var(--slate);
+  color: #fff;
+}
+.section--dark h2 {
+  color: #fff;
+}
+.section--dark .lede {
+  color: rgba(255, 255, 255, 0.75);
+}
+.section--dark .kicker {
+  color: var(--lime);
+}
+
+.split {
+  display: grid;
+  gap: 2rem;
+}
+@media (min-width: 900px) {
+  .split {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+  }
+}
+.split ul {
+  margin: 1.2rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.6rem;
+}
+.split li {
+  padding-left: 1.6rem;
+  position: relative;
+  color: var(--muted);
+}
+.split li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--lime);
+}
+
+/* —— Service cards —— */
+.cards {
+  display: grid;
+  gap: 1rem;
+  margin-top: 2.2rem;
+}
+@media (min-width: 640px) {
+  .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 980px) {
+  .cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.svc {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--moss);
+  border-radius: var(--radius);
+  padding: 1.4rem;
+}
+.svc p {
+  color: var(--muted);
+  font-size: 0.97rem;
+}
+.svc__price {
+  display: block;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px dashed var(--line);
+  font-family: var(--display);
+  font-size: 1.1rem;
+  color: var(--moss-deep);
+}
+.svc__price small {
+  font-family: var(--body);
+  font-size: 0.82rem;
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* —— Steps —— */
+.steps {
+  list-style: none;
+  counter-reset: s;
+  margin: 2.2rem 0 2rem;
+  padding: 0;
+  display: grid;
+  gap: 1.6rem;
+}
+@media (min-width: 860px) {
+  .steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.steps li span {
+  display: block;
+  font-family: var(--display);
+  font-size: 2.4rem;
+  line-height: 1;
+  color: var(--lime);
+}
+.steps li h3 {
+  margin-top: 0.5rem;
+}
+.steps li p {
+  color: var(--muted);
+  font-size: 0.97rem;
+}
+.section--dark .steps li p {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+/* —— Warning panel (the jet-wash bit) —— */
+.warn {
+  display: grid;
+  gap: 1.2rem;
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--danger);
+  border-radius: var(--radius);
+}
+@media (min-width: 780px) {
+  .warn {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+  }
+}
+.warn__mark {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(179, 38, 30, 0.1);
+  color: var(--danger);
+}
+.warn h3 {
+  color: var(--danger);
+}
+.warn p {
+  color: var(--muted);
+  font-size: 0.97rem;
+}
+
+/* —— Gallery —— */
+.ba {
+  display: grid;
+  gap: 1rem;
+  margin-top: 2.2rem;
+}
+@media (min-width: 720px) {
+  .ba {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.ba figure {
+  margin: 0;
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.ba img {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+}
+.ba figcaption {
+  position: absolute;
+  left: 0.8rem;
+  bottom: 0.8rem;
+  background: rgba(19, 26, 22, 0.82);
+  color: #fff;
+  font-family: var(--display);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.85rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 2px;
+}
+
+/* —— Reviews —— */
+.reviews {
+  display: grid;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+@media (min-width: 860px) {
+  .reviews {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.review {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.3rem;
+}
+.stars {
+  color: var(--star);
+  letter-spacing: 0.12em;
+  font-size: 1rem;
+}
+.review p {
+  font-size: 0.97rem;
+  color: var(--ink);
+}
+.review cite {
+  display: block;
+  margin-top: 0.8rem;
+  font-style: normal;
+  font-size: 0.86rem;
+  color: var(--muted);
+}
+
+/* —— Contact —— */
+.contact {
+  display: grid;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+@media (min-width: 900px) {
+  .contact {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+.contact dl {
+  margin: 0;
+  display: grid;
+  gap: 0.9rem;
+}
+.contact dt {
+  font-family: var(--display);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.contact dd {
+  margin: 0.15rem 0 0;
+  font-size: 1.05rem;
+}
+
+/* —— Footer —— */
+.site-foot {
+  background: var(--slate);
+  color: rgba(255, 255, 255, 0.72);
+  padding-block: 2.6rem 6rem;
+  font-size: 0.92rem;
+}
+@media (min-width: 780px) {
+  .site-foot {
+    padding-bottom: 2.6rem;
+  }
+}
+.site-foot h3 {
+  color: #fff;
+  font-size: 1.05rem;
+  margin-bottom: 0.5rem;
+}
+.foot-grid {
+  display: grid;
+  gap: 1.8rem;
+}
+@media (min-width: 780px) {
+  .foot-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.site-foot ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.4rem;
+}
+.site-foot a {
+  color: rgba(255, 255, 255, 0.72);
+  text-decoration: none;
+}
+.site-foot a:hover {
+  color: #fff;
+}
+.legal {
+  margin-top: 2rem;
+  padding-top: 1.3rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* —— Mobile dock —— */
+.dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 70;
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.65rem 1rem calc(0.65rem + env(safe-area-inset-bottom, 0px));
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--line);
+}
+.dock .btn {
+  flex: 1;
+}
+@media (min-width: 780px) {
+  .dock {
+    display: none;
+  }
+}

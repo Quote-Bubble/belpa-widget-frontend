@@ -40,6 +40,11 @@ const nextConfig: NextConfig = {
       // does not inherit Geist / Inter / Poppins from the product layout.
       { source: "/hatherley", destination: "/hatherley.html" },
       { source: "/hatherley/", destination: "/hatherley.html" },
+      // The same, for the cleaning half of the trade. Its slug enables soft
+      // wash, biocide and gutter clearing only, so the flow that opens from it
+      // offers cleaning jobs and nothing else.
+      { source: "/clearview", destination: "/clearview.html" },
+      { source: "/clearview/", destination: "/clearview.html" },
     ];
   },
   async redirects() {
