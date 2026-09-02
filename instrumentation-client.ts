@@ -1,5 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 
+import { DENY_URLS, IGNORE_ERRORS } from "@/lib/sentry-noise";
+
 /**
  * Browser-side error reporting. Covers the embed pages roofers put on their sites.
  *
@@ -19,6 +21,9 @@ if (dsn) {
     replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: 0,
     sendDefaultPii: false,
+    // Other people's browser extensions are not our incidents.
+    ignoreErrors: IGNORE_ERRORS,
+    denyUrls: DENY_URLS,
   });
 }
 
